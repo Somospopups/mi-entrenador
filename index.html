@@ -500,7 +500,7 @@ var LIBRERIA = [
     <p class="mini">La persona va a tener que elegir su propia contraseña en el primer ingreso.</p>
     <div class="popup-botones">
       <button class="btn-neutro" data-cerrar-velo>Listo</button>
-      <button class="btn-grande" id="btnCopiarCred" style="flex:1">📋 Copiar credenciales</button>
+      <button class="btn-grande" id="btnCopiarCred" style="flex:1">📋 Copiar contraseña</button>
     </div>
   </div>
 </div>
@@ -1629,11 +1629,10 @@ $('btnCrear').onclick = async function(){
   var r = await Backend.crearUsuario({ nombre:$('crNombre').value, dni:$('crDni').value, telefono:$('crTel').value, membresia:mem });
   if (r.error){ avisar(r.error); return; }
   $('veloCrear').classList.remove('abierto');
-  var texto = 'App: ' + CONFIG.APP_NOMBRE + '\nDNI: ' + r.usuario.dni + '\nContraseña: ' + r.password;
   $('credTitulo').textContent = '✅ Cuenta creada';
-  $('credDetalle').textContent = 'Pasale las credenciales a ' + r.usuario.nombre + ' (la contraseña conviene mandarla en un mensaje aparte):';
-  $('credTexto').textContent = r.usuario.dni + ' · ' + r.password;
-  $('btnCopiarCred').onclick = function(){ copiar(texto); };
+  $('credDetalle').textContent = r.usuario.nombre + ' ya puede entrar con su DNI ' + r.usuario.dni + '. Esta es su contraseña temporal, copiala y mandásela:';
+  $('credTexto').textContent = r.password;
+  $('btnCopiarCred').onclick = function(){ copiar(r.password); };
   $('veloCredencial').classList.add('abierto');
   pintarAdmin();
 };
