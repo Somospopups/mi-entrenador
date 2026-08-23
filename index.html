@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f7df2">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Prototipo · Login + Panel Admin</title>
+<!-- ============================================================
+     PROTOTIPO REUTILIZABLE · Login con DNI + Panel de Administración
+     ------------------------------------------------------------
+     · Un solo archivo. Se abre directo en el navegador y funciona
+       offline con datos de prueba guardados en el dispositivo.
+     · Pensado como punto de partida para varias apps: TODO lo que
+       cambia entre una app y otra vive en el bloque CONFIG de abajo.
+     · La conexión al servidor está desacoplada: hoy corre el backend
+       local (localStorage); para producción se escribe un
+       BackendSupabase con las MISMAS 9 funciones y se cambia UNA línea.
+
+     CREDENCIALES DE PRUEBA (se crean solas la primera vez):
+       Administrador → DNI 11111111 · contraseña Admin1234
+       Usuaria       → DNI 22222222 · contraseña Clave1234
+       Usuario       → DNI 33333333 · contraseña Clave1234 (en prueba)
+     ============================================================ -->
+<script>
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ CONFIG · lo único que tocás para cada app nueva           ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var CONFIG = {
+  APP_NOMBRE:   'Mi Entrenador',     // el nombre que se ve en toda la app
+  APP_EMOJI:    '💪',                // el ícono de la marca (se reemplaza subiendo un logo)
+  COLOR_1:      '#4f7df2',           // color principal (degradé, botones)
+  COLOR_2:      '#8b63e8',           // color secundario del degradé
+  MONEDA:       '$',                 // símbolo de moneda para pagos
+  PRECIO_MES:   15000,               // precio sugerido de 1 mes (editable al cobrar)
+  DIAS_PRUEBA:  5,                   // duración del modo prueba
+  CLAVE_DATOS:  'proto_entrenador_v1' // clave de guardado local (una distinta por app)
+};
+
+/* Ilustraciones PROPIAS de los ejercicios (generadas a medida para esta
+   marca): viven en la carpeta img/ al lado de este archivo, así la app es
+   100% offline y con identidad visual única. Los ejercicios sin dibujo
+   muestran un comodín; se pueden ir sumando ilustraciones a img/ y la app
+   las levanta sola por nombre. */
+var LIBRERIA = [
+  { n:'Sentadilla con barra',            img:'img/sentadilla-barra.jpg' },
+  { n:'Peso muerto',                     img:'img/peso-muerto.jpg' },
+  { n:'Press de banca',                  img:'img/press-banca.jpg' },
+  { n:'Press militar',                   img:'img/press-militar.jpg' },
+  { n:'Remo con barra',                  img:'img/remo-barra.jpg' },
+  { n:'Dominadas',                       img:'img/dominadas.jpg' },
+  { n:'Flexiones de brazos',             img:'img/flexiones.jpg' },
+  { n:'Estocadas con mancuernas',        img:'img/estocadas.jpg' },
+  { n:'Prensa de piernas',               img:'img/prensa-piernas.jpg' },
+  { n:'Curl de bíceps con mancuernas',   img:'img/curl-biceps.jpg' },
+  { n:'Tríceps en polea',                img:'img/triceps-polea.jpg' },
+  { n:'Vuelos laterales',                img:'img/vuelos-laterales.jpg' },
+  { n:'Plancha',                         img:'img/plancha.jpg' },
+  { n:'Abdominales',                     img:'img/abdominales.jpg' },
+  { n:'Puente de glúteos',               img:'img/puente-gluteos.jpg' },
+  { n:'Jalón al pecho',                  img:'img/jalon-pecho.jpg' },
+  { n:'Remo en polea sentado',           img:'img/remo-polea.jpg' },
+  { n:'Peso muerto rumano',              img:'img/peso-muerto-rumano.jpg' },
+  { n:'Hip thrust con barra',            img:'img/hip-thrust.jpg' },
+  { n:'Elevación de talones',            img:'img/talones.jpg' },
+  { n:'Extensión de cuádriceps',         img:'img/extension-cuadriceps.jpg' },
+  { n:'Curl femoral',                    img:'img/curl-femoral.jpg' },
+  { n:'Press inclinado con mancuernas',  img:'img/press-inclinado.jpg' },
+  { n:'Aperturas con mancuernas',        img:'img/aperturas.jpg' },
+  { n:'Vuelos frontales',                img:'img/vuelos-frontales.jpg' },
+  { n:'Curl martillo',                   img:'img/curl-martillo.jpg' },
+  { n:'Fondos en banco',                 img:'img/fondos-banco.jpg' },
+  { n:'Escaladores',                     img:'img/escaladores.jpg' },
+  { n:'Giro ruso',                       img:'img/giro-ruso.jpg' },
+  { n:'Superman',                        img:'img/superman.jpg' },
+  { n:'Fondos en paralelas',             img:'img/fondos-paralelas.jpg' },
+  { n:'Press francés',                   img:'img/press-frances.jpg' },
+  { n:'Elevación de piernas',            img:'img/elevacion-piernas.jpg' },
+  { n:'Plancha lateral',                 img:'img/plancha-lateral.jpg' },
+  { n:'Abdominales cruzados',            img:'img/abdominales-cruzados.jpg' },
+  { n:'Encogimientos de hombros',        img:'img/encogimientos.jpg' },
+  { n:'Cinta: trote',                    img:'img/cinta.jpg' },
+  { n:'Cinta: caminata',                 img:'img/cinta.jpg' },
+  { n:'Bicicleta fija',                  img:'img/bicicleta-fija.jpg' },
+  { n:'Soga (saltos)',                   img:'img/soga.jpg' },
+  { n:'Estiramientos',                   img:'img/estiramientos.jpg' },
+  { n:'Sentadilla frontal',              img:'img/sentadilla-frontal.jpg' },
+  { n:'Estocadas con barra',             img:'img/estocadas-barra.jpg' },
+  { n:'Curl concentrado',                img:'img/curl-concentrado.jpg' },
+  { n:'Press cerrado',                   img:'img/press-cerrado.jpg' }
+];
+</script>
+<style>
+  :root{
+    --c1:#4f7df2; --c2:#8b63e8;      /* se pisan desde CONFIG al arrancar */
+    --tinta:#1d1d2c; --gris:#6b6c7a; --fondo:#f2f4fb; --carta:#ffffff;
+    --borde:#e4e7f3; --ok:#1e9e60; --rojo:#e02424; --dorado:#b8860b;
+  }
+  body.dark{ --tinta:#f0f0f6; --gris:#a0a1b2; --fondo:#12131f; --carta:#1e2030; --borde:#2c2f45; }
+  *{ box-sizing:border-box; margin:0; }
+  body{ font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--fondo); color:var(--tinta); min-height:100vh; }
+  button{ font:inherit; cursor:pointer; }
+  input,select{ font:inherit; color:var(--tinta); }
+
+  /* ---------- pantalla de ingreso ---------- */
+  #vLogin{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+           background:linear-gradient(150deg,var(--c1),var(--c2)); position:relative; }
+  .candado{ position:absolute; top:16px; right:16px; width:42px; height:42px; border:1px solid rgba(255,255,255,.35);
+            border-radius:50%; background:rgba(255,255,255,.15); color:#fff; font-size:17px; line-height:1;
+            display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); opacity:.85; }
+  .candado:hover{ opacity:1; background:rgba(255,255,255,.25); }
+  .login-caja{ width:100%; max-width:390px; background:var(--carta); border-radius:26px; padding:34px 28px;
+               box-shadow:0 30px 80px rgba(10,12,40,.35); }
+  .login-logo{ text-align:center; font-size:52px; }
+  .login-caja h1{ text-align:center; font-size:24px; letter-spacing:-.5px; margin:6px 0 2px; }
+  .login-caja .sub{ text-align:center; color:var(--gris); font-size:12.5px; margin-bottom:22px; }
+  .campo{ margin-bottom:14px; }
+  .campo label{ display:block; font-size:11px; font-weight:800; color:var(--gris); text-transform:uppercase;
+                letter-spacing:.5px; margin-bottom:5px; }
+  .campo input{ width:100%; padding:13px 14px; border:1.5px solid var(--borde); border-radius:13px;
+                background:var(--fondo); font-size:15px; outline:none; }
+  .campo input:focus{ border-color:var(--c1); }
+  .btn-grande{ width:100%; min-height:52px; border:0; border-radius:14px; color:#fff; font-size:15px; font-weight:900;
+               background:linear-gradient(135deg,var(--c1),var(--c2)); margin-top:6px; }
+  .login-error{ display:none; margin-top:12px; padding:11px 13px; border-radius:12px; background:rgba(224,36,36,.1);
+                color:var(--rojo); font-size:12.5px; font-weight:700; text-align:center; }
+  .login-pie{ text-align:center; color:var(--gris); font-size:10.5px; margin-top:18px; }
+
+  /* ---------- estructura general ---------- */
+  .vista{ display:none; max-width:760px; margin:0 auto; padding:18px 16px 90px; }
+  .vista.activa{ display:block; }
+  .top{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .top .marca{ font-weight:900; font-size:17px; letter-spacing:-.3px; }
+  .top .rol{ font-size:10px; font-weight:900; color:var(--c1); background:rgba(79,125,242,.12);
+             padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.5px; }
+  .top .der{ margin-left:auto; display:flex; gap:8px; }
+  .btn-chico{ min-height:38px; padding:0 14px; border:1px solid var(--borde); border-radius:11px;
+              background:var(--carta); color:var(--tinta); font-size:12.5px; font-weight:800; }
+  .carta{ background:var(--carta); border:1px solid var(--borde); border-radius:20px; padding:18px; margin-bottom:14px;
+          box-shadow:0 8px 26px rgba(20,25,70,.06); }
+  .carta h2{ font-size:15px; margin-bottom:4px; }
+  .carta .mini{ color:var(--gris); font-size:12px; }
+
+  /* ---------- hero admin ---------- */
+  .hero{ background:linear-gradient(150deg,var(--c1),var(--c2)); color:#fff; border:0; }
+  .hero .plata{ font-size:34px; font-weight:900; letter-spacing:-1px; }
+  .hero .comp{ font-size:12.5px; opacity:.9; margin-top:2px; }
+  .hero-chips{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+  .hero-chips span{ background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.28);
+                    padding:6px 12px; border-radius:999px; font-size:11.5px; font-weight:800; }
+  .accesos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .acceso{ min-height:58px; border:0; border-radius:16px; font-size:14px; font-weight:900; color:#fff;
+           background:linear-gradient(135deg,var(--c1),var(--c2)); }
+  .acceso.sec{ background:var(--carta); color:var(--tinta); border:1.5px solid var(--borde); }
+
+  /* ---------- colapsables ---------- */
+  .colapsa-cab{ width:100%; display:flex; align-items:center; gap:8px; background:none; border:0; padding:0;
+                color:var(--tinta); text-align:left; }
+  .colapsa-cab h2{ font-size:15px; } .colapsa-cab .resumen{ margin-left:auto; color:var(--gris); font-size:11.5px; font-weight:700; }
+  .colapsa-cab .flecha{ transition:transform .2s; color:var(--gris); } .colapsa-cab.abierta .flecha{ transform:rotate(90deg); }
+  .colapsa-cuerpo{ display:none; margin-top:14px; } .colapsa-cuerpo.abierto{ display:block; }
+
+  /* ---------- lista de usuarios ---------- */
+  .buscador{ width:100%; padding:11px 13px; border:1.5px solid var(--borde); border-radius:12px;
+             background:var(--fondo); margin-bottom:10px; outline:none; }
+  .u-fila{ border:1px solid var(--borde); border-radius:15px; margin-bottom:8px; overflow:hidden; }
+  .u-cab{ width:100%; display:flex; align-items:center; gap:10px; padding:12px 13px; background:none; border:0;
+          color:var(--tinta); text-align:left; }
+  .u-cab b{ font-size:13.5px; } .u-cab .dni{ color:var(--gris); font-size:11px; }
+  .badge{ margin-left:auto; font-size:10px; font-weight:900; padding:4px 9px; border-radius:999px; white-space:nowrap; }
+  .badge.ok{ background:rgba(30,158,96,.13); color:var(--ok); }
+  .badge.por{ background:rgba(184,134,11,.15); color:var(--dorado); }
+  .badge.mal{ background:rgba(224,36,36,.12); color:var(--rojo); }
+  .badge.oro{ background:linear-gradient(135deg,#f6d365,#e8b93a); color:#5c4400; }
+  .badge.gris{ background:rgba(120,120,140,.15); color:var(--gris); }
+  .u-acciones{ display:none; grid-template-columns:1fr 1fr; gap:7px; padding:0 12px 12px; }
+  .u-acciones.abierto{ display:grid; }
+  .u-btn{ min-height:44px; border:1px solid var(--borde); border-radius:11px; background:var(--fondo);
+          color:var(--tinta); font-size:12px; font-weight:800; text-align:left; padding:0 12px; }
+  .u-btn.peligro{ color:var(--rojo); }
+
+  /* ---------- ingresos ---------- */
+  .mes-nav{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .mes-nav b{ flex:1; text-align:center; font-size:14px; }
+  .mes-nav button{ width:38px; height:38px; border:1px solid var(--borde); border-radius:10px; background:var(--carta); color:var(--tinta); font-weight:900; }
+  .pago-fila{ display:flex; align-items:center; gap:8px; padding:9px 4px; border-bottom:1px dashed var(--borde); font-size:12.5px; }
+  .pago-fila .monto{ margin-left:auto; font-weight:900; color:var(--c1); }
+
+  /* ---------- home usuario ---------- */
+  .hola{ font-size:22px; font-weight:900; letter-spacing:-.4px; }
+  .placeholder{ border:2px dashed var(--borde); border-radius:18px; padding:26px; text-align:center; color:var(--gris);
+                font-size:13px; margin-top:12px; }
+  .franja-prueba{ background:var(--rojo); color:#fff; text-align:center; font-size:12px; font-weight:900;
+                  padding:9px 12px; border-radius:12px; margin-bottom:14px; }
+
+  /* ---------- plan de entrenamiento ---------- */
+  .dia-pills{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin:10px 0; }
+  .dia-pill{ flex:1; min-width:44px; min-height:42px; border:1.5px solid var(--borde); border-radius:11px;
+             background:var(--carta); color:var(--tinta); font-size:11.5px; font-weight:800; }
+  .dia-pill i{ display:block; font-style:normal; font-size:8.5px; opacity:.75; }
+  .dia-pill.hoy{ border-color:var(--c1); }
+  .dia-pill.activa{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent; }
+  .ej-carta{ display:flex; gap:10px; align-items:flex-start; border:1px solid var(--borde); border-radius:15px;
+             padding:11px; margin-bottom:8px; }
+  .ej-carta.hecho{ opacity:.55; } .ej-carta.hecho .ej-nombre{ text-decoration:line-through; }
+  .ej-anim{ width:76px; height:57px; border-radius:10px; object-fit:cover; background:var(--fondo); flex:none; }
+  .ej-datos{ flex:1; min-width:0; } .ej-nombre{ font-size:13.5px; font-weight:800; }
+  .ej-chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+  .ej-chips span{ background:rgba(79,125,242,.1); color:var(--c1); border-radius:999px; padding:3px 9px;
+                  font-size:10.5px; font-weight:800; }
+  .ej-nota{ color:var(--gris); font-size:11px; margin-top:5px; }
+  .ej-check{ width:36px; height:36px; border-radius:11px; border:2px solid var(--borde); background:var(--carta);
+             color:transparent; font-size:17px; font-weight:900; flex:none; }
+  .ej-carta.hecho .ej-check{ background:var(--ok); border-color:var(--ok); color:#fff; }
+  .progreso{ height:10px; border-radius:999px; background:var(--fondo); overflow:hidden; margin:8px 0 4px; }
+  .progreso i{ display:block; height:100%; background:linear-gradient(135deg,var(--c1),var(--c2));
+               border-radius:999px; transition:width .3s; }
+  /* mazo de tarjetas de ejercicios (estilo APPI) */
+  .mz-head{ display:flex; align-items:center; gap:10px; margin:10px 0 8px; }
+  .mz-head button{ width:40px; height:40px; border:1px solid var(--borde); border-radius:11px;
+                   background:var(--carta); color:var(--tinta); font-size:16px; font-weight:900; }
+  .mz-head span{ flex:1; text-align:center; font-size:12px; font-weight:800; color:var(--gris); }
+  .mz-deck{ position:relative; height:430px; }
+  .mz-card{ position:absolute; inset:0; display:flex; flex-direction:column; background:var(--carta);
+            border:1px solid var(--borde); border-radius:22px; padding:16px;
+            box-shadow:0 18px 45px rgba(20,25,70,.16);
+            transition:transform .35s cubic-bezier(.22,.9,.35,1), opacity .3s; }
+  .mz-card.detras1{ transform:translateY(14px) scale(.95); opacity:.7; pointer-events:none; }
+  .mz-card.detras2{ transform:translateY(26px) scale(.9); opacity:.4; pointer-events:none; }
+  .mz-card.vuela-si{ transform:translateX(125%) rotate(14deg); opacity:0; }
+  .mz-card.vuela-no{ transform:translateX(-125%) rotate(-14deg); opacity:0; }
+  .mz-anim{ width:100%; height:190px; object-fit:contain; background:#fff; border-radius:14px;
+            border:1px solid var(--borde); animation:mzRespira 3.4s ease-in-out infinite; }
+  .mz-comodin{ display:flex; align-items:center; justify-content:center; font-size:54px; }
+  @keyframes mzRespira{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.03) translateY(-3px) } }
+  body.dark .mz-anim{ background:#e9e9f2; }
+  .mz-nombre{ font-size:18px; font-weight:900; margin-top:10px; letter-spacing:-.3px; }
+  .mz-estado{ display:inline-block; margin-top:6px; font-size:11px; font-weight:900; border-radius:999px; padding:4px 10px; }
+  .mz-estado.si{ background:rgba(30,158,96,.13); color:var(--ok); }
+  .mz-estado.no{ background:rgba(224,36,36,.12); color:var(--rojo); }
+  .mz-botones{ display:flex; gap:10px; margin-top:auto; padding-top:12px; }
+  .mz-no,.mz-si{ flex:1; min-height:58px; border:0; border-radius:16px; font-size:24px; font-weight:900; color:#fff; }
+  .mz-no{ background:var(--rojo); } .mz-si{ background:var(--ok); }
+  .mz-no.baja,.mz-si.baja{ opacity:.3; }
+  .mz-fin{ text-align:center; padding:34px 12px; }
+  .mz-fin .grande{ font-size:46px; }
+  /* editor del plan (admin) */
+  .pl-lista{ margin:10px 0; }
+  .pl-fila{ display:flex; align-items:center; gap:8px; border:1px solid var(--borde); border-radius:12px;
+            padding:8px 10px; margin-bottom:6px; font-size:12px; }
+  .pl-fila b{ flex:1; min-width:0; } .pl-fila small{ color:var(--gris); }
+  .pl-fila button{ width:34px; height:34px; border:1px solid var(--borde); border-radius:9px; background:var(--fondo); color:var(--tinta); flex:none; }
+  .pl-form{ border-top:1px dashed var(--borde); padding-top:12px; margin-top:8px; }
+  .pl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .cump-fila{ padding:10px 4px; border-bottom:1px dashed var(--borde); font-size:12.5px; }
+  .cump-dias{ display:flex; gap:5px; margin-top:6px; flex-wrap:wrap; }
+  .cump-dias span{ border-radius:8px; padding:4px 8px; font-size:10px; font-weight:800; background:var(--fondo); color:var(--gris); }
+  .cump-dias span.bien{ background:rgba(30,158,96,.13); color:var(--ok); }
+  .cump-dias span.medio{ background:rgba(184,134,11,.15); color:var(--dorado); }
+  .cump-dias span.nada{ background:rgba(224,36,36,.10); color:var(--rojo); }
+
+  /* ---------- marca y colores ---------- */
+  [data-marca-emoji] img{ width:1.15em; height:1.15em; border-radius:22%; object-fit:cover; vertical-align:-0.18em; }
+  .logo-zona{ display:flex; align-items:center; gap:10px; margin:6px 0 16px; flex-wrap:wrap; }
+  .logo-prev{ width:58px; height:58px; border-radius:16px; border:1.5px solid var(--borde); background:var(--fondo);
+              display:flex; align-items:center; justify-content:center; font-size:30px; overflow:hidden; flex:none; }
+  .logo-prev img{ width:100%; height:100%; object-fit:cover; }
+  .paletas{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:6px 0 10px; }
+  .paleta{ height:46px; border-radius:13px; border:2.5px solid transparent; cursor:pointer; position:relative; }
+  .paleta.activa{ border-color:var(--tinta); }
+  .paleta span{ position:absolute; left:0; right:0; bottom:-16px; text-align:center; font-size:8.5px; font-weight:800;
+                color:var(--gris); text-transform:uppercase; letter-spacing:.3px; }
+  .fila-paletas{ margin-bottom:22px; }
+
+  /* ---------- popups ---------- */
+  .velo{ display:none; position:fixed; inset:0; background:rgba(15,16,35,.55); z-index:50;
+         align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px); }
+  .velo.abierto{ display:flex; }
+  .popup{ width:100%; max-width:420px; max-height:86vh; overflow-y:auto; background:var(--carta);
+          border-radius:22px; padding:24px 22px; box-shadow:0 30px 80px rgba(10,12,40,.4); }
+  .popup h3{ font-size:17px; margin-bottom:14px; }
+  .pildoras{ display:flex; gap:7px; margin:4px 0 14px; }
+  .pildora{ flex:1; min-height:44px; border:1.5px solid var(--borde); border-radius:12px; background:var(--fondo);
+            color:var(--tinta); font-size:12px; font-weight:800; }
+  .pildora.activa{ border-color:var(--c1); background:rgba(79,125,242,.1); color:var(--c1); }
+  .popup-botones{ display:flex; gap:8px; margin-top:16px; }
+  .popup-botones .btn-grande{ margin-top:0; }
+  .btn-neutro{ flex:1; min-height:52px; border:1.5px solid var(--borde); border-radius:14px; background:none;
+               color:var(--tinta); font-weight:800; }
+  .credencial{ background:var(--fondo); border:1px solid var(--borde); border-radius:13px; padding:13px;
+               font-family:Consolas,monospace; font-size:14px; text-align:center; margin:10px 0; user-select:all; }
+  .aviso-copiado{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); background:var(--tinta);
+                  color:var(--carta); padding:10px 20px; border-radius:999px; font-size:12.5px; font-weight:800;
+                  opacity:0; transition:opacity .25s; pointer-events:none; z-index:99; }
+  .aviso-copiado.ver{ opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- ════════════ INGRESO ════════════ -->
+<div id="vLogin">
+  <button class="candado" id="btnCandado" title="Ingreso del administrador" aria-label="Ingreso del administrador">🔒</button>
+  <div class="login-caja">
+    <div class="login-logo" data-marca-emoji>🚀</div>
+    <h1 data-marca-nombre>Mi App</h1>
+    <div class="sub">Ingresá con tu DNI y tu contraseña</div>
+    <div class="campo"><label>DNI (solo números)</label>
+      <input id="loginDni" inputmode="numeric" autocomplete="username" placeholder="Ej: 22222222"></div>
+    <div class="campo"><label>Contraseña</label>
+      <input id="loginPass" type="password" autocomplete="current-password" placeholder="Tu contraseña"></div>
+    <button class="btn-grande" id="btnEntrar">Entrar</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-pie">Prototipo · usuaria de prueba: DNI 22222222 · Clave1234</div>
+  </div>
+</div>
+
+<!-- ════════════ HOME DEL USUARIO ════════════ -->
+<div class="vista" id="vHome">
+  <div class="top">
+    <span data-marca-emoji>🚀</span><span class="marca" data-marca-nombre>Mi App</span>
+    <div class="der"><button class="btn-chico" id="btnTema1">🌙</button><button class="btn-chico" id="btnSalir1">Salir ↪</button></div>
+  </div>
+  <div id="homePrueba"></div>
+  <div class="carta">
+    <div class="hola" id="homeHola">¡Hola!</div>
+    <div class="mini" id="homeMembresia"></div>
+  </div>
+  <div class="carta">
+    <h2 id="planTitulo">🏋️ Tu plan de hoy</h2>
+    <div class="dia-pills" id="planPills"></div>
+    <div class="progreso" id="planProgresoWrap" hidden><i id="planProgreso" style="width:0%"></i></div>
+    <div class="mini" id="planResumen"></div>
+    <div id="planZona" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- ════════════ PANEL DEL ADMINISTRADOR ════════════ -->
+<div class="vista" id="vAdmin">
+  <div class="top">
+    <span data-marca-emoji>🚀</span><span class="marca" data-marca-nombre>Mi App</span><span class="rol">Admin</span>
+    <div class="der"><button class="btn-chico" id="btnTema2">🌙</button><button class="btn-chico" id="btnSalir2">Salir ↪</button></div>
+  </div>
+
+  <div class="carta hero">
+    <div class="mini" style="color:rgba(255,255,255,.85)">Recaudado este mes</div>
+    <div class="plata" id="heroPlata">$ 0</div>
+    <div class="comp" id="heroComp"></div>
+    <div class="hero-chips" id="heroChips"></div>
+  </div>
+
+  <div class="accesos">
+    <button class="acceso" id="btnAbrirCrear">➕ Crear cuenta</button>
+    <button class="acceso sec" id="btnIrAtencion">⚠️ Atención <b id="atencionBadge"></b></button>
+  </div>
+
+  <div class="carta" id="cartaAtencion">
+    <h2>⚠️ Necesitan tu atención</h2>
+    <div id="listaAtencion" style="margin-top:10px"></div>
+  </div>
+
+  <div class="carta">
+    <button class="colapsa-cab" data-colapsa="usuarios">
+      <span class="flecha">›</span><h2>👥 Estudiantes</h2><span class="resumen" id="resumenUsuarios"></span>
+    </button>
+    <div class="colapsa-cuerpo" id="cuerpoUsuarios">
+      <input class="buscador" id="buscaUsuario" placeholder="🔍 Buscar por nombre o DNI…">
+      <div id="listaUsuarios"></div>
+    </div>
+  </div>
+
+  <div class="carta" id="cartaCumplimiento">
+    <button class="colapsa-cab" data-colapsa="cumplimiento">
+      <span class="flecha">›</span><h2>📈 Cumplimiento semanal</h2><span class="resumen" id="resumenCump"></span>
+    </button>
+    <div class="colapsa-cuerpo" id="cuerpoCumplimiento"><div id="listaCump"></div></div>
+  </div>
+
+  <div class="carta" id="cartaIngresos">
+    <button class="colapsa-cab" data-colapsa="ingresos">
+      <span class="flecha">›</span><h2>📅 Ingresos por mes</h2><span class="resumen" id="resumenIngresos"></span>
+    </button>
+    <div class="colapsa-cuerpo" id="cuerpoIngresos">
+      <div class="mes-nav"><button id="mesAntes">‹</button><b id="mesTitulo"></b><button id="mesDespues">›</button></div>
+      <div id="listaPagos"></div>
+    </div>
+  </div>
+
+  <div class="carta" id="cartaConfig">
+    <button class="colapsa-cab" data-colapsa="config">
+      <span class="flecha">›</span><h2>⚙️ Configuración</h2><span class="resumen">nombre y precio</span>
+    </button>
+    <div class="colapsa-cuerpo" id="cuerpoConfig">
+      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Logo de la marca</label>
+      <div class="logo-zona">
+        <div class="logo-prev" id="logoPrev">🚀</div>
+        <button class="btn-chico" id="btnSubirLogo">📷 Subir / elegir de la galería</button>
+        <button class="btn-chico" id="btnColoresLogo">🪄 Usar los colores del logo</button>
+        <button class="btn-chico" id="btnQuitarLogo">🗑 Quitar</button>
+        <input type="file" id="inputLogo" accept="image/*" hidden>
+      </div>
+      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Colores de la app</label>
+      <div class="fila-paletas">
+        <div class="paletas" id="paletas"></div>
+        <button class="btn-chico" id="btnAzar" style="width:100%;margin-top:8px">🎲 Sorprendeme: colores al azar</button>
+      </div>
+      <div class="campo"><label>Nombre de la app</label><input id="cfgNombre"></div>
+      <div class="campo"><label>Precio sugerido de 1 mes</label><input id="cfgPrecio" inputmode="numeric"></div>
+      <button class="btn-grande" id="btnGuardarCfg">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ POPUPS ════════════ -->
+<div class="velo" id="veloAdminLogin">
+  <div class="popup">
+    <h3>🔒 Ingreso del administrador</h3>
+    <p class="mini">Este acceso es solo para la administración de la plataforma.<br>Prototipo · admin de prueba: DNI 11111111 · Admin1234</p>
+    <div class="campo" style="margin-top:12px"><label>DNI del administrador</label>
+      <input id="admDni" inputmode="numeric" placeholder="Ej: 11111111"></div>
+    <div class="campo"><label>Contraseña</label>
+      <input id="admPass" type="password" placeholder="Contraseña de administración"></div>
+    <div class="login-error" id="admError"></div>
+    <div class="popup-botones">
+      <button class="btn-neutro" data-cerrar-velo>Cancelar</button>
+      <button class="btn-grande" id="btnEntrarAdmin" style="flex:1">Entrar al panel</button>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="veloCrear">
+  <div class="popup">
+    <h3>➕ Crear cuenta</h3>
+    <div class="campo"><label>Nombre y apellido</label><input id="crNombre" placeholder="Ej: Ana García"></div>
+    <div class="campo"><label>DNI</label><input id="crDni" inputmode="numeric" placeholder="Solo números"></div>
+    <div class="campo"><label>Teléfono (opcional)</label><input id="crTel" inputmode="tel" placeholder="Ej: 351 5551234"></div>
+    <div id="crMembresiaWrap">
+    <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Membresía inicial</label>
+    <div class="pildoras" id="crMembresia">
+      <button class="pildora activa" data-mem="1">1 mes</button>
+      <button class="pildora" data-mem="prueba">🧪 Prueba</button>
+      <button class="pildora" data-mem="siempre">♾️ Siempre</button>
+    </div>
+    </div>
+    <div class="popup-botones">
+      <button class="btn-neutro" data-cerrar-velo>Cancelar</button>
+      <button class="btn-grande" id="btnCrear" style="flex:1">Crear</button>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="veloCredencial">
+  <div class="popup">
+    <h3 id="credTitulo">✅ Cuenta creada</h3>
+    <p class="mini" id="credDetalle"></p>
+    <div class="credencial" id="credTexto"></div>
+    <p class="mini">La persona va a tener que elegir su propia contraseña en el primer ingreso.</p>
+    <div class="popup-botones">
+      <button class="btn-neutro" data-cerrar-velo>Listo</button>
+      <button class="btn-grande" id="btnCopiarCred" style="flex:1">📋 Copiar credenciales</button>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="veloPago">
+  <div class="popup">
+    <h3>💳 Registrar pago</h3>
+    <p class="mini" id="pagoQuien"></p>
+    <div class="pildoras" id="pagoMeses">
+      <button class="pildora activa" data-meses="1">1 mes</button>
+      <button class="pildora" data-meses="3">3 meses</button>
+      <button class="pildora" data-meses="6">6 meses</button>
+    </div>
+    <div class="campo"><label>Monto cobrado</label><input id="pagoMonto" inputmode="numeric"></div>
+    <div class="popup-botones">
+      <button class="btn-neutro" data-cerrar-velo>Cancelar</button>
+      <button class="btn-grande" id="btnPagar" style="flex:1">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="veloForzada">
+  <div class="popup">
+    <h3>🔑 Elegí tu contraseña</h3>
+    <p class="mini">Es tu primer ingreso (o te blanquearon la clave): por seguridad tenés que elegir una contraseña propia. Mínimo 8 caracteres.</p>
+    <div class="campo" style="margin-top:12px"><label>Contraseña nueva</label><input id="fzPass1" type="password"></div>
+    <div class="campo"><label>Repetila</label><input id="fzPass2" type="password"></div>
+    <div class="login-error" id="fzError"></div>
+    <button class="btn-grande" id="btnForzada">Guardar y entrar</button>
+  </div>
+</div>
+
+<div class="velo" id="veloPlan">
+  <div class="popup" style="max-width:530px">
+    <h3 id="planDe">🏋️ Plan</h3>
+    <div class="dia-pills" id="plTabs"></div>
+    <div class="pl-lista" id="plLista"></div>
+    <div class="pl-form">
+      <div class="campo"><label>Ejercicio (elegí de la lista con animación o escribí el tuyo)</label>
+        <input id="plNombre" list="dlEjercicios" placeholder="Ej: Sentadilla con barra">
+        <datalist id="dlEjercicios"></datalist></div>
+      <div class="pl-grid">
+        <div class="campo"><label>Series</label><input id="plSeries" inputmode="numeric" placeholder="Ej: 4"></div>
+        <div class="campo"><label>Repeticiones / tiempo</label><input id="plReps" placeholder="Ej: 10-12 · 40 seg"></div>
+      </div>
+      <div class="pl-grid">
+        <div class="campo"><label>Carga / descanso (opcional)</label><input id="plCarga" placeholder="Ej: 40 kg · 90 seg"></div>
+        <div class="campo"><label>Nota del profe (opcional)</label><input id="plNota" placeholder="Ej: bajá lento"></div>
+      </div>
+      <button class="btn-grande" id="plAgregar">➕ Agregar al día</button>
+    </div>
+    <div class="pl-grid" style="margin-top:12px">
+      <select id="plCopiaDestino" class="buscador" style="margin:0"></select>
+      <button class="btn-chico" id="plCopiar" style="min-height:44px">📋 Copiar este día a →</button>
+    </div>
+    <div class="popup-botones">
+      <button class="btn-neutro" data-cerrar-velo>Cerrar sin guardar</button>
+      <button class="btn-grande" id="plGuardar" style="flex:1">💾 Guardar plan</button>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="veloConfirmar">
+  <div class="popup">
+    <h3 id="cfTitulo">¿Confirmás?</h3>
+    <p class="mini" id="cfDetalle"></p>
+    <div class="popup-botones">
+      <button class="btn-neutro" data-cerrar-velo>No</button>
+      <button class="btn-grande" id="btnConfirmar" style="flex:1">Sí, dale</button>
+    </div>
+  </div>
+</div>
+
+<div class="aviso-copiado" id="avisoCopiado">Copiado ✓</div>
+
+<script>
+'use strict';
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 1 · GUARDADO LOCAL (con red de seguridad)                  ║
+   ║ Si localStorage no está disponible (vista previa embebida) ║
+   ║ el prototipo sigue andando en memoria.                     ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var memoria = {};
+function guardar(clave, valor){ try{ localStorage.setItem(clave, JSON.stringify(valor)); }catch(e){ memoria[clave]=valor; } }
+function leer(clave, defecto){ try{ var v=JSON.parse(localStorage.getItem(clave)); return v==null?defecto:v; }catch(e){ return clave in memoria ? memoria[clave] : defecto; } }
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 2 · CONTRASEÑAS: siempre hasheadas, nunca en texto plano   ║
+   ╚══════════════════════════════════════════════════════════╝ */
+async function hashear(texto){
+  try{
+    var data = new TextEncoder().encode('proto-sal-2026·' + texto);
+    var buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  }catch(e){ /* respaldo simple si el entorno no trae crypto.subtle */
+    var h = 5381, s = 'proto-sal-2026·' + texto;
+    for (var i=0;i<s.length;i++){ h = ((h<<5)+h+s.charCodeAt(i))>>>0; }
+    return 'x' + h.toString(16);
+  }
+}
+function claveAleatoria(){
+  var letras='ABCDEFGHJKLMNPQRSTUVWXYZ', num='23456789', l='', n='';
+  for(var i=0;i<3;i++) l+=letras[Math.floor(Math.random()*letras.length)];
+  for(var j=0;j<4;j++) n+=num[Math.floor(Math.random()*num.length)];
+  return l.slice(0,1) + l.slice(1).toLowerCase() + n; // ej: Abc4729
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 3 · EL BACKEND (la capa que se cambia para ir a producción)║
+   ║                                                            ║
+   ║ Para conectar Supabase: escribí un objeto BackendSupabase  ║
+   ║ con ESTAS MISMAS 11 funciones (mismos nombres, mismos       ║
+   ║ parámetros, mismas promesas) y cambiá la última línea:     ║
+   ║   var Backend = BackendSupabase;                           ║
+   ║ El resto de la app no se toca.                             ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var BackendLocal = {
+  _db: null,
+  async _cargar(){
+    if (this._db) return this._db;
+    this._db = leer(CONFIG.CLAVE_DATOS, null);
+    if (!this._db){
+      // Semilla inicial: un admin y dos personas de ejemplo.
+      var hoy = Date.now(), dia = 86400000;
+      // Un plan de ejemplo para Ana: así el demo muestra la app viva.
+      var ej = function(n, series, reps, carga, nota){
+        return { id:'e'+n.replace(/\W+/g,'')+Math.floor(Math.random()*9999), nombre:n, img:null,
+                 series:series||'', reps:reps||'', carga:carga||'', nota:nota||'' };
+      };
+      var planAna = {
+        lun:[ ej('Sentadilla con barra','4','10-12','40 kg · 90 seg','Bajá lento y controlado'),
+              ej('Press de banca','4','8-10','',''),
+              ej('Plancha','3','40 seg','','Abdomen apretado, sin quebrar la cadera') ],
+        mar:[ ej('Cinta: trote','1','25 min','ritmo conversable',''),
+              ej('Abdominales','3','15','','') ],
+        mie:[ ej('Peso muerto','4','8','50 kg',''),
+              ej('Remo con barra','4','10','',''),
+              ej('Curl de bíceps con mancuernas','3','12','','') ],
+        jue:[],
+        vie:[ ej('Press militar','4','8-10','',''),
+              ej('Vuelos laterales','3','15','livianas',''),
+              ej('Tríceps en polea','3','12','','') ],
+        sab:[ ej('Soga (saltos)','5','2 min','','Descansá 1 min entre series') ],
+        dom:[ ej('Cinta: caminata','1','30 min','','Regenerativo, tranquilo'),
+              ej('Puente de glúteos','3','15','','Apretá arriba 2 segundos') ]
+      };
+      this._db = {
+        usuarios: [
+          { id:'u1', dni:'11111111', nombre:'Administrador', telefono:'', rol:'admin', activo:true,
+            passHash: await hashear('Admin1234'), debeCambiar:false, membresia:{ tipo:'siempre', inicio:hoy, vence:null } },
+          { id:'u2', dni:'22222222', nombre:'Ana García', telefono:'351 5551234', rol:'usuario', activo:true,
+            passHash: await hashear('Clave1234'), debeCambiar:false, membresia:{ tipo:'meses', inicio:hoy, vence:hoy+28*dia },
+            plan: planAna, hechos:{} },
+          { id:'u3', dni:'33333333', nombre:'Bruno López', telefono:'', rol:'usuario', activo:true,
+            passHash: await hashear('Clave1234'), debeCambiar:true, membresia:{ tipo:'prueba', inicio:hoy, vence:hoy+CONFIG.DIAS_PRUEBA*dia } }
+        ],
+        pagos: [ { id:'p1', userId:'u2', nombre:'Ana García', meses:1, monto:CONFIG.PRECIO_MES, fecha:hoy } ],
+        config: {}
+      };
+      this._guardar();
+    }
+    return this._db;
+  },
+  _guardar(){ guardar(CONFIG.CLAVE_DATOS, this._db); },
+
+  /* — las 9 funciones del contrato — */
+  async login(dni, pass){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.dni === String(dni).replace(/\D/g,''); });
+    if (!u) return { error:'No encontramos ese DNI. Fijate si está bien escrito.' };
+    if (u.passHash !== await hashear(pass)) return { error:'La contraseña no es correcta.' };
+    if (!u.activo) return { error:'Tu cuenta está desactivada. Hablá con el administrador.' };
+    if (u.rol!=='admin' && u.membresia.vence && Date.now() > u.membresia.vence){
+      return { error: u.membresia.tipo==='prueba'
+        ? 'Tu período de prueba terminó. Hablá con el administrador para seguir usando la app.'
+        : 'Tu membresía venció. Hablá con el administrador para renovarla.' };
+    }
+    return { usuario: u };
+  },
+  async listarUsuarios(){ var db = await this._cargar(); return db.usuarios.slice(); },
+  async crearUsuario(datos){
+    var db = await this._cargar();
+    var dni = String(datos.dni||'').replace(/\D/g,'');
+    if (!dni || dni.length < 7) return { error:'Ese DNI no parece válido.' };
+    if (db.usuarios.some(function(x){ return x.dni===dni; })) return { error:'Ya existe una cuenta con ese DNI.' };
+    var pass = claveAleatoria(), hoy = Date.now(), dia = 86400000, mem;
+    if (datos.membresia==='siempre')      mem = { tipo:'siempre', inicio:hoy, vence:null };
+    else if (datos.membresia==='prueba')  mem = { tipo:'prueba',  inicio:hoy, vence:hoy+CONFIG.DIAS_PRUEBA*dia };
+    else                                  mem = { tipo:'meses',   inicio:hoy, vence:hoy+30*dia };
+    var u = { id:'u'+hoy, dni:dni, nombre:String(datos.nombre||'').trim()||('DNI '+dni), telefono:String(datos.telefono||'').trim(),
+              rol:'usuario', activo:true, passHash: await hashear(pass), debeCambiar:true, membresia:mem };
+    db.usuarios.push(u); this._guardar();
+    return { usuario:u, password:pass };
+  },
+  async cambiarPassword(userId, passNueva){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    u.passHash = await hashear(passNueva); u.debeCambiar = false; this._guardar();
+    return { ok:true };
+  },
+  async blanquearPassword(userId){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    var pass = claveAleatoria();
+    u.passHash = await hashear(pass); u.debeCambiar = true; this._guardar();
+    return { password:pass };
+  },
+  async registrarPago(userId, meses, monto){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    var dia = 86400000, base = (u.membresia.vence && u.membresia.vence > Date.now() && u.membresia.tipo==='meses')
+      ? u.membresia.vence : Date.now();
+    u.membresia = { tipo:'meses', inicio:u.membresia.inicio||Date.now(), vence: base + meses*30*dia };
+    db.pagos.push({ id:'p'+Date.now(), userId:u.id, nombre:u.nombre, meses:meses, monto:Number(monto)||0, fecha:Date.now() });
+    this._guardar(); return { ok:true };
+  },
+  async cambiarMembresia(userId, tipo){   // 'prueba' | 'siempre'
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    var dia = 86400000;
+    u.membresia = tipo==='siempre' ? { tipo:'siempre', inicio:Date.now(), vence:null }
+                                   : { tipo:'prueba', inicio:Date.now(), vence:Date.now()+CONFIG.DIAS_PRUEBA*dia };
+    this._guardar(); return { ok:true };
+  },
+  async setActivo(userId, activo){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (u){ u.activo = !!activo; this._guardar(); } return { ok:true };
+  },
+  async eliminarUsuario(userId){
+    var db = await this._cargar();
+    db.usuarios = db.usuarios.filter(function(x){ return x.id!==userId; });
+    this._guardar(); return { ok:true };
+  },
+  async listarPagos(){ var db = await this._cargar(); return db.pagos.slice(); },
+  async guardarPlan(userId, plan){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    u.plan = plan; this._guardar(); return { ok:true };
+  },
+  async marcarHecho(userId, fechaClave, ejercicioId, valor){
+    /* valor: true = la hizo (✓) · false = no salió (✗) */
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    u.hechos = u.hechos || {};
+    var marcas = u.hechos[fechaClave] || {};
+    marcas[ejercicioId] = !!valor;
+    u.hechos[fechaClave] = marcas; this._guardar(); return { ok:true, hechos:u.hechos };
+  }
+};
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 3b · BACKEND EN LA NUBE · Supabase (Popups Fitness)        ║
+   ║ Mismo contrato que BackendLocal, hablando con el servidor  ║
+   ║ real. La clave anon es pública por diseño; la seguridad la ║
+   ║ ponen las políticas RLS del servidor.                      ║
+   ║ Para el modo demo local: abrir la app con #local al final. ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var NUBE = {
+  activa: true,
+  url: 'https://dozgsdsoxmvvccynevwg.supabase.co',
+  anon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvemdzZHNveG12dmNjeW5ldndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MTg1MzksImV4cCI6MjEwMzA5NDUzOX0.6aYb9pT9vXwLpB1gPmx5dRGe3gc-M4wUU8xglEpiZk0',
+  dominio: 'fit.popups.invalid',
+  fnAlta: 'super-responder'   // el nombre con el que quedó desplegada la Edge Function
+};
+var nubeSesion = { token: null, uid: null };
+async function nubeApi(ruta, opciones){
+  opciones = opciones || {};
+  var headers = { 'apikey': NUBE.anon, 'Content-Type': 'application/json' };
+  if (!opciones.sinAuth) headers['Authorization'] = 'Bearer ' + (nubeSesion.token || NUBE.anon);
+  if (opciones.headers) Object.keys(opciones.headers).forEach(function(k){ headers[k] = opciones.headers[k]; });
+  var r = await fetch(NUBE.url + ruta, {
+    method: opciones.method || 'GET', headers: headers,
+    body: opciones.body !== undefined ? JSON.stringify(opciones.body) : undefined
+  });
+  var texto = await r.text(), data = null;
+  try{ data = texto ? JSON.parse(texto) : null; }catch(e){ data = texto; }
+  return { ok: r.ok, status: r.status, data: data };
+}
+function nubeMapear(p, extra){
+  extra = extra || {};
+  return { id: p.user_id, dni: p.dni, nombre: p.nombre || '', telefono: p.telefono || '',
+    rol: p.rol, activo: !!p.activo, debeCambiar: !!p.debe_cambiar_password, entrenadorId: p.entrenador_id || null,
+    membresia: { tipo: p.membresia_tipo || 'meses',
+      inicio: p.membresia_inicio ? Date.parse(p.membresia_inicio) : Date.now(),
+      vence: p.membresia_vence ? Date.parse(p.membresia_vence) : null },
+    plan: extra.plan || null, hechos: extra.hechos || {} };
+}
+var BackendSupabase = {
+  async login(dni, pass){
+    dni = String(dni || '').replace(/\D/g, '');
+    if (!dni || !pass) return { error: 'Completá DNI y contraseña.' };
+    var r = await nubeApi('/auth/v1/token?grant_type=password', { method: 'POST', sinAuth: true,
+      body: { email: dni + '@' + NUBE.dominio, password: pass } });
+    if (!r.ok){
+      var m = (r.data && (r.data.error_description || r.data.msg || r.data.message)) || '';
+      if (/invalid login/i.test(m)) return { error: 'DNI o contraseña incorrectos.' };
+      return { error: 'No se pudo entrar: ' + (m || ('HTTP ' + r.status)) };
+    }
+    nubeSesion.token = r.data.access_token; nubeSesion.uid = r.data.user.id;
+    var est = await nubeApi('/rest/v1/rpc/fit_estado_acceso', { method: 'POST', body: {} });
+    var MENSAJES = {
+      inactivo: 'Tu cuenta está desactivada. Hablá con quien te la creó.',
+      sin_perfil: 'Tu cuenta no tiene perfil todavía. Hablá con soporte.',
+      membresia_vencida: 'Tu membresía venció. Hablá con la administración para renovarla.',
+      prueba_vencida: 'Tu período de prueba terminó. Hablá con la administración.',
+      entrenador_inactivo: 'La cuenta de tu entrenador no está activa. Avisale.',
+      entrenador_vencido: 'La cuenta de tu entrenador está vencida. Avisale para que la renueve.'
+    };
+    if (est.data !== 'ok'){ nubeSesion = { token: null, uid: null };
+      return { error: MENSAJES[est.data] || ('Acceso denegado: ' + est.data) }; }
+    var rp = await nubeApi('/rest/v1/fit_perfiles?select=*&user_id=eq.' + nubeSesion.uid);
+    var p = rp.data && rp.data[0];
+    if (!p){ nubeSesion = { token: null, uid: null }; return { error: 'No se encontró tu perfil.' }; }
+    var extra = {};
+    if (p.rol === 'alumno'){
+      var rpl = await nubeApi('/rest/v1/fit_planes?select=plan&alumno_id=eq.' + p.user_id);
+      extra.plan = rpl.data && rpl.data[0] ? rpl.data[0].plan : null;
+      var desde = fechaClave(Date.now() - 6 * 86400000);
+      var rm = await nubeApi('/rest/v1/fit_marcas?select=fecha,marcas&alumno_id=eq.' + p.user_id + '&fecha=gte.' + desde);
+      extra.hechos = {}; (rm.data || []).forEach(function(m){ extra.hechos[m.fecha] = m.marcas || {}; });
+    }
+    return { usuario: nubeMapear(p, extra) };
+  },
+  async listarUsuarios(){
+    var r = await nubeApi('/rest/v1/fit_perfiles?select=*&order=nombre.asc');
+    var soySuper = sesion && sesion.rol === 'superadmin';
+    var lista = (r.data || []).filter(function(p){ return p.rol === (soySuper ? 'entrenador' : 'alumno'); });
+    var planes = {}, marcas = {};
+    if (!soySuper){
+      var rp = await nubeApi('/rest/v1/fit_planes?select=alumno_id,plan');
+      (rp.data || []).forEach(function(x){ planes[x.alumno_id] = x.plan; });
+      var desde = fechaClave(Date.now() - 6 * 86400000);
+      var rm = await nubeApi('/rest/v1/fit_marcas?select=alumno_id,fecha,marcas&fecha=gte.' + desde);
+      (rm.data || []).forEach(function(x){ (marcas[x.alumno_id] = marcas[x.alumno_id] || {})[x.fecha] = x.marcas || {}; });
+    }
+    return lista.map(function(p){ return nubeMapear(p, { plan: planes[p.user_id] || null, hechos: marcas[p.user_id] || {} }); });
+  },
+  async crearUsuario(datos){
+    var r = await nubeApi('/functions/v1/' + NUBE.fnAlta, { method: 'POST',
+      body: { accion: 'crear', dni: datos.dni, nombre: datos.nombre, telefono: datos.telefono, membresia: datos.membresia } });
+    if (!r.ok || (r.data && r.data.error))
+      return { error: (r.data && r.data.error) || ('No se pudo crear (HTTP ' + r.status + '). ¿Está desplegada la función alta?') };
+    return { usuario: { id: r.data.user_id, dni: r.data.dni, nombre: String(datos.nombre || '').trim() || ('DNI ' + r.data.dni) }, password: r.data.password };
+  },
+  async cambiarPassword(userId, passNueva){
+    var r = await nubeApi('/auth/v1/user', { method: 'PUT', body: { password: passNueva } });
+    if (!r.ok) return { error: 'No se pudo guardar la contraseña nueva.' };
+    await nubeApi('/rest/v1/rpc/fit_password_cambiada', { method: 'POST', body: {} });
+    return { ok: true };
+  },
+  async blanquearPassword(userId){
+    var r = await nubeApi('/functions/v1/' + NUBE.fnAlta, { method: 'POST', body: { accion: 'blanquear', user_id: userId } });
+    if (!r.ok || (r.data && r.data.error)) return { error: (r.data && r.data.error) || 'No se pudo blanquear.' };
+    return { password: r.data.password };
+  },
+  async registrarPago(userId, meses, monto){
+    var r = await nubeApi('/rest/v1/rpc/fit_registrar_pago', { method: 'POST',
+      body: { p_entrenador: userId, p_meses: Number(meses), p_monto: Number(monto) || 0 } });
+    if (!r.ok) return { error: (r.data && r.data.message) || 'No se pudo registrar el pago.' };
+    return { ok: true };
+  },
+  async cambiarMembresia(userId, tipo){
+    var r = await nubeApi('/rest/v1/rpc/fit_cambiar_membresia', { method: 'POST',
+      body: { p_entrenador: userId, p_tipo: tipo } });
+    if (!r.ok) return { error: (r.data && r.data.message) || 'No se pudo cambiar la membresía.' };
+    return { ok: true };
+  },
+  async setActivo(userId, activo){
+    var r = await nubeApi('/rest/v1/rpc/fit_set_activo', { method: 'POST',
+      body: { p_user: userId, p_activo: !!activo } });
+    if (!r.ok) return { error: (r.data && r.data.message) || 'No se pudo cambiar.' };
+    return { ok: true };
+  },
+  async eliminarUsuario(userId){
+    var r = await nubeApi('/functions/v1/' + NUBE.fnAlta, { method: 'POST', body: { accion: 'eliminar', user_id: userId } });
+    if (!r.ok || (r.data && r.data.error)) return { error: (r.data && r.data.error) || 'No se pudo eliminar.' };
+    return { ok: true };
+  },
+  async listarPagos(){
+    var r = await nubeApi('/rest/v1/fit_pagos?select=*&order=fecha.desc');
+    return (r.data || []).map(function(p){ return { id: p.id, userId: p.entrenador_id, nombre: p.nombre,
+      meses: p.meses, monto: Number(p.monto) || 0, fecha: Date.parse(p.fecha) }; });
+  },
+  async guardarPlan(userId, plan){
+    var r = await nubeApi('/rest/v1/fit_planes', { method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: [{ alumno_id: userId, entrenador_id: nubeSesion.uid, plan: plan, actualizado: new Date().toISOString() }] });
+    if (!r.ok) return { error: 'No se pudo guardar el plan.' };
+    return { ok: true };
+  },
+  async marcarHecho(userId, fecha, ejercicioId, valor){
+    var actuales = (sesion && sesion.hechos && sesion.hechos[fecha]) || {};
+    var nuevas = {}; Object.keys(actuales).forEach(function(k){ nuevas[k] = actuales[k]; });
+    nuevas[ejercicioId] = !!valor;
+    var r = await nubeApi('/rest/v1/fit_marcas', { method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: [{ alumno_id: userId, fecha: fecha, marcas: nuevas, actualizado: new Date().toISOString() }] });
+    if (!r.ok) return { error: 'No se pudo guardar la marca.' };
+    var hechos = {}; Object.keys(sesion.hechos || {}).forEach(function(k){ hechos[k] = sesion.hechos[k]; });
+    hechos[fecha] = nuevas;
+    return { ok: true, hechos: hechos };
+  }
+};
+var Backend = (NUBE.activa && NUBE.url && location.hash.indexOf('local') < 0) ? BackendSupabase : BackendLocal;
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 4 · SESIÓN Y NAVEGACIÓN                                    ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var sesion = null;
+function $(id){ return document.getElementById(id); }
+function mostrar(vista){
+  $('vLogin').style.display = vista==='login' ? 'flex' : 'none';
+  $('vHome').classList.toggle('activa', vista==='home');
+  $('vAdmin').classList.toggle('activa', vista==='admin');
+}
+function fecha(ms){ var d=new Date(ms); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function plata(n){ return CONFIG.MONEDA + ' ' + Number(n||0).toLocaleString('es-AR'); }
+function diasQueQuedan(u){ return u.membresia.vence ? Math.ceil((u.membresia.vence - Date.now())/86400000) : null; }
+function badgeDe(u){
+  if (!u.activo) return ['gris','⛔ Desactivada'];
+  if (u.rol==='alumno') return ['ok','Activo'];
+  if (u.rol==='admin') return ['ok','👑 Admin'];
+  if (u.membresia.tipo==='siempre') return ['oro','♾️ Para siempre'];
+  var d = diasQueQuedan(u);
+  var pre = u.membresia.tipo==='prueba' ? '🧪 ' : '';
+  if (d==null) return ['ok', pre+'Al día'];
+  if (d < 0)  return ['mal', pre+'Vencida hace '+Math.abs(d)+'d'];
+  if (d===0)  return ['mal', pre+'Vence HOY'];
+  if (d<=3)   return ['por', pre+'Vence en '+d+'d'];
+  return ['ok', pre+'Vence '+fecha(u.membresia.vence)];
+}
+function avisar(texto){
+  var a=$('avisoCopiado'); a.textContent=texto||'Copiado ✓'; a.classList.add('ver');
+  setTimeout(function(){ a.classList.remove('ver'); }, 1600);
+}
+function copiar(texto){
+  if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(texto).then(function(){ avisar(); }, function(){ avisar('No se pudo copiar'); }); }
+  else { avisar('Seleccioná y copiá a mano'); }
+}
+
+/* velos (popups) */
+document.querySelectorAll('[data-cerrar-velo]').forEach(function(b){
+  b.onclick = function(){ b.closest('.velo').classList.remove('abierto'); };
+});
+document.querySelectorAll('.velo').forEach(function(v){
+  v.addEventListener('click', function(e){ if (e.target===v && v.id!=='veloForzada') v.classList.remove('abierto'); });
+});
+function confirmar(titulo, detalle, alConfirmar){
+  $('cfTitulo').textContent = titulo; $('cfDetalle').textContent = detalle;
+  $('veloConfirmar').classList.add('abierto');
+  $('btnConfirmar').onclick = function(){ $('veloConfirmar').classList.remove('abierto'); alConfirmar(); };
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 5 · INGRESO + contraseña obligatoria del primer ingreso    ║
+   ╚══════════════════════════════════════════════════════════╝ */
+async function entrar(){
+  var err = $('loginError'); err.style.display='none';
+  var r = await Backend.login($('loginDni').value, $('loginPass').value);
+  if (r.error){ err.textContent = r.error; err.style.display='block'; return; }
+  if (r.usuario.rol !== 'usuario' && r.usuario.rol !== 'alumno'){
+    err.textContent = 'Esa cuenta es de gestión: entrá por el candadito 🔒 de arriba.';
+    err.style.display = 'block'; return;
+  }
+  sesion = r.usuario;
+  if (sesion.debeCambiar){ $('veloForzada').classList.add('abierto'); $('fzPass1').focus(); return; }
+  aLaApp();
+}
+$('btnEntrar').onclick = entrar;
+$('loginPass').addEventListener('keydown', function(e){ if (e.key==='Enter') entrar(); });
+
+/* — el candadito: la puerta del administrador (como en APPI) — */
+$('btnCandado').onclick = function(){
+  $('admDni').value=''; $('admPass').value=''; $('admError').style.display='none';
+  $('veloAdminLogin').classList.add('abierto'); $('admDni').focus();
+};
+async function entrarAdmin(){
+  var err = $('admError'); err.style.display='none';
+  var r = await Backend.login($('admDni').value, $('admPass').value);
+  if (r.error){ err.textContent = r.error; err.style.display='block'; return; }
+  if (r.usuario.rol === 'usuario' || r.usuario.rol === 'alumno'){
+    err.textContent = 'Esa cuenta no es de gestión. Los alumnos entran por la pantalla principal.';
+    err.style.display = 'block'; return;
+  }
+  sesion = r.usuario;
+  $('veloAdminLogin').classList.remove('abierto');
+  aLaApp();
+}
+$('btnEntrarAdmin').onclick = entrarAdmin;
+$('admPass').addEventListener('keydown', function(e){ if (e.key==='Enter') entrarAdmin(); });
+$('btnForzada').onclick = async function(){
+  var p1=$('fzPass1').value, p2=$('fzPass2').value, err=$('fzError'); err.style.display='none';
+  if (p1.length<8){ err.textContent='Tiene que tener al menos 8 caracteres.'; err.style.display='block'; return; }
+  if (p1!==p2){ err.textContent='No coinciden. Escribilas de nuevo.'; err.style.display='block'; return; }
+  await Backend.cambiarPassword(sesion.id, p1);
+  sesion.debeCambiar=false; $('veloForzada').classList.remove('abierto');
+  $('fzPass1').value=''; $('fzPass2').value='';
+  aLaApp();
+};
+function aLaApp(){
+  $('loginDni').value=''; $('loginPass').value='';
+  if (sesion.rol==='usuario' || sesion.rol==='alumno'){ mostrar('home'); pintarHome(); }
+  else { mostrar('admin'); pintarAdmin(); }
+}
+function salir(){ sesion=null; nubeSesion = { token:null, uid:null }; mostrar('login'); }
+$('btnSalir1').onclick = salir; $('btnSalir2').onclick = salir;
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 6 · HOME DEL USUARIO                                       ║
+   ╚══════════════════════════════════════════════════════════╝ */
+function pintarHome(){
+  diaVista = null;
+  $('homeHola').textContent = '¡Hola, ' + (sesion.nombre.split(' ')[0] || '') + '! 👋';
+  pintarPlanEstudiante();
+  var b = badgeDe(sesion);
+  $('homeMembresia').textContent = 'Tu membresía: ' + b[1].replace(/^[^\s]+\s/,'');
+  var f = $('homePrueba'); f.innerHTML='';
+  if (sesion.membresia.tipo==='prueba'){
+    var d = Math.max(0, diasQueQuedan(sesion));
+    f.innerHTML = '<div class="franja-prueba">🔴 VERSIÓN DE PRUEBA · Te queda' + (d===1?'':'n') + ' ' + d + ' día' + (d===1?'':'s') + ' de uso</div>';
+  }
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 7 · PANEL DEL ADMINISTRADOR                                ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var estadoAdmin = { filtro:'', mes:null, filaAbierta:null, colapsas:{ usuarios:false, cumplimiento:false, ingresos:false, config:false } };
+
+async function pintarAdmin(){
+  // Tres niveles: el superadmin gestiona ENTRENADORES y la caja (sin ver
+  // planes de nadie); el entrenador gestiona SUS ALUMNOS y sus planes (sin
+  // ver la caja). El admin del modo demo local ve todo, como siempre.
+  var soySuperA = sesion.rol==='superadmin', soyProfeA = sesion.rol==='entrenador';
+  document.querySelector('#vAdmin .hero').style.display = soyProfeA ? 'none' : '';
+  $('btnIrAtencion').style.display = soyProfeA ? 'none' : '';
+  $('cartaAtencion').style.display = soyProfeA ? 'none' : '';
+  $('cartaIngresos').style.display = soyProfeA ? 'none' : '';
+  $('cartaConfig').style.display = soyProfeA ? 'none' : '';
+  $('cartaCumplimiento').style.display = soySuperA ? 'none' : '';
+  document.querySelector('[data-colapsa="usuarios"] h2').textContent = soySuperA ? '👥 Entrenadores' : '👥 Estudiantes';
+  $('btnAbrirCrear').textContent = soySuperA ? '➕ Crear entrenador' : '➕ Crear cuenta';
+  document.querySelector('#vAdmin .rol').textContent = soySuperA ? 'Dueño' : soyProfeA ? 'Entrenador' : 'Admin';
+  var usuarios = await Backend.listarUsuarios();
+  var pagos = await Backend.listarPagos();
+
+  /* hero: recaudación */
+  var ahora = new Date(); if (!estadoAdmin.mes) estadoAdmin.mes = ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0');
+  var mesActual = ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0');
+  var mesPasado = new Date(ahora.getFullYear(), ahora.getMonth()-1, 1);
+  var clavePasado = mesPasado.getFullYear()+'-'+String(mesPasado.getMonth()+1).padStart(2,'0');
+  var sumaMes = function(clave){ return pagos.filter(function(p){ var d=new Date(p.fecha); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')===clave; }).reduce(function(s,p){ return s+p.monto; },0); };
+  var deEste = sumaMes(mesActual), deAntes = sumaMes(clavePasado);
+  $('heroPlata').textContent = plata(deEste);
+  $('heroComp').textContent = deAntes ? ((deEste>=deAntes?'▲ ':'▼ ') + Math.abs(Math.round((deEste-deAntes)/deAntes*100)) + '% contra el mes pasado') : 'Sin pagos el mes pasado para comparar';
+  var activos = usuarios.filter(function(u){ return u.rol!=='admin' && u.activo; }).length;
+  var enPrueba = usuarios.filter(function(u){ return u.membresia.tipo==='prueba' && u.activo && (diasQueQuedan(u)||0)>=0; }).length;
+  var chipPlan = usuarios.filter(function(u){ return u.rol!=='admin' && planTieneAlgo(planDe(u)); }).length;
+  $('heroChips').innerHTML = '<span>👥 '+activos+' activos</span><span>🏋️ '+chipPlan+' con plan</span><span>🧪 '+enPrueba+' en prueba</span><span>💳 '+pagos.length+' pagos</span>';
+
+  /* atención: vencen hoy / ≤3 días / vencidas */
+  var atencion = usuarios.filter(function(u){
+    if (u.rol==='admin' || !u.activo || !u.membresia.vence) return false;
+    return diasQueQuedan(u) <= 3;
+  }).sort(function(a,b){ return a.membresia.vence-b.membresia.vence; });
+  $('atencionBadge').textContent = atencion.length ? '('+atencion.length+')' : '';
+  $('listaAtencion').innerHTML = atencion.length ? atencion.map(function(u){
+    var b = badgeDe(u);
+    return '<div class="pago-fila"><span>'+(u.membresia.tipo==='prueba'?'🧪':'💳')+' <b>'+u.nombre+'</b></span><span class="badge '+b[0]+'">'+b[1]+'</span></div>';
+  }).join('') : '<p class="mini">Todo tranquilo: nadie vence en los próximos días. 😌</p>';
+
+  pintarUsuarios(usuarios);
+  pintarPagos(pagos);
+  pintarCumplimiento(usuarios);
+  var conPlan = usuarios.filter(function(u){ return u.rol!=='admin' && planTieneAlgo(planDe(u)); }).length;
+  $('resumenUsuarios').textContent = usuarios.filter(function(u){ return u.rol!=='admin'; }).length + ' estudiantes · ' + conPlan + ' con plan';
+}
+
+function pintarUsuarios(usuarios){
+  var filtro = estadoAdmin.filtro.toLowerCase();
+  var lista = usuarios.filter(function(u){
+    return !filtro || u.nombre.toLowerCase().includes(filtro) || u.dni.includes(filtro);
+  }).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
+  $('listaUsuarios').innerHTML = lista.map(function(u){
+    var b = badgeDe(u), abierta = estadoAdmin.filaAbierta===u.id;
+    var soySuperA = sesion && sesion.rol==='superadmin';
+    var soyProfeA = sesion && sesion.rol==='entrenador';
+    var acciones = u.rol==='admin' ? '' :
+      '<div class="u-acciones'+(abierta?' abierto':'')+'">'+
+        (!soySuperA ? '<button class="u-btn" data-accion="plan" data-id="'+u.id+'">🏋️ Armar plan</button>' : '')+
+        (!soyProfeA ? '<button class="u-btn" data-accion="pago" data-id="'+u.id+'">💳 Registrar pago</button>' : '')+
+        '<button class="u-btn" data-accion="clave" data-id="'+u.id+'">🔑 Blanquear contraseña</button>'+
+        (!soyProfeA ? '<button class="u-btn" data-accion="prueba" data-id="'+u.id+'">🧪 Activar prueba</button>' : '')+
+        (!soyProfeA ? '<button class="u-btn" data-accion="siempre" data-id="'+u.id+'">♾️ Para siempre</button>' : '')+
+        '<button class="u-btn'+(u.activo?' peligro':'')+'" data-accion="activo" data-id="'+u.id+'">'+(u.activo?'⛔ Desactivar':'✅ Reactivar')+'</button>'+
+        '<button class="u-btn peligro" data-accion="borrar" data-id="'+u.id+'">🗑 Eliminar</button>'+
+      '</div>';
+    return '<div class="u-fila">'+
+      '<button class="u-cab" data-fila="'+u.id+'"><div><b>'+u.nombre+'</b><div class="dni">DNI '+u.dni+(u.telefono?' · 📱 '+u.telefono:'')+'</div></div>'+
+      '<span class="badge '+b[0]+'">'+b[1]+'</span></button>'+acciones+'</div>';
+  }).join('') || '<p class="mini">No hay cuentas que coincidan con la búsqueda.</p>';
+
+  document.querySelectorAll('[data-fila]').forEach(function(btn){
+    btn.onclick = function(){
+      var id = btn.getAttribute('data-fila');
+      estadoAdmin.filaAbierta = estadoAdmin.filaAbierta===id ? null : id;
+      pintarAdmin();
+    };
+  });
+  document.querySelectorAll('[data-accion]').forEach(function(btn){
+    btn.onclick = function(){ accionUsuario(btn.getAttribute('data-accion'), btn.getAttribute('data-id')); };
+  });
+}
+
+async function accionUsuario(accion, id){
+  var usuarios = await Backend.listarUsuarios();
+  var u = usuarios.find(function(x){ return x.id===id; });
+  if (!u) return;
+  if (accion==='plan'){ abrirEditorPlan(u); return; }
+  if (accion==='pago'){
+    $('pagoQuien').textContent = 'Cobrarle a ' + u.nombre + ' (DNI ' + u.dni + ')';
+    $('pagoMonto').value = CONFIG.PRECIO_MES;
+    document.querySelectorAll('#pagoMeses .pildora').forEach(function(p,i){ p.classList.toggle('activa', i===0); });
+    $('veloPago').classList.add('abierto');
+    $('btnPagar').onclick = async function(){
+      var meses = Number(document.querySelector('#pagoMeses .pildora.activa').getAttribute('data-meses'));
+      await Backend.registrarPago(id, meses, $('pagoMonto').value);
+      $('veloPago').classList.remove('abierto'); avisar('Pago registrado ✓'); pintarAdmin();
+    };
+  }
+  if (accion==='clave'){
+    confirmar('¿Blanquear la contraseña?', u.nombre + ' va a tener que elegir una nueva en su próximo ingreso.', async function(){
+      var r = await Backend.blanquearPassword(id);
+      $('credTitulo').textContent = '🔑 Contraseña blanqueada';
+      $('credDetalle').textContent = 'Pasale esta clave temporal a ' + u.nombre + ':';
+      $('credTexto').textContent = r.password;
+      $('btnCopiarCred').onclick = function(){ copiar(r.password); };
+      $('veloCredencial').classList.add('abierto'); pintarAdmin();
+    });
+  }
+  if (accion==='prueba'){
+    confirmar('¿Activar la prueba?', u.nombre + ' va a tener ' + CONFIG.DIAS_PRUEBA + ' días de uso con la franja roja a la vista.', async function(){
+      await Backend.cambiarMembresia(id,'prueba'); avisar('Prueba activada ✓'); pintarAdmin();
+    });
+  }
+  if (accion==='siempre'){
+    confirmar('¿Membresía para siempre?', u.nombre + ' no va a vencer nunca más (badge dorado).', async function(){
+      await Backend.cambiarMembresia(id,'siempre'); avisar('Para siempre ✓'); pintarAdmin();
+    });
+  }
+  if (accion==='activo'){
+    confirmar(u.activo?'¿Desactivar la cuenta?':'¿Reactivar la cuenta?',
+      u.activo ? (u.nombre+' no va a poder entrar hasta que la reactives.') : (u.nombre+' vuelve a poder entrar.'),
+      async function(){ await Backend.setActivo(id, !u.activo); pintarAdmin(); });
+  }
+  if (accion==='borrar'){
+    confirmar('¿Eliminar la cuenta?', 'Se borra a ' + u.nombre + ' y no hay vuelta atrás.', async function(){
+      await Backend.eliminarUsuario(id); avisar('Cuenta eliminada'); pintarAdmin();
+    });
+  }
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 9 · PLANES DE ENTRENAMIENTO                                ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var DIAS = [['lun','Lunes'],['mar','Martes'],['mie','Miércoles'],['jue','Jueves'],['vie','Viernes'],['sab','Sábado'],['dom','Domingo']];
+var DIA_CORTO = { lun:'Lun', mar:'Mar', mie:'Mié', jue:'Jue', vie:'Vie', sab:'Sáb', dom:'Dom' };
+function claveDia(ms){ return ['dom','lun','mar','mie','jue','vie','sab'][new Date(ms).getDay()]; }
+function nombreDia(k){ for (var i=0;i<DIAS.length;i++) if (DIAS[i][0]===k) return DIAS[i][1]; return k; }
+function fechaClave(ms){ var d=new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function planVacio(){ return { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] }; }
+function planDe(u){ var p=u&&u.plan?u.plan:{}; var v=planVacio(); DIAS.forEach(function(d){ if(Array.isArray(p[d[0]])) v[d[0]]=p[d[0]]; }); return v; }
+function planTieneAlgo(p){ return DIAS.some(function(d){ return (p[d[0]]||[]).length>0; }); }
+function imgDe(nombre){
+  var n=String(nombre||'').trim().toLowerCase();
+  for (var i=0;i<LIBRERIA.length;i++) if (LIBRERIA[i].n.toLowerCase()===n) return LIBRERIA[i].img||null;
+  return null;
+}
+function chipsDe(e){
+  var c=[];
+  if (e.series && e.reps) c.push(e.series+' × '+e.reps);
+  else if (e.series) c.push(e.series+' series'); else if (e.reps) c.push(e.reps);
+  if (e.carga) c.push(e.carga);
+  return c.map(function(x){ return '<span>'+x+'</span>'; }).join('');
+}
+/* — la vista del estudiante: el mazo de tarjetas con ✓ y ✗ — */
+var diaVista = null, mzIdx = 0, mzRevisando = false;
+function marcasDeHoy(){ return (sesion.hechos||{})[fechaClave(Date.now())]||{}; }
+async function pintarPlanEstudiante(){
+  var plan = planDe(sesion), hoyK = claveDia(Date.now());
+  if (!diaVista) diaVista = hoyK;
+  $('planPills').innerHTML = DIAS.map(function(d){
+    var n = (plan[d[0]]||[]).length;
+    return '<button class="dia-pill'+(d[0]===diaVista?' activa':'')+(d[0]===hoyK?' hoy':'')+'" data-dia-ver="'+d[0]+'">'+
+      DIA_CORTO[d[0]] + '<i>'+(n? n+' ej.' : '—')+'</i></button>';
+  }).join('');
+  document.querySelectorAll('[data-dia-ver]').forEach(function(b){
+    b.onclick = function(){ diaVista = b.getAttribute('data-dia-ver'); mzIdx = 0; mzRevisando = false; pintarPlanEstudiante(); };
+  });
+  var lista = plan[diaVista]||[], esHoy = diaVista===hoyK;
+  $('planTitulo').textContent = esHoy ? '🏋️ Tu plan de hoy · '+nombreDia(diaVista) : '🏋️ '+nombreDia(diaVista);
+  if (!planTieneAlgo(plan)){
+    $('planZona').innerHTML = '<p class="mini">Tu entrenador todavía no te armó el plan. En cuanto lo cargue, lo vas a ver acá. 💬</p>';
+    $('planResumen').textContent=''; $('planProgresoWrap').hidden = true; return;
+  }
+  if (!lista.length){
+    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">😌</div><p><b>Día de descanso.</b><br><span class="mini">El descanso también entrena.</span></p></div>';
+    $('planResumen').textContent=''; $('planProgresoWrap').hidden = true; return;
+  }
+  var marcas = esHoy ? marcasDeHoy() : {};
+  var respondidas = lista.filter(function(e){ return marcas[e.id]!==undefined; }).length;
+  var hechas = lista.filter(function(e){ return marcas[e.id]===true; }).length;
+  $('planProgresoWrap').hidden = !esHoy;
+  if (esHoy){
+    $('planProgreso').style.width = Math.round(respondidas/lista.length*100)+'%';
+    $('planResumen').textContent = respondidas===lista.length
+      ? ('💪 Día completado: '+hechas+' ✓ · '+(respondidas-hechas)+' ✗')
+      : 'Marcá cada ejercicio con ✓ si lo hiciste o ✗ si no salió.';
+  } else {
+    $('planResumen').textContent = 'Estás espiando otro día: las marcas se hacen el día que toca.';
+  }
+  // ¿terminó el día? tarjeta de cierre (salvo que esté revisando)
+  if (esHoy && respondidas===lista.length && !mzRevisando){
+    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">'+(hechas===lista.length?'🏆':'💪')+'</div>'+
+      '<p><b>'+(hechas===lista.length?'¡Completaste todo el día!':'Día cerrado: '+hechas+' de '+lista.length+' ✓')+'</b><br>'+
+      '<span class="mini">Mañana se abre el próximo. ¡Seguí así!</span></p>'+
+      '<button class="btn-chico" id="mzRevisar" style="margin-top:10px">↺ Revisar mis marcas</button></div>';
+    $('mzRevisar').onclick = function(){ mzRevisando = true; mzIdx = 0; pintarPlanEstudiante(); };
+    return;
+  }
+  // arranca en la primera sin responder (si no está revisando)
+  if (esHoy && !mzRevisando){
+    var prima = lista.findIndex(function(e){ return marcas[e.id]===undefined; });
+    if (prima >= 0 && mzIdx > lista.length-1) mzIdx = prima;
+    if (prima >= 0 && marcas[lista[mzIdx]] !== undefined && lista[mzIdx] && marcas[lista[mzIdx].id]!==undefined) mzIdx = prima;
+  }
+  if (mzIdx > lista.length-1) mzIdx = lista.length-1;
+  if (mzIdx < 0) mzIdx = 0;
+  var html = '<div class="mz-head">'+
+    '<button id="mzAtras" aria-label="Anterior">‹</button>'+
+    '<span>'+(mzIdx+1)+' de '+lista.length+'</span>'+
+    '<button id="mzAdelante" aria-label="Siguiente">›</button></div><div class="mz-deck">';
+  for (var off = Math.min(2, lista.length-1-mzIdx); off >= 0; off--){
+    var e = lista[mzIdx+off];
+    if (!e) continue;
+    var m = marcas[e.id];
+    var imagen = e.img || imgDe(e.nombre);
+    var dibujo = imagen
+      ? '<img class="mz-anim" src="'+imagen+'" alt="" onerror="this.outerHTML=\'<div class=&quot;mz-anim mz-comodin&quot;>🏋️</div>\'">'
+      : '<div class="mz-anim mz-comodin">🏃</div>';
+    html += '<div class="mz-card'+(off===1?' detras1':off===2?' detras2':'')+'"'+(off===0?' id="mzTope"':'')+'>'+
+      dibujo +
+      '<div class="mz-nombre">'+e.nombre+'</div>'+
+      '<div class="ej-chips">'+chipsDe(e)+'</div>'+
+      (e.nota?'<div class="ej-nota">💬 '+e.nota+'</div>':'')+
+      (m!==undefined?'<span class="mz-estado '+(m?'si':'no')+'">'+(m?'✓ Hecha':'✗ No salió')+'</span>':'')+
+      (esHoy?'<div class="mz-botones">'+
+        '<button class="mz-no'+(m===true?' baja':'')+'" data-mz-no="'+e.id+'" aria-label="No la hice">✗</button>'+
+        '<button class="mz-si'+(m===false?' baja':'')+'" data-mz-si="'+e.id+'" aria-label="La hice">✓</button></div>'
+      :'')+
+      '</div>';
+  }
+  html += '</div>';
+  $('planZona').innerHTML = html;
+  $('mzAtras').onclick = function(){ if (mzIdx>0){ mzIdx--; mzRevisando = true; pintarPlanEstudiante(); } };
+  $('mzAdelante').onclick = function(){ if (mzIdx<lista.length-1){ mzIdx++; mzRevisando = true; pintarPlanEstudiante(); } };
+  var volar = async function(id, valor){
+    var r = await Backend.marcarHecho(sesion.id, fechaClave(Date.now()), id, valor);
+    if (r.hechos) sesion.hechos = r.hechos;
+    var tope = $('mzTope');
+    if (tope){ tope.classList.add(valor?'vuela-si':'vuela-no'); }
+    setTimeout(function(){
+      var marcasYa = marcasDeHoy();
+      var faltan = lista.some(function(e){ return marcasYa[e.id]===undefined; });
+      if (faltan){ mzRevisando = false;
+        var prox = lista.findIndex(function(e,i){ return i>mzIdx && marcasYa[e.id]===undefined; });
+        if (prox<0) prox = lista.findIndex(function(e){ return marcasYa[e.id]===undefined; });
+        mzIdx = prox>=0 ? prox : 0;
+      } else { mzRevisando = false; }
+      pintarPlanEstudiante();
+    }, 340);
+  };
+  document.querySelectorAll('[data-mz-si]').forEach(function(b){ b.onclick=function(){ volar(b.getAttribute('data-mz-si'), true); }; });
+  document.querySelectorAll('[data-mz-no]').forEach(function(b){ b.onclick=function(){ volar(b.getAttribute('data-mz-no'), false); }; });
+}
+
+/* — el editor del entrenador — */
+var planEdit=null, planUserId=null, plDia='lun', plEditando=-1;
+function abrirEditorPlan(u){
+  planUserId = u.id; planEdit = planDe(u); plDia = claveDia(Date.now()); plEditando = -1;
+  $('planDe').textContent = '🏋️ Plan de ' + u.nombre;
+  $('dlEjercicios').innerHTML = LIBRERIA.map(function(e){ return '<option value="'+e.n+'">'; }).join('');
+  limpiarFormPlan(); pintarEditorPlan();
+  $('veloPlan').classList.add('abierto');
+}
+function limpiarFormPlan(){ ['plNombre','plSeries','plReps','plCarga','plNota'].forEach(function(id){ $(id).value=''; }); plEditando=-1; $('plAgregar').textContent='➕ Agregar al día'; }
+function pintarEditorPlan(){
+  $('plTabs').innerHTML = DIAS.map(function(d){
+    var n = (planEdit[d[0]]||[]).length;
+    return '<button class="dia-pill'+(d[0]===plDia?' activa':'')+'" data-pl-dia="'+d[0]+'">'+DIA_CORTO[d[0]]+'<i>'+(n||'—')+'</i></button>';
+  }).join('');
+  document.querySelectorAll('[data-pl-dia]').forEach(function(b){
+    b.onclick = function(){ plDia = b.getAttribute('data-pl-dia'); limpiarFormPlan(); pintarEditorPlan(); };
+  });
+  var lista = planEdit[plDia]||[];
+  $('plLista').innerHTML = lista.length ? lista.map(function(e,i){
+    return '<div class="pl-fila"><b>'+e.nombre+'</b><small>'+[e.series&&e.reps?e.series+'×'+e.reps:'',e.carga].filter(Boolean).join(' · ')+'</small>'+
+      '<button data-pl-sube="'+i+'" title="Subir">↑</button>'+
+      '<button data-pl-edita="'+i+'" title="Editar">✏️</button>'+
+      '<button data-pl-borra="'+i+'" title="Quitar">🗑</button></div>';
+  }).join('') : '<p class="mini">Día vacío: queda como descanso. Agregá ejercicios abajo.</p>';
+  document.querySelectorAll('[data-pl-borra]').forEach(function(b){ b.onclick=function(){ planEdit[plDia].splice(Number(b.getAttribute('data-pl-borra')),1); pintarEditorPlan(); }; });
+  document.querySelectorAll('[data-pl-sube]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-pl-sube')); if(i>0){ var t=planEdit[plDia][i]; planEdit[plDia][i]=planEdit[plDia][i-1]; planEdit[plDia][i-1]=t; pintarEditorPlan(); } }; });
+  document.querySelectorAll('[data-pl-edita]').forEach(function(b){ b.onclick=function(){
+    var i=Number(b.getAttribute('data-pl-edita')), e=planEdit[plDia][i]; plEditando=i;
+    $('plNombre').value=e.nombre; $('plSeries').value=e.series; $('plReps').value=e.reps; $('plCarga').value=e.carga; $('plNota').value=e.nota;
+    $('plAgregar').textContent='💾 Guardar cambios del ejercicio';
+  }; });
+  $('plCopiaDestino').innerHTML = DIAS.filter(function(d){ return d[0]!==plDia; })
+    .map(function(d){ return '<option value="'+d[0]+'">a '+d[1]+'</option>'; }).join('');
+}
+$('plAgregar').onclick = function(){
+  var nombre = $('plNombre').value.trim();
+  if (!nombre){ avisar('Poné el nombre del ejercicio'); return; }
+  var e = { id:'e'+Date.now()+Math.floor(Math.random()*999), nombre:nombre, img:imgDe(nombre),
+            series:$('plSeries').value.trim(), reps:$('plReps').value.trim(),
+            carga:$('plCarga').value.trim(), nota:$('plNota').value.trim() };
+  if (plEditando>=0){ e.id = planEdit[plDia][plEditando].id; planEdit[plDia][plEditando]=e; }
+  else planEdit[plDia].push(e);
+  limpiarFormPlan(); pintarEditorPlan();
+};
+$('plCopiar').onclick = function(){
+  var destino = $('plCopiaDestino').value; if (!destino) return;
+  planEdit[destino] = (planEdit[plDia]||[]).map(function(e){
+    return { id:'e'+Date.now()+Math.floor(Math.random()*99999), nombre:e.nombre, img:e.img||imgDe(e.nombre), series:e.series, reps:e.reps, carga:e.carga, nota:e.nota };
+  });
+  avisar('Copiado a '+nombreDia(destino)+' ✓'); pintarEditorPlan();
+};
+$('plGuardar').onclick = async function(){
+  await Backend.guardarPlan(planUserId, planEdit);
+  $('veloPlan').classList.remove('abierto');
+  avisar('Plan guardado 💪'); pintarAdmin();
+};
+
+/* — cumplimiento semanal (lo ve el entrenador) — */
+function pintarCumplimiento(usuarios){
+  var alumnos = usuarios.filter(function(u){ return u.rol!=='admin' && planTieneAlgo(planDe(u)); });
+  var html = '', totalHechos=0, totalPlan=0;
+  alumnos.forEach(function(u){
+    var plan = planDe(u), dias = '';
+    for (var i=6;i>=0;i--){
+      var t = Date.now()-i*86400000, k = claveDia(t);
+      var prog = plan[k]||[]; if (!prog.length) continue;
+      var marcasDia = (u.hechos||{})[fechaClave(t)]||{};
+      var marcados = prog.filter(function(e){ return marcasDia[e.id]===true; }).length;
+      totalHechos+=marcados; totalPlan+=prog.length;
+      var cls = marcados>=prog.length?'bien':marcados>0?'medio':'nada';
+      dias += '<span class="'+cls+'">'+DIA_CORTO[k]+' '+marcados+'/'+prog.length+'</span>';
+    }
+    html += '<div class="cump-fila"><b>'+u.nombre+'</b><div class="cump-dias">'+(dias||'<span>Sin días de entrenamiento esta semana</span>')+'</div></div>';
+  });
+  $('listaCump').innerHTML = html || '<p class="mini">Todavía no hay estudiantes con plan armado.</p>';
+  $('resumenCump').textContent = totalPlan ? Math.round(totalHechos/totalPlan*100)+'% esta semana' : 'sin datos';
+}
+
+/* crear cuenta */
+$('btnAbrirCrear').onclick = function(){
+  var soySuperA = sesion && sesion.rol==='superadmin';
+  var soyProfeA = sesion && sesion.rol==='entrenador';
+  $('crMembresiaWrap').style.display = soyProfeA ? 'none' : '';
+  document.querySelector('#veloCrear h3').textContent = soySuperA ? '➕ Crear entrenador' : soyProfeA ? '➕ Crear alumno' : '➕ Crear cuenta';
+  $('crNombre').value=''; $('crDni').value=''; $('crTel').value='';
+  document.querySelectorAll('#crMembresia .pildora').forEach(function(p,i){ p.classList.toggle('activa', i===0); });
+  $('veloCrear').classList.add('abierto');
+};
+document.querySelectorAll('.pildoras').forEach(function(grupo){
+  grupo.addEventListener('click', function(e){
+    var p = e.target.closest('.pildora'); if (!p) return;
+    grupo.querySelectorAll('.pildora').forEach(function(x){ x.classList.remove('activa'); });
+    p.classList.add('activa');
+  });
+});
+$('btnCrear').onclick = async function(){
+  var mem = document.querySelector('#crMembresia .pildora.activa').getAttribute('data-mem');
+  var r = await Backend.crearUsuario({ nombre:$('crNombre').value, dni:$('crDni').value, telefono:$('crTel').value, membresia:mem });
+  if (r.error){ avisar(r.error); return; }
+  $('veloCrear').classList.remove('abierto');
+  var texto = 'App: ' + CONFIG.APP_NOMBRE + '\nDNI: ' + r.usuario.dni + '\nContraseña: ' + r.password;
+  $('credTitulo').textContent = '✅ Cuenta creada';
+  $('credDetalle').textContent = 'Pasale las credenciales a ' + r.usuario.nombre + ' (la contraseña conviene mandarla en un mensaje aparte):';
+  $('credTexto').textContent = r.usuario.dni + ' · ' + r.password;
+  $('btnCopiarCred').onclick = function(){ copiar(texto); };
+  $('veloCredencial').classList.add('abierto');
+  pintarAdmin();
+};
+
+/* ingresos por mes */
+function pintarPagos(pagos){
+  var clave = estadoAdmin.mes;
+  var del = pagos.filter(function(p){ var d=new Date(p.fecha); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')===clave; })
+                 .sort(function(a,b){ return b.fecha-a.fecha; });
+  var total = del.reduce(function(s,p){ return s+p.monto; },0);
+  var MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var partes = clave.split('-');
+  $('mesTitulo').textContent = MESES[Number(partes[1])-1] + ' ' + partes[0];
+  $('resumenIngresos').textContent = plata(total) + ' este mes';
+  $('listaPagos').innerHTML = del.length ? del.map(function(p){
+    return '<div class="pago-fila"><span>💳 <b>'+p.nombre+'</b> · '+p.meses+' mes'+(p.meses>1?'es':'')+' · '+fecha(p.fecha)+'</span><span class="monto">'+plata(p.monto)+'</span></div>';
+  }).join('') + '<div class="pago-fila" style="border:0"><span><b>Total del mes</b></span><span class="monto">'+plata(total)+'</span></div>'
+  : '<p class="mini">Sin pagos registrados este mes.</p>';
+}
+function moverMes(delta){
+  var partes = estadoAdmin.mes.split('-');
+  var d = new Date(Number(partes[0]), Number(partes[1])-1+delta, 1);
+  estadoAdmin.mes = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  pintarAdmin();
+}
+$('mesAntes').onclick = function(){ moverMes(-1); };
+$('mesDespues').onclick = function(){ moverMes(1); };
+
+/* buscador + colapsables */
+$('buscaUsuario').addEventListener('input', function(){ estadoAdmin.filtro=this.value; Backend.listarUsuarios().then(pintarUsuarios); });
+document.querySelectorAll('[data-colapsa]').forEach(function(cab){
+  cab.onclick = function(){
+    var id = cab.getAttribute('data-colapsa');
+    estadoAdmin.colapsas[id] = !estadoAdmin.colapsas[id];
+    cab.classList.toggle('abierta', estadoAdmin.colapsas[id]);
+    ({usuarios:'cuerpoUsuarios',cumplimiento:'cuerpoCumplimiento',ingresos:'cuerpoIngresos',config:'cuerpoConfig'})[id] &&
+      $({usuarios:'cuerpoUsuarios',cumplimiento:'cuerpoCumplimiento',ingresos:'cuerpoIngresos',config:'cuerpoConfig'}[id]).classList.toggle('abierto', estadoAdmin.colapsas[id]);
+  };
+});
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 8 · MARCA: logo, paletas de colores, azar y colores del    ║
+   ║     logo. Todo persiste en el dispositivo.                 ║
+   ╚══════════════════════════════════════════════════════════╝ */
+var PALETAS = [
+  { nombre:'Océano',  c1:'#4f7df2', c2:'#8b63e8' },
+  { nombre:'Menta',   c1:'#1fa971', c2:'#38b6d8' },
+  { nombre:'Fuego',   c1:'#f2622e', c2:'#e8385c' },
+  { nombre:'Rosa',    c1:'#e84f9a', c2:'#8b63e8' },
+  { nombre:'Cielo',   c1:'#38a6e8', c2:'#4f7df2' },
+  { nombre:'Bosque',  c1:'#2e8b57', c2:'#14532d' },
+  { nombre:'Dorado',  c1:'#e8b93a', c2:'#c07b2e' },
+  { nombre:'Bordó',   c1:'#8e2743', c2:'#c0392b' },
+  { nombre:'Espejo',  c1:'#c3ccd9', c2:'#5f6a7d' },   // plateado espejado
+  { nombre:'Negro',   c1:'#2a2a33', c2:'#000000' }
+];
+function leerMarca(){ return leer(CONFIG.CLAVE_DATOS + '_marca', {}); }
+function guardarMarca(cambios){
+  var m = leerMarca();
+  Object.keys(cambios).forEach(function(k){ m[k] = cambios[k]; });
+  guardar(CONFIG.CLAVE_DATOS + '_marca', m);
+  aplicarMarca();
+}
+function setColores(c1, c2){ guardarMarca({ c1:c1, c2:c2 }); pintarPaletas(); }
+
+/* — conversores de color — */
+function aHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  var max=Math.max(r,g,b), min=Math.min(r,g,b), l=(max+min)/2, h=0, s=0;
+  if (max!==min){
+    var d=max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    h = max===r ? ((g-b)/d + (g<b?6:0)) : max===g ? ((b-r)/d + 2) : ((r-g)/d + 4);
+    h*=60;
+  }
+  return [h,s,l];
+}
+function hslHex(h,s,l){
+  h=((h%360)+360)%360;
+  var c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2, rgb;
+  if(h<60)rgb=[c,x,0]; else if(h<120)rgb=[x,c,0]; else if(h<180)rgb=[0,c,x];
+  else if(h<240)rgb=[0,x,c]; else if(h<300)rgb=[x,0,c]; else rgb=[c,0,x];
+  return '#'+rgb.map(function(v){ return Math.round((v+m)*255).toString(16).padStart(2,'0'); }).join('');
+}
+
+/* — los colores dominantes del logo — */
+function coloresDesdeLogo(dataUrl, listo){
+  var img = new Image();
+  img.onload = function(){
+    try{
+      var n=64, cv=document.createElement('canvas'); cv.width=n; cv.height=n;
+      var cx=cv.getContext('2d'); cx.drawImage(img,0,0,n,n);
+      var d=cx.getImageData(0,0,n,n).data, cubos={};
+      for (var i=0;i<d.length;i+=4){
+        if (d[i+3]<200) continue;                       // transparente afuera
+        var hsl=aHsl(d[i],d[i+1],d[i+2]);
+        if (hsl[1]<0.18 || hsl[2]<0.12 || hsl[2]>0.92) continue; // grises y extremos afuera
+        var k=Math.round(hsl[0]/20)*20%360;
+        if(!cubos[k]) cubos[k]={n:0};
+        cubos[k].n++;
+      }
+      var orden=Object.keys(cubos).sort(function(a,b){ return cubos[b].n-cubos[a].n; });
+      if (!orden.length){ listo(null); return; }        // logo en blanco y negro
+      var h1=Number(orden[0]);
+      var h2=orden.length>1 ? Number(orden[1]) : (h1+40)%360;
+      listo([ hslHex(h1,.62,.55), hslHex(h2,.6,.48) ]);
+    }catch(e){ listo(null); }
+  };
+  img.onerror=function(){ listo(null); };
+  img.src=dataUrl;
+}
+
+function pintarPaletas(){
+  var m = leerMarca(), c1 = m.c1||CONFIG.COLOR_1, c2 = m.c2||CONFIG.COLOR_2;
+  $('paletas').innerHTML = PALETAS.map(function(p,i){
+    var activa = (p.c1===c1 && p.c2===c2) ? ' activa' : '';
+    return '<button class="paleta'+activa+'" data-paleta="'+i+'" title="'+p.nombre+'"'+
+      ' style="background:linear-gradient(135deg,'+p.c1+','+p.c2+')"><span>'+p.nombre+'</span></button>';
+  }).join('');
+  document.querySelectorAll('[data-paleta]').forEach(function(b){
+    b.onclick = function(){ var p = PALETAS[Number(b.getAttribute('data-paleta'))]; setColores(p.c1, p.c2); avisar(p.nombre+' ✓'); };
+  });
+  var logo = m.logo;
+  $('logoPrev').innerHTML = logo ? '<img src="'+logo+'" alt="logo">' : CONFIG.APP_EMOJI;
+}
+$('btnAzar').onclick = function(){
+  var h = Math.floor(Math.random()*360);
+  setColores(hslHex(h,.62,.55), hslHex(h+40+Math.floor(Math.random()*50),.6,.5));
+  avisar('🎲 ¡Nuevos colores!');
+};
+
+/* — subir logo (galería/cámara), achicado a 256px para que pese poco — */
+$('btnSubirLogo').onclick = function(){ $('inputLogo').click(); };
+$('inputLogo').addEventListener('change', function(){
+  var archivo = this.files && this.files[0]; if (!archivo) return;
+  var lector = new FileReader();
+  lector.onload = function(){
+    var img = new Image();
+    img.onload = function(){
+      var lado = Math.min(256, Math.max(img.width, img.height)) || 256;
+      var esc = lado / Math.max(img.width, img.height);
+      var cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(img.width*esc)); cv.height = Math.max(1, Math.round(img.height*esc));
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      guardarMarca({ logo: cv.toDataURL('image/png') });
+      pintarPaletas(); avisar('Logo guardado ✓');
+    };
+    img.src = lector.result;
+  };
+  lector.readAsDataURL(archivo);
+  this.value = '';
+});
+$('btnQuitarLogo').onclick = function(){ guardarMarca({ logo:null }); pintarPaletas(); avisar('Logo quitado'); };
+$('btnColoresLogo').onclick = function(){
+  var m = leerMarca();
+  if (!m.logo){ avisar('Primero subí un logo 📷'); return; }
+  coloresDesdeLogo(m.logo, function(colores){
+    if (!colores){ avisar('El logo no tiene colores vivos: elegí una paleta'); return; }
+    setColores(colores[0], colores[1]); avisar('🪄 Colores del logo ✓');
+  });
+};
+
+/* configuración de la marca (persistida) */
+function aplicarMarca(){
+  var extra = leerMarca();
+  if (extra.nombre) CONFIG.APP_NOMBRE = extra.nombre;
+  if (extra.precio) CONFIG.PRECIO_MES = extra.precio;
+  document.documentElement.style.setProperty('--c1', extra.c1 || CONFIG.COLOR_1);
+  document.documentElement.style.setProperty('--c2', extra.c2 || CONFIG.COLOR_2);
+  document.title = CONFIG.APP_NOMBRE + ' · Ingreso';
+  document.querySelectorAll('[data-marca-nombre]').forEach(function(n){ n.textContent = CONFIG.APP_NOMBRE; });
+  document.querySelectorAll('[data-marca-emoji]').forEach(function(n){
+    n.innerHTML = extra.logo ? '<img src="'+extra.logo+'" alt="">' : CONFIG.APP_EMOJI;
+  });
+}
+$('btnGuardarCfg').onclick = function(){
+  guardarMarca({ nombre:$('cfgNombre').value.trim()||CONFIG.APP_NOMBRE, precio:Number($('cfgPrecio').value)||CONFIG.PRECIO_MES });
+  avisar('Guardado ✓');
+};
+
+/* tema oscuro */
+function alternarTema(){ document.body.classList.toggle('dark'); guardar(CONFIG.CLAVE_DATOS+'_tema', document.body.classList.contains('dark')?'dark':'claro'); }
+$('btnTema1').onclick = alternarTema; $('btnTema2').onclick = alternarTema;
+
+/* la PWA: instalable y con los dibujos disponibles sin conexión */
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+
+/* arranque */
+(function(){
+  if (leer(CONFIG.CLAVE_DATOS+'_tema','claro')==='dark') document.body.classList.add('dark');
+  if (Backend === BackendSupabase){
+    document.querySelector('.login-pie').textContent = '☁️ Conectado a Popups Fitness';
+  }
+  aplicarMarca();
+  $('cfgNombre').value = CONFIG.APP_NOMBRE; $('cfgPrecio').value = CONFIG.PRECIO_MES;
+  pintarPaletas();
+  mostrar('login');
+})();
+</script>
+</body>
+</html>
