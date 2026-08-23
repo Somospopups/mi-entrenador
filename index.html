@@ -281,6 +281,21 @@ var LIBRERIA = [
   .pl-linea select, .pl-linea input{ flex:1; min-width:0; border:1.5px solid var(--borde); border-radius:10px;
                                      background:var(--fondo); padding:9px 10px; font-size:12px; color:var(--tinta); }
   .pl-linea .btn-chico{ min-height:40px; flex:none; }
+  /* ---------- mi progreso ---------- */
+  .prog-linea{ display:flex; gap:6px; margin-top:8px; }
+  .prog-linea input{ flex:1; min-width:0; border:1.5px solid var(--borde); border-radius:11px; background:var(--fondo);
+                     padding:10px 12px; font-size:13px; color:var(--tinta); outline:none; }
+  .prog-linea .btn-chico{ min-height:44px; flex:none; }
+  .prog-medidas{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+  .prog-medidas input{ border:1.5px solid var(--borde); border-radius:11px; background:var(--fondo);
+                       padding:10px 12px; font-size:12.5px; color:var(--tinta); outline:none; min-width:0; }
+  .grafico{ margin-top:10px; }
+  .grafico svg{ width:100%; height:auto; display:block; }
+  .grafico .vacio{ color:var(--gris); font-size:12px; text-align:center; padding:14px 8px;
+                   border:1.5px dashed var(--borde); border-radius:12px; }
+  .delta{ display:inline-block; margin-top:8px; background:rgba(30,158,96,.12); color:var(--ok);
+          border-radius:999px; padding:5px 12px; font-size:11.5px; font-weight:900; }
+  .delta.baja{ background:rgba(224,36,36,.1); color:var(--rojo); }
   /* editor del plan (admin) */
   .pl-lista{ margin:10px 0; }
   .pl-fila{ display:flex; align-items:center; gap:8px; border:1px solid var(--borde); border-radius:12px;
@@ -375,6 +390,26 @@ var LIBRERIA = [
     <h2>📊 Tu semana</h2>
     <div class="semana" id="semanaBars"></div>
     <div class="mini" id="semanaTexto" style="margin-top:9px"></div>
+  </div>
+  <div class="carta" id="cartaProgreso">
+    <h2>📈 Mi progreso</h2>
+    <div class="prog-linea">
+      <input id="progPeso" inputmode="decimal" placeholder="⚖️ Tu peso de hoy (kg)">
+      <button class="btn-chico" id="progMasMedidas">➕ Medidas</button>
+      <button class="btn-chico" id="progGuardar" style="background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;border:0">Guardar</button>
+    </div>
+    <div class="prog-medidas" id="progMedidasWrap" hidden>
+      <input id="progCintura" inputmode="decimal" placeholder="Cintura (cm)">
+      <input id="progPecho" inputmode="decimal" placeholder="Pecho (cm)">
+      <input id="progBrazo" inputmode="decimal" placeholder="Brazo (cm)">
+      <input id="progMuslo" inputmode="decimal" placeholder="Muslo (cm)">
+    </div>
+    <div class="grafico" id="graficoPeso"></div>
+    <div style="margin-top:14px">
+      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">🏋️ Tus cargas por ejercicio</label>
+      <select id="progEj" class="buscador" style="margin:7px 0 0"></select>
+      <div class="grafico" id="graficoCargas"></div>
+    </div>
   </div>
 </div>
 
@@ -577,6 +612,20 @@ var LIBRERIA = [
       <button class="btn-neutro" data-cerrar-velo>No</button>
       <button class="btn-grande" id="btnConfirmar" style="flex:1">Sí, dale</button>
     </div>
+  </div>
+</div>
+
+<div class="velo" id="veloProgreso">
+  <div class="popup" style="max-width:480px">
+    <h3 id="vpTitulo">📈 Progreso</h3>
+    <div class="mini" id="vpResumen"></div>
+    <div class="grafico" id="vpGraficoPeso"></div>
+    <div style="margin-top:14px">
+      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">🏋️ Cargas por ejercicio</label>
+      <select id="vpEj" class="buscador" style="margin:7px 0 0"></select>
+      <div class="grafico" id="vpGraficoCargas"></div>
+    </div>
+    <div class="popup-botones"><button class="btn-neutro" data-cerrar-velo style="flex:1">Cerrar</button></div>
   </div>
 </div>
 
@@ -794,8 +843,23 @@ var BackendLocal = {
     u.hechos = u.hechos || {};
     var marcas = u.hechos[fechaClave] || {};
     var t = String(peso||'').trim();
-    if (t) marcas['p:'+ejercicioId] = t; else delete marcas['p:'+ejercicioId];
+    var clave = String(ejercicioId).indexOf('p:') === 0 ? ejercicioId : 'p:'+ejercicioId;
+    if (t) marcas[clave] = t; else delete marcas[clave];
     u.hechos[fechaClave] = marcas; this._guardar(); return { ok:true, hechos:u.hechos };
+  },
+  async guardarProgreso(userId, fechaClave, datos){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    u.progreso = u.progreso || {};
+    u.progreso[fechaClave] = datos;
+    this._guardar(); return { ok:true, progreso:u.progreso };
+  },
+  async obtenerProgreso(userId){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    return { progreso: u.progreso || {}, cargas: u.hechos || {} };
   }
 };
 /* ╔══════════════════════════════════════════════════════════╗
@@ -833,7 +897,7 @@ function nubeMapear(p, extra){
     membresia: { tipo: p.membresia_tipo || 'meses',
       inicio: p.membresia_inicio ? Date.parse(p.membresia_inicio) : Date.now(),
       vence: p.membresia_vence ? Date.parse(p.membresia_vence) : null },
-    plan: extra.plan || null, hechos: extra.hechos || {} };
+    plan: extra.plan || null, hechos: extra.hechos || {}, progreso: extra.progreso || {} };
 }
 var BackendSupabase = {
   async login(dni, pass){
@@ -868,6 +932,8 @@ var BackendSupabase = {
       var desde = fechaClave(Date.now() - 29 * 86400000);  // un mes: alcanza para la racha
       var rm = await nubeApi('/rest/v1/fit_marcas?select=fecha,marcas&alumno_id=eq.' + p.user_id + '&fecha=gte.' + desde);
       extra.hechos = {}; (rm.data || []).forEach(function(m){ extra.hechos[m.fecha] = m.marcas || {}; });
+      var rpr = await nubeApi('/rest/v1/fit_progreso?select=fecha,datos&alumno_id=eq.' + p.user_id + '&order=fecha.asc');
+      extra.progreso = {}; (rpr.ok ? (rpr.data || []) : []).forEach(function(x){ extra.progreso[x.fecha] = x.datos || {}; });
     }
     return { usuario: nubeMapear(p, extra) };
   },
@@ -954,7 +1020,8 @@ var BackendSupabase = {
     var actuales = (sesion && sesion.hechos && sesion.hechos[fecha]) || {};
     var nuevas = {}; Object.keys(actuales).forEach(function(k){ nuevas[k] = actuales[k]; });
     var t = String(peso||'').trim();
-    if (t) nuevas['p:'+ejercicioId] = t; else delete nuevas['p:'+ejercicioId];
+    var clave = String(ejercicioId).indexOf('p:') === 0 ? ejercicioId : 'p:'+ejercicioId;
+    if (t) nuevas[clave] = t; else delete nuevas[clave];
     var r = await nubeApi('/rest/v1/fit_marcas', { method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body: [{ alumno_id: userId, fecha: fecha, marcas: nuevas, actualizado: new Date().toISOString() }] });
@@ -962,6 +1029,29 @@ var BackendSupabase = {
     var hechos = {}; Object.keys(sesion.hechos || {}).forEach(function(k){ hechos[k] = sesion.hechos[k]; });
     hechos[fecha] = nuevas;
     return { ok: true, hechos: hechos };
+  },
+  async guardarProgreso(userId, fecha, datos){
+    var r = await nubeApi('/rest/v1/fit_progreso', { method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: [{ alumno_id: userId, fecha: fecha, datos: datos, actualizado: new Date().toISOString() }] });
+    if (!r.ok){
+      if (r.status === 404 || (r.data && String(r.data.message||'').indexOf('fit_progreso') >= 0))
+        return { error: 'Falta instalar el módulo de progreso en el servidor (un SQL de 1 minuto).' };
+      return { error: 'No se pudo guardar el progreso.' };
+    }
+    var prog = {}; Object.keys(sesion.progreso || {}).forEach(function(k){ prog[k] = sesion.progreso[k]; });
+    prog[fecha] = datos;
+    return { ok: true, progreso: prog };
+  },
+  async obtenerProgreso(userId){
+    var rp = await nubeApi('/rest/v1/fit_progreso?select=fecha,datos&alumno_id=eq.' + userId + '&order=fecha.asc');
+    var progreso = {};
+    (rp.ok ? (rp.data || []) : []).forEach(function(x){ progreso[x.fecha] = x.datos || {}; });
+    var desde = fechaClave(Date.now() - 119 * 86400000);
+    var rm = await nubeApi('/rest/v1/fit_marcas?select=fecha,marcas&alumno_id=eq.' + userId + '&fecha=gte.' + desde + '&order=fecha.asc');
+    var cargas = {};
+    (rm.ok ? (rm.data || []) : []).forEach(function(x){ cargas[x.fecha] = x.marcas || {}; });
+    return { progreso: progreso, cargas: cargas };
   }
 };
 var Backend = (NUBE.activa && NUBE.url && location.hash.indexOf('local') < 0) ? BackendSupabase : BackendLocal;
@@ -1152,6 +1242,7 @@ function pintarHome(){
   $('homeHola').textContent = '¡Hola, ' + (sesion.nombre.split(' ')[0] || '') + '! 👋';
   $('homeFecha').textContent = fechaBonita();
   pintarMotivacion();
+  pintarMiProgreso();
   pintarPlanEstudiante();
   var b = badgeDe(sesion);
   $('homeMembresia').textContent = 'Tu membresía: ' + b[1].replace(/^[^\s]+\s/,'');
@@ -1230,6 +1321,7 @@ function pintarUsuarios(usuarios){
     var acciones = u.rol==='admin' ? '' :
       '<div class="u-acciones'+(abierta?' abierto':'')+'">'+
         (!soySuperA ? '<button class="u-btn" data-accion="plan" data-id="'+u.id+'">🏋️ Armar plan</button>' : '')+
+        (!soySuperA ? '<button class="u-btn" data-accion="progreso" data-id="'+u.id+'">📈 Ver progreso</button>' : '')+
         (!soyProfeA ? '<button class="u-btn" data-accion="pago" data-id="'+u.id+'">💳 Registrar pago</button>' : '')+
         (u.telefono ? '<button class="u-btn" data-accion="wa" data-id="'+u.id+'">💬 WhatsApp</button>' : '')+
         '<button class="u-btn" data-accion="clave" data-id="'+u.id+'">🔑 Blanquear contraseña</button>'+
@@ -1272,6 +1364,7 @@ async function accionUsuario(accion, id){
     window.open('https://wa.me/' + d + '?text=' + encodeURIComponent('¡Hola ' + (u.nombre.split(' ')[0]||'') + '! 💪 '), '_blank');
     return;
   }
+  if (accion==='progreso'){ abrirProgresoDe(u); return; }
   if (accion==='plan'){ abrirEditorPlan(u); return; }
   if (accion==='pago'){
     $('pagoQuien').textContent = 'Cobrarle a ' + u.nombre + ' (DNI ' + u.dni + ')';
@@ -1413,7 +1506,7 @@ async function pintarPlanEstudiante(){
         '<button class="t" data-timer="30">⏱ 30″</button>'+
         '<button class="t" data-timer="60">⏱ 1′</button>'+
         '<button class="t" data-timer="90">⏱ 1′30″</button>'+
-        '<div class="mz-peso">🏋️<input data-peso="'+e.id+'" placeholder="Peso usado (ej: 42,5 kg)" value="'+String(marcas['p:'+e.id]||'').replace(/"/g,'&quot;')+'"></div>'+
+        '<div class="mz-peso">🏋️<input data-peso="'+claveCarga(e.nombre)+'" placeholder="Peso usado (ej: 42,5 kg)" value="'+String(marcas[claveCarga(e.nombre)]||marcas['p:'+e.id]||'').replace(/"/g,'&quot;')+'"></div>'+
       '</div>':'')+
       (m!==undefined?'<span class="mz-estado '+(m?'si':'no')+'">'+(m?'✓ Hecha':'✗ No salió')+'</span>':'')+
       (esHoy?'<div class="mz-botones">'+
@@ -1451,8 +1544,121 @@ async function pintarPlanEstudiante(){
       var r = await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), inp.getAttribute('data-peso'), inp.value);
       if (r.hechos) sesion.hechos = r.hechos;
       avisar(inp.value.trim() ? 'Peso anotado 🏋️' : 'Peso borrado');
+      pintarMiProgreso();
     });
   });
+}
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║ 10 · MI PROGRESO: peso corporal, medidas y cargas          ║
+   ╚══════════════════════════════════════════════════════════╝ */
+function claveCarga(nombre){ return 'p:' + String(nombre||'').trim().toLowerCase(); }
+function numeroDe(texto){
+  var m = String(texto||'').replace(',', '.').match(/-?\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+// Gráfico de línea en SVG puro: puntos = [{f:'YYYY-MM-DD', v:numero}]
+function graficoLinea(nodo, puntos, unidad, vacioTexto){
+  var el = typeof nodo === 'string' ? $(nodo) : nodo;
+  puntos = (puntos || []).filter(function(p){ return p.v != null; });
+  if (puntos.length < 2){
+    el.innerHTML = '<div class="vacio">' + (puntos.length === 1
+      ? 'Un registro (' + puntos[0].v + ' ' + unidad + '). Con el segundo aparece la línea 📈'
+      : vacioTexto) + '</div>';
+    return;
+  }
+  var W = 320, H = 110, PAD = 26;
+  var vs = puntos.map(function(p){ return p.v; });
+  var min = Math.min.apply(null, vs), max = Math.max.apply(null, vs);
+  if (max === min){ max += 1; min -= 1; }
+  var x = function(i){ return PAD + (W - PAD * 1.4) * (i / (puntos.length - 1)); };
+  var y = function(v){ return 12 + (H - 34) * (1 - (v - min) / (max - min)); };
+  var linea = puntos.map(function(p, i){ return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.v).toFixed(1); }).join(' ');
+  var dots = puntos.map(function(p, i){
+    return '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="3.4" fill="url(#gprog)"></circle>';
+  }).join('');
+  var ult = puntos[puntos.length - 1], pri = puntos[0];
+  var delta = Math.round((ult.v - pri.v) * 10) / 10;
+  var f = function(fecha){ var p = fecha.split('-'); return p[2] + '/' + p[1]; };
+  el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '">' +
+    '<defs><linearGradient id="gprog" x1="0" y1="0" x2="1" y2="0">' +
+    '<stop offset="0" stop-color="var(--c1)"/><stop offset="1" stop-color="var(--c2)"/></linearGradient></defs>' +
+    '<path d="' + linea + '" fill="none" stroke="url(#gprog)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' + dots +
+    '<text x="' + PAD + '" y="' + (H - 4) + '" font-size="9" fill="#9a9ba8" font-weight="700">' + f(pri.f) + ' · ' + pri.v + ' ' + unidad + '</text>' +
+    '<text x="' + (W - PAD * 0.4) + '" y="' + (H - 4) + '" font-size="9" fill="#9a9ba8" font-weight="700" text-anchor="end">' + f(ult.f) + ' · ' + ult.v + ' ' + unidad + '</text>' +
+    '</svg>' +
+    '<span class="delta' + (delta < 0 ? ' baja' : '') + '">' + (delta > 0 ? '▲ +' : delta < 0 ? '▼ ' : '=') + (delta || 'igual') + (delta ? ' ' + unidad : '') + ' desde el inicio</span>';
+}
+function puntosDePeso(progreso){
+  return Object.keys(progreso || {}).sort().map(function(f){ return { f: f, v: numeroDe((progreso[f] || {}).peso) }; });
+}
+function puntosDeCarga(cargas, clave){
+  return Object.keys(cargas || {}).sort().map(function(f){ return { f: f, v: numeroDe((cargas[f] || {})[clave]) }; });
+}
+function ejerciciosConCarga(cargas, plan){
+  var vistos = {}, lista = [];
+  Object.keys(cargas || {}).forEach(function(f){
+    Object.keys(cargas[f] || {}).forEach(function(k){
+      if (k.indexOf('p:') === 0 && !vistos[k] && numeroDe(cargas[f][k]) != null){
+        vistos[k] = true;
+        var nombre = k.slice(2);
+        // si es un id viejo, se busca el nombre en el plan
+        DIAS.forEach(function(d){ (planDe({plan:plan})[d[0]] || []).forEach(function(e){ if (e.id === nombre) nombre = e.nombre.toLowerCase(); }); });
+        lista.push({ clave: k, nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1) });
+      }
+    });
+  });
+  return lista.sort(function(a, b){ return a.nombre.localeCompare(b.nombre); });
+}
+function pintarMiProgreso(){
+  if (!esAlumnoRol() || !$('cartaProgreso')) return;
+  var hoyD = (sesion.progreso || {})[fechaClave(Date.now())] || {};
+  if (document.activeElement !== $('progPeso')) $('progPeso').value = hoyD.peso || '';
+  graficoLinea('graficoPeso', puntosDePeso(sesion.progreso), 'kg', 'Anotá tu peso un par de veces por semana y mirá la línea moverse.');
+  var lista = ejerciciosConCarga(sesion.hechos, sesion.plan);
+  $('progEj').innerHTML = lista.length
+    ? lista.map(function(e){ return '<option value="' + e.clave.replace(/"/g,'&quot;') + '">' + e.nombre + '</option>'; }).join('')
+    : '<option value="">(anotá el peso usado en tus ejercicios y aparece acá)</option>';
+  var sel = $('progEj').value;
+  if (sel) graficoLinea('graficoCargas', puntosDeCarga(sesion.hechos, sel), 'kg', '');
+  else $('graficoCargas').innerHTML = '<div class="vacio">Cuando anotes el peso que usás en un ejercicio, acá vas a ver cómo progresa. 🏋️</div>';
+}
+document.addEventListener('change', function(e){ if (e.target && e.target.id === 'progEj') pintarMiProgreso(); });
+$('progMasMedidas').onclick = function(){ $('progMedidasWrap').hidden = !$('progMedidasWrap').hidden; };
+$('progGuardar').onclick = async function(){
+  var datos = {
+    peso: $('progPeso').value.trim(),
+    cintura: $('progCintura').value.trim(), pecho: $('progPecho').value.trim(),
+    brazo: $('progBrazo').value.trim(), muslo: $('progMuslo').value.trim()
+  };
+  if (!datos.peso && !datos.cintura && !datos.pecho && !datos.brazo && !datos.muslo){ avisar('Anotá al menos el peso ⚖️'); return; }
+  var r = await Backend.guardarProgreso(sesion.id, fechaClave(Date.now()), datos);
+  if (r.error){ avisar(r.error); return; }
+  if (r.progreso) sesion.progreso = r.progreso;
+  avisar('Progreso guardado 📈');
+  pintarMiProgreso();
+};
+// El profe mira el progreso de su alumno
+async function abrirProgresoDe(u){
+  $('vpTitulo').textContent = '📈 Progreso de ' + u.nombre;
+  $('vpResumen').textContent = 'Cargando…';
+  $('veloProgreso').classList.add('abierto');
+  var r = await Backend.obtenerProgreso(u.id);
+  var pesos = puntosDePeso(r.progreso).filter(function(p){ return p.v != null; });
+  $('vpResumen').textContent = pesos.length
+    ? ('Peso corporal: ' + pesos[pesos.length-1].v + ' kg (' + pesos.length + ' registros)')
+    : 'Todavía no registró su peso corporal.';
+  graficoLinea('vpGraficoPeso', puntosDePeso(r.progreso), 'kg', 'Sin registros de peso corporal todavía.');
+  var lista = ejerciciosConCarga(r.cargas, u.plan);
+  $('vpEj').innerHTML = lista.length
+    ? lista.map(function(e){ return '<option value="' + e.clave.replace(/"/g,'&quot;') + '">' + e.nombre + '</option>'; }).join('')
+    : '<option value="">(sin cargas anotadas todavía)</option>';
+  var pintarCarga = function(){
+    var sel = $('vpEj').value;
+    if (sel) graficoLinea('vpGraficoCargas', puntosDeCarga(r.cargas, sel), 'kg', '');
+    else $('vpGraficoCargas').innerHTML = '<div class="vacio">Cuando anote sus pesos, acá ves su progresión.</div>';
+  };
+  $('vpEj').onchange = pintarCarga; pintarCarga();
 }
 
 /* — el timer de descanso — */
