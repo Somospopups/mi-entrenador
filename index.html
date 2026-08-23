@@ -296,6 +296,77 @@ var LIBRERIA = [
   .delta{ display:inline-block; margin-top:8px; background:rgba(30,158,96,.12); color:var(--ok);
           border-radius:999px; padding:5px 12px; font-size:11.5px; font-weight:900; }
   .delta.baja{ background:rgba(224,36,36,.1); color:var(--rojo); }
+
+  /* ---------- lista de sesión (IDEA A) ---------- */
+  .ses-head{ display:flex; align-items:center; gap:12px; background:linear-gradient(150deg,var(--c1),var(--c2));
+             border-radius:18px; padding:14px 16px; color:#fff; margin-bottom:10px; }
+  .ses-head b{ font-size:16px; } .ses-head small{ display:block; font-size:11.5px; opacity:.92; margin-top:2px; }
+  .ses-anillo{ margin-left:auto; width:54px; height:54px; border-radius:50%; display:flex; align-items:center;
+               justify-content:center; flex:none; }
+  .ses-anillo i{ width:40px; height:40px; border-radius:50%; background:rgba(25,28,64,.4); display:flex;
+                 align-items:center; justify-content:center; font-style:normal; font-size:11px; font-weight:900; }
+  .ses-fila{ width:100%; display:flex; align-items:center; gap:11px; background:var(--carta); border:1px solid var(--borde);
+             border-radius:16px; padding:10px 12px; margin-bottom:8px; text-align:left; color:var(--tinta);
+             font:inherit; cursor:pointer; }
+  .ses-fila img, .ses-thumb-emoji{ width:52px; height:52px; border-radius:12px; object-fit:contain; background:#fff;
+                                   border:1px solid var(--borde); flex:none; }
+  .ses-thumb-emoji{ display:flex; align-items:center; justify-content:center; font-size:26px; }
+  .ses-fila .d{ flex:1; min-width:0; }
+  .ses-fila b{ font-size:13.5px; display:block; }
+  .ses-fila small{ color:var(--gris); font-size:11px; font-weight:700; }
+  .ses-tilde{ width:38px; height:38px; border-radius:50%; border:2.5px solid var(--borde); color:transparent;
+              font-weight:900; flex:none; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .ses-tilde.ok{ background:var(--ok); border-color:var(--ok); color:#fff; }
+  .ses-tilde.no{ background:rgba(224,36,36,.12); border-color:var(--rojo); color:var(--rojo); }
+  .ses-fila.hecha{ opacity:.55; } .ses-fila.hecha b{ text-decoration:line-through; }
+  .ses-fila.fallada{ opacity:.75; }
+  .ses-fila[disabled]{ pointer-events:none; }
+  .ses-empezar{ width:100%; min-height:56px; border:0; border-radius:16px; margin-top:6px;
+                background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; font:inherit; font-size:15.5px;
+                font-weight:900; box-shadow:0 12px 30px rgba(79,125,242,.35); cursor:pointer; }
+  body.sin-scroll{ overflow:hidden; }
+
+  /* ---------- modo entrenamiento (IDEA B, oscuro) ---------- */
+  #playerWrap{ position:fixed; inset:0; z-index:45; display:flex; flex-direction:column; padding:16px;
+               background:linear-gradient(165deg,#151726,#232647 60%,#2b2555); color:#fff; overflow-y:auto; }
+  .pl2-top{ display:flex; align-items:center; gap:9px; }
+  .pl2-top .salir{ background:none; border:0; color:#9aa0b8; font-size:13px; font-weight:800; cursor:pointer; }
+  .pl2-seg{ flex:1; display:flex; gap:4px; }
+  .pl2-seg i{ flex:1; height:5px; border-radius:99px; background:rgba(255,255,255,.16); }
+  .pl2-seg i.full{ background:linear-gradient(90deg,#5b8def,#a06bff); }
+  .pl2-seg i.aqui{ outline:1.5px solid rgba(255,255,255,.65); }
+  .pl2-top .pos{ font-size:11px; color:#9aa0b8; font-weight:800; white-space:nowrap; }
+  .pl2-top .nav{ width:34px; height:34px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
+                 background:rgba(255,255,255,.06); color:#dde; font-weight:900; cursor:pointer; }
+  .pl2-zona{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+             text-align:center; padding:14px 0; }
+  .pl2-marco{ width:min(76vw,290px); height:min(56vw,225px); background:#fff; border-radius:26px; display:flex;
+              align-items:center; justify-content:center; box-shadow:0 26px 60px rgba(0,0,0,.45); }
+  .pl2-marco img{ width:88%; height:88%; object-fit:contain; }
+  .pl2-marco .emoji{ font-size:64px; }
+  .pl2-zona h1{ font-size:23px; letter-spacing:-.5px; margin-top:18px; }
+  .pl2-serie{ font-size:36px; font-weight:900; margin-top:6px; background:linear-gradient(90deg,#7ba2ff,#c39bff);
+              -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .pl2-sub{ color:#a6aac2; font-size:12.5px; margin-top:5px; font-weight:700; }
+  .pl2-nota{ margin-top:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.13);
+             border-radius:13px; padding:9px 14px; font-size:12.5px; color:#dde; max-width:320px; }
+  .pl2-estado{ margin-top:10px; font-size:11px; font-weight:900; border-radius:99px; padding:5px 12px;
+               background:rgba(255,255,255,.12); }
+  .pl2-peso{ display:flex; gap:8px; margin:4px 0 12px; }
+  .pl2-peso input{ flex:1; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07);
+                   border-radius:13px; color:#fff; padding:12px 14px; font-size:13px; outline:none; }
+  .pl2-peso input::placeholder{ color:#8b90ad; }
+  .pl2-acciones{ display:flex; gap:11px; }
+  .pl2-no{ flex:1; min-height:60px; border-radius:17px; border:1.5px solid rgba(224,36,36,.55);
+           background:rgba(224,36,36,.18); color:#ff9d9d; font-size:24px; font-weight:900; cursor:pointer; }
+  .pl2-si{ flex:2; min-height:60px; border:0; border-radius:17px; background:linear-gradient(135deg,#1e9e60,#27c47a);
+           color:#fff; font-size:22px; font-weight:900; box-shadow:0 12px 30px rgba(30,158,96,.35); cursor:pointer; }
+  .pl2-pista{ color:#7d829e; text-align:center; font-size:10px; margin-top:8px; }
+  .pl2-fin{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .pl2-fin .g{ font-size:64px; }
+  .pl2-fin h1{ font-size:24px; margin-top:12px; }
+  .pl2-fin p{ color:#a6aac2; font-size:13px; margin-top:6px; }
+  .pl2-fin .fila-bot{ display:flex; gap:10px; margin-top:24px; width:100%; }
   /* editor del plan (admin) */
   .pl-lista{ margin:10px 0; }
   .pl-fila{ display:flex; align-items:center; gap:8px; border:1px solid var(--borde); border-radius:12px;
@@ -1432,9 +1503,22 @@ function chipsDe(e){
   if (e.carga) c.push(e.carga);
   return c.map(function(x){ return '<span>'+x+'</span>'; }).join('');
 }
-/* — la vista del estudiante: el mazo de tarjetas con ✓ y ✗ — */
-var diaVista = null, mzIdx = 0, mzRevisando = false;
-function marcasDeHoy(){ return (sesion.hechos||{})[fechaClave(Date.now())]||{}; }
+/* — la vista del estudiante: lista de sesión + Modo Entrenamiento — */
+var diaVista = null, playerIdx = 0, playerAbierto = false, playerRevisando = false;
+function marcasDeHoy(){ return (sesion.hechos || {})[fechaClave(Date.now())] || {}; }
+function descansoDe(e){
+  var m = String((e && e.carga) || '').match(/(\d+)\s*(seg|s\b|″)/i);
+  var v = m ? parseInt(m[1]) : 60;
+  return (v >= 15 && v <= 600) ? v : 60;
+}
+function ultimaCargaDe(e){
+  var k = claveCarga(e.nombre), fechas = Object.keys(sesion.hechos || {}).sort().reverse();
+  for (var i = 0; i < fechas.length; i++){
+    var v = (sesion.hechos[fechas[i]] || {})[k];
+    if (v) return v;
+  }
+  return '';
+}
 async function pintarPlanEstudiante(){
   var plan = planDe(sesion), hoyK = claveDia(Date.now());
   if (!diaVista) diaVista = hoyK;
@@ -1444,10 +1528,10 @@ async function pintarPlanEstudiante(){
       DIA_CORTO[d[0]] + '<i>'+(n? n+' ej.' : '—')+'</i></button>';
   }).join('');
   document.querySelectorAll('[data-dia-ver]').forEach(function(b){
-    b.onclick = function(){ diaVista = b.getAttribute('data-dia-ver'); mzIdx = 0; mzRevisando = false; pintarPlanEstudiante(); };
+    b.onclick = function(){ diaVista = b.getAttribute('data-dia-ver'); pintarPlanEstudiante(); };
   });
   var lista = plan[diaVista]||[], esHoy = diaVista===hoyK;
-  $('planTitulo').textContent = esHoy ? '🏋️ Tu plan de hoy · '+nombreDia(diaVista) : '🏋️ '+nombreDia(diaVista);
+  $('planTitulo').textContent = esHoy ? '🏋️ Tu plan de hoy' : '🏋️ ' + nombreDia(diaVista);
   if (!planTieneAlgo(plan)){
     $('planZona').innerHTML = '<p class="mini">Tu entrenador todavía no te armó el plan. En cuanto lo cargue, lo vas a ver acá. 💬</p>';
     $('planResumen').textContent=''; $('planProgresoWrap').hidden = true; return;
@@ -1457,96 +1541,130 @@ async function pintarPlanEstudiante(){
     $('planResumen').textContent=''; $('planProgresoWrap').hidden = true; return;
   }
   var marcas = esHoy ? marcasDeHoy() : {};
-  var respondidas = lista.filter(function(e){ return marcas[e.id]!==undefined; }).length;
-  var hechas = lista.filter(function(e){ return marcas[e.id]===true; }).length;
+  var resp = lista.filter(function(e){ return marcas[e.id] !== undefined; }).length;
+  var hechas = lista.filter(function(e){ return marcas[e.id] === true; }).length;
   $('planProgresoWrap').hidden = !esHoy;
   if (esHoy){
-    $('planProgreso').style.width = Math.round(respondidas/lista.length*100)+'%';
-    $('planResumen').textContent = respondidas===lista.length
-      ? ('💪 Día completado: '+hechas+' ✓ · '+(respondidas-hechas)+' ✗')
-      : 'Marcá cada ejercicio con ✓ si lo hiciste o ✗ si no salió.';
+    $('planProgreso').style.width = Math.round(resp / lista.length * 100) + '%';
+    $('planResumen').textContent = resp === lista.length
+      ? ('💪 Día completado: ' + hechas + ' ✓ · ' + (resp - hechas) + ' ✗')
+      : 'Tocá ▶ para entrenar guiado, o cualquier ejercicio para ir directo.';
   } else {
-    $('planResumen').textContent = 'Estás espiando otro día: las marcas se hacen el día que toca.';
+    $('planResumen').textContent = 'Estás espiando otro día: se entrena el día que toca.';
   }
-  // ¿terminó el día? tarjeta de cierre (salvo que esté revisando)
-  if (esHoy && respondidas===lista.length && !mzRevisando){
-    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">'+(hechas===lista.length?'🏆':'💪')+'</div>'+
-      '<p><b>'+(hechas===lista.length?'¡Completaste todo el día!':'Día cerrado: '+hechas+' de '+lista.length+' ✓')+'</b><br>'+
-      '<span class="mini">Mañana se abre el próximo. ¡Seguí así!</span></p>'+
-      '<button class="btn-chico" id="mzRevisar" style="margin-top:10px">↺ Revisar mis marcas</button></div>';
-    $('mzRevisar').onclick = function(){ mzRevisando = true; mzIdx = 0; pintarPlanEstudiante(); };
+  var pct = Math.round(resp / lista.length * 100);
+  var html = '<div class="ses-head"><div><b>' + nombreDia(diaVista) + '</b>' +
+    '<small>' + lista.length + ' ejercicio' + (lista.length===1?'':'s') + (esHoy ? ' · respondiste ' + resp : '') + '</small></div>' +
+    '<div class="ses-anillo" style="background:conic-gradient(#fff 0 ' + pct + '%, rgba(255,255,255,.25) ' + pct + '% 100%)"><i>' + pct + '%</i></div></div>';
+  html += lista.map(function(e, i){
+    var m = marcas[e.id];
+    var img = e.img || imgDe(e.nombre);
+    var thumb = img ? '<img src="' + img + '" alt="">' : '<div class="ses-thumb-emoji">🏃</div>';
+    var peso = esHoy ? (marcas[claveCarga(e.nombre)] || '') : '';
+    var datos = [ (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || ''), e.carga, peso ? ('🏋️ ' + peso) : '' ]
+      .filter(Boolean).join(' · ');
+    return '<button type="button" class="ses-fila' + (m===true?' hecha':m===false?' fallada':'') + '" data-ses="' + i + '"' + (esHoy ? '' : ' disabled') + '>' +
+      thumb + '<div class="d"><b>' + e.nombre + '</b><small>' + datos + '</small></div>' +
+      '<span class="ses-tilde' + (m===true?' ok':m===false?' no':'') + '">' + (m===false?'✗':'✓') + '</span></button>';
+  }).join('');
+  if (esHoy && resp < lista.length){
+    html += '<button type="button" class="ses-empezar" id="sesEmpezar">▶ ' + (resp ? 'Continuar entrenamiento' : 'Empezar entrenamiento') + '</button>';
+  }
+  $('planZona').innerHTML = html;
+  if (esHoy){
+    document.querySelectorAll('[data-ses]').forEach(function(b){
+      b.onclick = function(){ playerRevisando = (resp === lista.length); abrirPlayer(Number(b.getAttribute('data-ses'))); };
+    });
+    var emp = $('sesEmpezar');
+    if (emp) emp.onclick = function(){
+      var marcasYa = marcasDeHoy();
+      var prima = lista.findIndex(function(e){ return marcasYa[e.id] === undefined; });
+      playerRevisando = false;
+      abrirPlayer(prima >= 0 ? prima : 0);
+    };
+  }
+}
+
+/* — el Modo Entrenamiento: pantalla completa, un ejercicio por vez — */
+function abrirPlayer(i){ playerIdx = i; playerAbierto = true; document.body.classList.add('sin-scroll'); renderPlayer(); }
+function cerrarPlayer(){
+  playerAbierto = false; playerRevisando = false;
+  var n = $('playerWrap'); if (n) n.remove();
+  document.body.classList.remove('sin-scroll');
+  pintarPlanEstudiante(); pintarMotivacion(); pintarMiProgreso();
+}
+function renderPlayer(){
+  var lista = planDe(sesion)[claveDia(Date.now())] || [];
+  if (!lista.length){ cerrarPlayer(); return; }
+  if (playerIdx > lista.length - 1) playerIdx = lista.length - 1;
+  if (playerIdx < 0) playerIdx = 0;
+  var marcas = marcasDeHoy();
+  var resp = lista.filter(function(x){ return marcas[x.id] !== undefined; }).length;
+  var previo = $('playerWrap'); if (previo) previo.remove();
+  var w = document.createElement('div'); w.id = 'playerWrap';
+  // ¿día terminado? el cierre con festejo
+  if (resp === lista.length && !playerRevisando){
+    var hechas = lista.filter(function(x){ return marcas[x.id] === true; }).length;
+    w.innerHTML = '<div class="pl2-top"><button class="salir" id="pl2Salir">✕ Salir</button></div>' +
+      '<div class="pl2-fin"><div class="g">' + (hechas === lista.length ? '🏆' : '💪') + '</div>' +
+      '<h1>' + (hechas === lista.length ? '¡Entrenamiento completo!' : 'Día cerrado') + '</h1>' +
+      '<p>' + hechas + ' ✓ · ' + (lista.length - hechas) + ' ✗ · ¡Mañana se sigue!</p>' +
+      '<div class="fila-bot"><button class="btn-neutro" id="pl2Revisar" style="color:#dde;border-color:rgba(255,255,255,.25)">↺ Revisar</button>' +
+      '<button class="btn-grande" id="pl2Fin" style="flex:1">Terminar 🏁</button></div></div>';
+    document.body.appendChild(w);
+    $('pl2Salir').onclick = cerrarPlayer; $('pl2Fin').onclick = cerrarPlayer;
+    $('pl2Revisar').onclick = function(){ playerRevisando = true; playerIdx = 0; renderPlayer(); };
     return;
   }
-  // arranca en la primera sin responder (si no está revisando)
-  if (esHoy && !mzRevisando){
-    var prima = lista.findIndex(function(e){ return marcas[e.id]===undefined; });
-    if (prima >= 0 && mzIdx > lista.length-1) mzIdx = prima;
-    if (prima >= 0 && marcas[lista[mzIdx]] !== undefined && lista[mzIdx] && marcas[lista[mzIdx].id]!==undefined) mzIdx = prima;
-  }
-  if (mzIdx > lista.length-1) mzIdx = lista.length-1;
-  if (mzIdx < 0) mzIdx = 0;
-  var html = '<div class="mz-head">'+
-    '<button id="mzAtras" aria-label="Anterior">‹</button>'+
-    '<span>'+(mzIdx+1)+' de '+lista.length+'</span>'+
-    '<button id="mzAdelante" aria-label="Siguiente">›</button></div><div class="mz-deck">';
-  for (var off = Math.min(2, lista.length-1-mzIdx); off >= 0; off--){
-    var e = lista[mzIdx+off];
-    if (!e) continue;
-    var m = marcas[e.id];
-    var imagen = e.img || imgDe(e.nombre);
-    var dibujo = imagen
-      ? '<img class="mz-anim" src="'+imagen+'" alt="" onerror="this.outerHTML=\'<div class=&quot;mz-anim mz-comodin&quot;>🏋️</div>\'">'
-      : '<div class="mz-anim mz-comodin">🏃</div>';
-    html += '<div class="mz-card'+(off===1?' detras1':off===2?' detras2':'')+'"'+(off===0?' id="mzTope"':'')+'>'+
-      dibujo +
-      '<div class="mz-nombre">'+e.nombre+'</div>'+
-      '<div class="ej-chips">'+chipsDe(e)+'</div>'+
-      (e.nota?'<div class="ej-nota">💬 '+e.nota+'</div>':'')+
-      (esHoy?'<div class="mz-extra">'+
-        '<button class="t" data-timer="30">⏱ 30″</button>'+
-        '<button class="t" data-timer="60">⏱ 1′</button>'+
-        '<button class="t" data-timer="90">⏱ 1′30″</button>'+
-        '<div class="mz-peso">🏋️<input data-peso="'+claveCarga(e.nombre)+'" placeholder="Peso usado (ej: 42,5 kg)" value="'+String(marcas[claveCarga(e.nombre)]||marcas['p:'+e.id]||'').replace(/"/g,'&quot;')+'"></div>'+
-      '</div>':'')+
-      (m!==undefined?'<span class="mz-estado '+(m?'si':'no')+'">'+(m?'✓ Hecha':'✗ No salió')+'</span>':'')+
-      (esHoy?'<div class="mz-botones">'+
-        '<button class="mz-no'+(m===true?' baja':'')+'" data-mz-no="'+e.id+'" aria-label="No la hice">✗</button>'+
-        '<button class="mz-si'+(m===false?' baja':'')+'" data-mz-si="'+e.id+'" aria-label="La hice">✓</button></div>'
-      :'')+
-      '</div>';
-  }
-  html += '</div>';
-  $('planZona').innerHTML = html;
-  $('mzAtras').onclick = function(){ if (mzIdx>0){ mzIdx--; mzRevisando = true; pintarPlanEstudiante(); } };
-  $('mzAdelante').onclick = function(){ if (mzIdx<lista.length-1){ mzIdx++; mzRevisando = true; pintarPlanEstudiante(); } };
-  var volar = async function(id, valor){
-    var r = await Backend.marcarHecho(sesion.id, fechaClave(Date.now()), id, valor);
+  var e = lista[playerIdx], m = marcas[e.id];
+  var img = e.img || imgDe(e.nombre);
+  var serie = (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || '¡A moverse!');
+  var ultima = ultimaCargaDe(e);
+  var sub = [ ultima ? ('🏋️ Última vez: ' + ultima) : '', '⏱ descanso ' + descansoDe(e) + '″' ].filter(Boolean).join(' · ');
+  var pesoHoy = marcas[claveCarga(e.nombre)] || '';
+  var segs = lista.map(function(x, j){
+    return '<i class="' + (marcas[x.id] !== undefined ? 'full' : '') + (j === playerIdx ? ' aqui' : '') + '"></i>';
+  }).join('');
+  w.innerHTML = '<div class="pl2-top">' +
+      '<button class="salir" id="pl2Salir">✕ Salir</button>' +
+      '<div class="pl2-seg">' + segs + '</div>' +
+      '<button class="nav" id="pl2Antes">‹</button>' +
+      '<span class="pos">' + (playerIdx + 1) + '/' + lista.length + '</span>' +
+      '<button class="nav" id="pl2Despues">›</button></div>' +
+    '<div class="pl2-zona">' +
+      '<div class="pl2-marco">' + (img ? '<img src="' + img + '" alt="">' : '<div class="emoji">🏃</div>') + '</div>' +
+      '<h1>' + e.nombre + '</h1>' +
+      '<div class="pl2-serie">' + serie + '</div>' +
+      (sub ? '<div class="pl2-sub">' + sub + '</div>' : '') +
+      (e.nota ? '<div class="pl2-nota">💬 Profe: ' + e.nota + '</div>' : '') +
+      (m !== undefined ? '<div class="pl2-estado">' + (m ? '✓ Ya la marcaste hecha' : '✗ Marcada como no salió') + '</div>' : '') +
+    '</div>' +
+    '<div class="pl2-peso"><input id="pl2Peso" inputmode="decimal" placeholder="🏋️ Peso usado hoy (ej: 42,5 kg)" value="' + String(pesoHoy).replace(/"/g,'&quot;') + '"></div>' +
+    '<div class="pl2-acciones"><button class="pl2-no" id="pl2No">✗</button><button class="pl2-si" id="pl2Si">✓ Hecho</button></div>' +
+    '<div class="pl2-pista">Al marcar ✓ arranca solo el descanso y pasa al siguiente</div>';
+  document.body.appendChild(w);
+  $('pl2Salir').onclick = cerrarPlayer;
+  $('pl2Antes').onclick = function(){ if (playerIdx > 0){ playerIdx--; renderPlayer(); } };
+  $('pl2Despues').onclick = function(){ if (playerIdx < lista.length - 1){ playerIdx++; renderPlayer(); } };
+  $('pl2Peso').addEventListener('change', async function(){
+    var r = await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), claveCarga(e.nombre), $('pl2Peso').value);
     if (r.hechos) sesion.hechos = r.hechos;
-    var tope = $('mzTope');
-    if (tope){ tope.classList.add(valor?'vuela-si':'vuela-no'); }
-    setTimeout(function(){
-      var marcasYa = marcasDeHoy();
-      var faltan = lista.some(function(e){ return marcasYa[e.id]===undefined; });
-      if (faltan){ mzRevisando = false;
-        var prox = lista.findIndex(function(e,i){ return i>mzIdx && marcasYa[e.id]===undefined; });
-        if (prox<0) prox = lista.findIndex(function(e){ return marcasYa[e.id]===undefined; });
-        mzIdx = prox>=0 ? prox : 0;
-      } else { mzRevisando = false; }
-      pintarPlanEstudiante();
-      pintarMotivacion();
-    }, 340);
-  };
-  document.querySelectorAll('[data-mz-si]').forEach(function(b){ b.onclick=function(){ volar(b.getAttribute('data-mz-si'), true); }; });
-  document.querySelectorAll('[data-mz-no]').forEach(function(b){ b.onclick=function(){ volar(b.getAttribute('data-mz-no'), false); }; });
-  document.querySelectorAll('[data-timer]').forEach(function(b){ b.onclick=function(){ abrirTimer(Number(b.getAttribute('data-timer'))); }; });
-  document.querySelectorAll('[data-peso]').forEach(function(inp){
-    inp.addEventListener('change', async function(){
-      var r = await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), inp.getAttribute('data-peso'), inp.value);
-      if (r.hechos) sesion.hechos = r.hechos;
-      avisar(inp.value.trim() ? 'Peso anotado 🏋️' : 'Peso borrado');
-      pintarMiProgreso();
-    });
+    avisar($('pl2Peso').value.trim() ? 'Peso anotado 🏋️' : 'Peso borrado');
   });
+  $('pl2No').onclick = function(){ marcarPlayer(e, false, lista); };
+  $('pl2Si').onclick = function(){ marcarPlayer(e, true, lista); };
+}
+async function marcarPlayer(e, valor, lista){
+  var r = await Backend.marcarHecho(sesion.id, fechaClave(Date.now()), e.id, valor);
+  if (r.hechos) sesion.hechos = r.hechos;
+  var marcas = marcasDeHoy();
+  var faltan = lista.some(function(x){ return marcas[x.id] === undefined; });
+  if (!faltan){ playerRevisando = false; renderPlayer(); return; }
+  if (valor) abrirTimer(descansoDe(e));                       // descanso automático
+  var prox = lista.findIndex(function(x, j){ return j > playerIdx && marcas[x.id] === undefined; });
+  if (prox < 0) prox = lista.findIndex(function(x){ return marcas[x.id] === undefined; });
+  playerIdx = prox >= 0 ? prox : playerIdx;
+  renderPlayer();
 }
 
 /* ╔══════════════════════════════════════════════════════════╗
