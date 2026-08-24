@@ -2122,6 +2122,46 @@ function abrirTimer(seg){
 }
 $('timerCancelar').onclick = function(){ clearInterval(timerInt); timerInt = null; $('veloTimer').classList.remove('abierto'); };
 
+/* ═══════════════════════════════════════════════════════════════
+   GESTO ATRÁS (Android / navegador)
+   Cada "atrás" cierra UNA capa, en orden: popup → player → pestaña
+   Progreso → home. En el home no hace nada: nunca saca de la app.
+   ═══════════════════════════════════════════════════════════════ */
+(function(){
+  function cerrarVelo(velo){
+    // reusamos el botón de cierre propio del popup si lo tiene
+    var btn = velo.querySelector('#timerCancelar') || velo.querySelector('[data-cerrar-velo]');
+    if (btn) btn.click(); else velo.classList.remove('abierto');
+  }
+  function atras(){
+    // 1 · el picker de ejercicios (si está en el paso 2, vuelve al paso 1)
+    var picker = $('veloPicker');
+    if (picker && picker.classList.contains('abierto')){
+      var p2 = $('pkPaso2');
+      if (p2 && !p2.hidden && $('pkVolver')){ $('pkVolver').click(); return true; }
+      cerrarVelo(picker); return true;
+    }
+    // 2 · cualquier otro popup abierto (menos la contraseña obligatoria)
+    var velos = Array.prototype.slice.call(document.querySelectorAll('.velo.abierto'))
+      .filter(function(x){ return x.id !== 'veloForzada'; });
+    if (velos.length){ cerrarVelo(velos[velos.length - 1]); return true; }
+    // 3 · el modo entrenamiento
+    if ($('playerWrap')){ cerrarPlayer(); return true; }
+    // 4 · la pestaña Progreso vuelve a Hoy
+    if ($('vHome').classList.contains('activa') && $('tabProg') && !$('tabProg').hidden){
+      verTab('hoy'); return true;
+    }
+    // 5 · ya estamos en el home: quedarse (no salir de la app)
+    return false;
+  }
+  // candado: siempre hay una entrada de historial para amortiguar el "atrás"
+  try { history.pushState({ app:1 }, ''); } catch(e){}
+  window.addEventListener('popstate', function(){
+    try { atras(); } catch(e){}
+    try { history.pushState({ app:1 }, ''); } catch(e){}
+  });
+})();
+
 /* — el editor del entrenador — */
 var planEdit=null, planUserId=null, plDia='lun', plVivoOriginal=null, editorCargas={}, pkEditando=-1;
 function soloDias(plan){
