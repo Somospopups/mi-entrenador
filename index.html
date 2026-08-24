@@ -83,23 +83,23 @@ var CONFIG = {
    muestran un comodín; se pueden ir sumando ilustraciones a img/ y la app
    las levanta sola por nombre. */
 var LIBRERIA = [
-  { n:'Sentadilla con barra',            img:'img/sentadilla-barra.jpg' },
-  { n:'Peso muerto',                     img:'img/peso-muerto.jpg' },
-  { n:'Press de banca',                  img:'img/press-banca.jpg' },
-  { n:'Press militar',                   img:'img/press-militar.jpg' },
+  { n:'Sentadilla con barra',            img:'img/sentadilla-barra.jpg', img2:'img/sentadilla-barra-2.jpg' },
+  { n:'Peso muerto',                     img:'img/peso-muerto.jpg', img2:'img/peso-muerto-2.jpg' },
+  { n:'Press de banca',                  img:'img/press-banca.jpg', img2:'img/press-banca-2.jpg' },
+  { n:'Press militar',                   img:'img/press-militar.jpg', img2:'img/press-militar-2.jpg' },
   { n:'Remo con barra',                  img:'img/remo-barra.jpg' },
-  { n:'Dominadas',                       img:'img/dominadas.jpg' },
-  { n:'Flexiones de brazos',             img:'img/flexiones.jpg' },
+  { n:'Dominadas',                       img:'img/dominadas.jpg', img2:'img/dominadas-2.jpg' },
+  { n:'Flexiones de brazos',             img:'img/flexiones.jpg', img2:'img/flexiones-2.jpg' },
   { n:'Estocadas con mancuernas',        img:'img/estocadas.jpg' },
   { n:'Prensa de piernas',               img:'img/prensa-piernas.jpg' },
-  { n:'Curl de bíceps con mancuernas',   img:'img/curl-biceps.jpg' },
+  { n:'Curl de bíceps con mancuernas',   img:'img/curl-biceps.jpg', img2:'img/curl-biceps-2.jpg' },
   { n:'Tríceps en polea',                img:'img/triceps-polea.jpg' },
   { n:'Vuelos laterales',                img:'img/vuelos-laterales.jpg' },
   { n:'Plancha',                         img:'img/plancha.jpg' },
   { n:'Abdominales',                     img:'img/abdominales.jpg' },
-  { n:'Puente de glúteos',               img:'img/puente-gluteos.jpg' },
-  { n:'Jalón al pecho',                  img:'img/jalon-pecho.jpg' },
-  { n:'Remo en polea sentado',           img:'img/remo-polea.jpg' },
+  { n:'Puente de glúteos',               img:'img/puente-gluteos.jpg', img2:'img/puente-gluteos-2.jpg' },
+  { n:'Jalón al pecho',                  img:'img/jalon-pecho.jpg', img2:'img/jalon-pecho-2.jpg' },
+  { n:'Remo en polea sentado',           img:'img/remo-polea.jpg', img2:'img/remo-polea-2.jpg' },
   { n:'Peso muerto rumano',              img:'img/peso-muerto-rumano.jpg' },
   { n:'Hip thrust con barra',            img:'img/hip-thrust.jpg' },
   { n:'Elevación de talones',            img:'img/talones.jpg' },
@@ -452,6 +452,11 @@ var LIBRERIA = [
     stroke-dasharray:326.7; transition:stroke-dashoffset .26s linear; }
   .timer-caja .timer-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:36px; margin:0; }
+  .anim2{ position:relative; width:88%; height:88%; }
+  .anim2 img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
+              transition:opacity .3s ease-in-out; }
+  .anim2 .fb{ opacity:0; }
+  .anim2.f2 .fb{ opacity:1; } .anim2.f2 .fa{ opacity:0; }
   .confes{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .ico{ display:inline-block; vertical-align:-3px; flex:none; }
   button .ico{ pointer-events:none; }
@@ -1620,6 +1625,11 @@ function imgDe(nombre){
   for (var i=0;i<LIBRERIA.length;i++) if (LIBRERIA[i].n.toLowerCase()===n) return LIBRERIA[i].img||null;
   return null;
 }
+function img2De(nombre){
+  var n=String(nombre||'').trim().toLowerCase();
+  for (var i=0;i<LIBRERIA.length;i++) if (LIBRERIA[i].n.toLowerCase()===n) return LIBRERIA[i].img2||null;
+  return null;
+}
 function chipsDe(e){
   var c=[];
   if (e.series && e.reps) c.push(e.series+' × '+e.reps);
@@ -1777,7 +1787,12 @@ function renderPlayer(){
       '<span class="pos">' + (playerIdx + 1) + '/' + lista.length + '</span>' +
       '<button class="nav" id="pl2Despues">›</button></div>' +
     '<div class="pl2-zona">' +
-      '<div class="pl2-marco">' + (img ? '<img src="' + img + '" alt="">' : '<div class="emoji" style="color:var(--c1)">' + icono('pesa',56) + '</div>') + '</div>' +
+      '<div class="pl2-marco">' + (function(){
+        var b = img2De(e.nombre);
+        if (img && b) return '<div class="anim2"><img class="fa" src="' + img + '" alt=""><img class="fb" src="' + b + '" alt=""></div>';
+        if (img) return '<img src="' + img + '" alt="">';
+        return '<div class="emoji" style="color:var(--c1)">' + icono('pesa',56) + '</div>';
+      })() + '</div>' +
       '<h1>' + e.nombre + '</h1>' +
       '<div class="pl2-serie">' + serie + '</div>' +
       (sub ? '<div class="pl2-sub">' + sub + '</div>' : '') +
@@ -1923,6 +1938,11 @@ async function abrirProgresoDe(u){
   };
   $('vpEj').onchange = pintarCarga; pintarCarga();
 }
+
+/* el latido de las animaciones de técnica: alterna los dos cuadros */
+setInterval(function(){
+  document.querySelectorAll('.anim2').forEach(function(n){ n.classList.toggle('f2'); });
+}, 1000);
 
 /* — el timer de descanso — */
 var timerInt = null;
