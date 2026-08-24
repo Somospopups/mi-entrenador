@@ -28,9 +28,47 @@
 /* ╔══════════════════════════════════════════════════════════╗
    ║ CONFIG · lo único que tocás para cada app nueva           ║
    ╚══════════════════════════════════════════════════════════╝ */
+/* ── Iconografía propia: SVG de trazo consistente, cero emojis ── */
+var ICONOS = {
+  casa:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/>',
+  grafico:'<path d="M4 19h16"/><path d="M5 15l4.5-4.5 3 3L19 7"/><path d="M15.5 7H19v3.5"/>',
+  pesa:'<path d="M2.5 12h2M19.5 12h2"/><path d="M6 8.5v7M18 8.5v7"/><rect x="8" y="6" width="2.6" height="12" rx="1"/><rect x="13.4" y="6" width="2.6" height="12" rx="1"/><path d="M10.6 12h2.8"/>',
+  fuego:'<path d="M12 3.5c.8 3 4.6 4.4 4.6 8.6a4.6 4.6 0 1 1-9.2 0c0-1.9.9-3.2 1.9-4.2.1 1.8.8 2.7 2.4 3.2-.7-2.6-.5-5.3.3-7.6z" fill="currentColor" stroke="none"/>',
+  play:'<path d="M8.5 5.5v13l11-6.5z" fill="currentColor" stroke="none"/>',
+  reloj:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2.5"/>',
+  balanza:'<rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8.5 10a5 5 0 0 1 7 0"/><path d="M12 10.5 13.5 9"/>',
+  luna:'<path d="M19.5 13.5A7.5 7.5 0 1 1 10.5 4.5a6.5 6.5 0 0 0 9 9z" fill="currentColor" stroke="none"/>',
+  sol:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>',
+  trofeo:'<path d="M8 4h8v4a4 4 0 0 1-8 0z"/><path d="M8 5H5a3 3 0 0 0 3.2 3.4M16 5h3A3 3 0 0 1 15.8 8.4"/><path d="M12 12v3.5"/><path d="M9.5 19.5h5M10.3 15.5h3.4l.8 4H9.5z"/>',
+  chispa:'<path d="M12 4l1.4 3.8L17 9.2l-3.6 1.4L12 14.5l-1.4-3.9L7 9.2l3.6-1.4zM18.5 15l.7 1.9 1.8.7-1.8.7-.7 1.9-.7-1.9-1.8-.7 1.8-.7z" fill="currentColor" stroke="none"/>',
+  nota:'<path d="M4.5 5.5h15v10h-9.5l-5.5 4z"/>',
+  candado:'<rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  salir:'<path d="M9.5 4.5H5.5v15h4M14.5 8.5l3.8 3.5-3.8 3.5M8.5 12h9.5"/>',
+  mas:'<path d="M12 5.5v13M5.5 12h13"/>',
+  alerta:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v5"/><circle cx="12" cy="16.3" r=".4" fill="currentColor"/>',
+  lapiz:'<path d="M4.5 19.5l4.2-1L19.5 7.7a1.8 1.8 0 0 0 0-2.6l-.6-.6a1.8 1.8 0 0 0-2.6 0L5.5 15.3z"/><path d="M14.5 6.3l3.2 3.2"/>',
+  tacho:'<path d="M5 7h14M9.5 7V5h5v2M7 7l.9 12.5h8.2L17 7"/>',
+  subir:'<path d="M12 18.5v-12M7 11l5-5 5 5"/>',
+  gente:'<circle cx="9" cy="9" r="3.2"/><path d="M4 19a5 5 0 0 1 10 0"/><circle cx="16.5" cy="10" r="2.5"/><path d="M15.5 19a4.6 4.6 0 0 1 4.5-4"/>',
+  tarjeta:'<rect x="3.5" y="6" width="17" height="12.5" rx="2.5"/><path d="M3.5 10h17M7 14.5h4"/>',
+  llave:'<circle cx="8.5" cy="12" r="4"/><path d="M12.5 12h8M17.5 12v3.2M20.5 12v2.2"/>',
+  regla:'<path d="M3.5 16.5 16.5 3.5l4 4L7.5 20.5z"/><path d="M8 12l1.8 1.8M11 9l1.8 1.8M14 6l1.8 1.8"/>',
+  copiar:'<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M5.5 15.5V6.5a2 2 0 0 1 2-2h9"/>',
+  guardar:'<path d="M5 4.5h11l3.5 3.5v11.5H5z"/><path d="M8 4.5V9h7V4.5M8 19.5v-5.5h8v5.5"/>',
+  carpeta:'<path d="M3.5 6.5h6l2 2.5h9v9.5h-17z"/>',
+  ayuda:'<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.4a2.4 2.4 0 1 1 3.3 2.2c-.8.3-1 .9-1 1.8"/><circle cx="12" cy="16.4" r=".4" fill="currentColor"/>',
+  infinito:'<path d="M8.2 9.5c-3.5 0-3.5 5 0 5 3.6 0 4-5 7.6-5 3.5 0 3.5 5 0 5-3.6 0-4-5-7.6-5z"/>'
+};
+function icono(n, t, extra){
+  return '<svg class="ico" width="' + (t||18) + '" height="' + (t||18) + '" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
+    (extra ? ' style="' + extra + '"' : '') + '>' + (ICONOS[n]||'') + '</svg>';
+}
+var LOGO_SVG = '<svg class="ico" width="1.12em" height="1.12em" viewBox="0 0 24 24" fill="none" stroke="url(#gLogo)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.18em"><defs><linearGradient id="gLogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f7df2"/><stop offset="1" stop-color="#8b63e8"/></linearGradient></defs>' + ICONOS.pesa + '</svg>';
+
 var CONFIG = {
   APP_NOMBRE:   'Mi Entrenador',     // el nombre que se ve en toda la app
-  APP_EMOJI:    '💪',                // el ícono de la marca (se reemplaza subiendo un logo)
+  APP_EMOJI:    '',                  // (ya no se usa: el logo por defecto es un ícono SVG propio)
   COLOR_1:      '#4f7df2',           // color principal (degradé, botones)
   COLOR_2:      '#8b63e8',           // color secundario del degradé
   MONEDA:       '$',                 // símbolo de moneda para pagos
@@ -415,6 +453,9 @@ var LIBRERIA = [
   .timer-caja .timer-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:36px; margin:0; }
   .confes{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .ico{ display:inline-block; vertical-align:-3px; flex:none; }
+  button .ico{ pointer-events:none; }
+  .mz-fin .grande .ico{ color:var(--c1); }
   .confes span{ position:absolute; top:-20px; width:9px; height:15px; border-radius:3px; opacity:.95;
     animation:caeConfe linear forwards; }
   @keyframes caeConfe{ to{ transform:translateY(115vh) rotate(760deg); } }
@@ -473,9 +514,9 @@ var LIBRERIA = [
 
 <!-- ════════════ INGRESO ════════════ -->
 <div id="vLogin">
-  <button class="candado" id="btnCandado" title="Ingreso del administrador" aria-label="Ingreso del administrador">🔒</button>
+  <button class="candado" id="btnCandado" title="Ingreso del administrador" aria-label="Ingreso del administrador"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></button>
   <div class="login-caja">
-    <div class="login-logo" data-marca-emoji>🚀</div>
+    <div class="login-logo" data-marca-emoji></div>
     <h1 data-marca-nombre>Mi App</h1>
     <div class="sub">Ingresá con tu DNI y tu contraseña</div>
     <div class="campo"><label>DNI (solo números)</label>
@@ -491,8 +532,8 @@ var LIBRERIA = [
 <!-- ════════════ HOME DEL USUARIO ════════════ -->
 <div class="vista" id="vHome">
   <div class="top">
-    <span data-marca-emoji>🚀</span><span class="marca" data-marca-nombre>Mi App</span>
-    <div class="der"><button class="btn-chico" id="btnAyuda1">?</button><button class="btn-chico" id="btnTema1">🌙</button><button class="btn-chico" id="btnSalir1">Salir ↪</button></div>
+    <span data-marca-emoji></span><span class="marca" data-marca-nombre>Mi App</span>
+    <div class="der"><button class="btn-chico" id="btnAyuda1" aria-label="Ayuda"></button><button class="btn-chico" id="btnTema1" aria-label="Tema"></button><button class="btn-chico" id="btnSalir1"></button></div>
   </div>
   <div id="homePrueba"></div>
 
@@ -503,17 +544,17 @@ var LIBRERIA = [
   </div>
 
   <div id="tabProg" class="panel-tab" hidden>
-    <div class="carta racha-card"><div class="fuego">🔥</div><div id="homeRacha" style="flex:1"></div></div>
+    <div class="carta racha-card"><div class="fuego" style="color:#ff8f3c"></div><div id="homeRacha" style="flex:1"></div></div>
     <div class="carta" id="cartaSemana">
-      <h2>📊 Tu semana</h2>
+      <h2>Tu semana</h2>
       <div class="semana" id="semanaBars"></div>
       <div class="mini" id="semanaTexto" style="margin-top:9px"></div>
     </div>
     <div class="carta" id="cartaProgreso">
-      <h2>📈 Mi progreso</h2>
+      <h2>Mi progreso</h2>
       <div class="prog-linea">
-        <input id="progPeso" inputmode="decimal" placeholder="⚖️ Tu peso de hoy (kg)">
-        <button class="btn-chico" id="progMasMedidas">➕ Medidas</button>
+        <input id="progPeso" inputmode="decimal" placeholder="Tu peso de hoy (kg)">
+        <button class="btn-chico" id="progMasMedidas">+ Medidas</button>
         <button class="btn-chico" id="progGuardar" style="background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;border:0">Guardar</button>
       </div>
       <div class="prog-medidas" id="progMedidasWrap" hidden>
@@ -524,7 +565,7 @@ var LIBRERIA = [
       </div>
       <div class="grafico" id="graficoPeso"></div>
       <div style="margin-top:14px">
-        <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">🏋️ Tus cargas por ejercicio</label>
+        <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Tus cargas por ejercicio</label>
         <select id="progEj" class="buscador" style="margin:7px 0 0"></select>
         <div class="grafico" id="graficoCargas"></div>
       </div>
@@ -533,16 +574,16 @@ var LIBRERIA = [
   </div>
 
   <nav class="tabbar" id="tabbarAlumno">
-    <button data-tab="hoy" class="on">🏠<span>Hoy</span></button>
-    <button data-tab="prog">📈<span>Progreso</span></button>
+    <button data-tab="hoy" class="on"><span class="tab-ico"></span><span>Hoy</span></button>
+    <button data-tab="prog"><span class="tab-ico"></span><span>Progreso</span></button>
   </nav>
 </div>
 
 <!-- ════════════ PANEL DEL ADMINISTRADOR ════════════ -->
 <div class="vista" id="vAdmin">
   <div class="top">
-    <span data-marca-emoji>🚀</span><span class="marca" data-marca-nombre>Mi App</span><span class="rol">Admin</span>
-    <div class="der"><button class="btn-chico" id="btnAyuda2">?</button><button class="btn-chico" id="btnTema2">🌙</button><button class="btn-chico" id="btnSalir2">Salir ↪</button></div>
+    <span data-marca-emoji></span><span class="marca" data-marca-nombre>Mi App</span><span class="rol">Admin</span>
+    <div class="der"><button class="btn-chico" id="btnAyuda2" aria-label="Ayuda"></button><button class="btn-chico" id="btnTema2" aria-label="Tema"></button><button class="btn-chico" id="btnSalir2"></button></div>
   </div>
 
   <div class="carta hero">
@@ -553,35 +594,35 @@ var LIBRERIA = [
   </div>
 
   <div class="accesos">
-    <button class="acceso" id="btnAbrirCrear">➕ Crear cuenta</button>
-    <button class="acceso sec" id="btnIrAtencion">⚠️ Atención <b id="atencionBadge"></b></button>
+    <button class="acceso" id="btnAbrirCrear">Crear cuenta</button>
+    <button class="acceso sec" id="btnIrAtencion">Atención <b id="atencionBadge"></b></button>
   </div>
 
   <div class="carta" id="cartaAtencion">
-    <h2>⚠️ Necesitan tu atención</h2>
+    <h2>Necesitan tu atención</h2>
     <div id="listaAtencion" style="margin-top:10px"></div>
   </div>
 
   <div class="carta">
     <button class="colapsa-cab" data-colapsa="usuarios">
-      <span class="flecha">›</span><h2>👥 Estudiantes</h2><span class="resumen" id="resumenUsuarios"></span>
+      <span class="flecha">›</span><h2>Estudiantes</h2><span class="resumen" id="resumenUsuarios"></span>
     </button>
     <div class="colapsa-cuerpo" id="cuerpoUsuarios">
-      <input class="buscador" id="buscaUsuario" placeholder="🔍 Buscar por nombre o DNI…">
+      <input class="buscador" id="buscaUsuario" placeholder="Buscar por nombre o DNI…">
       <div id="listaUsuarios"></div>
     </div>
   </div>
 
   <div class="carta" id="cartaCumplimiento">
     <button class="colapsa-cab" data-colapsa="cumplimiento">
-      <span class="flecha">›</span><h2>📈 Cumplimiento semanal</h2><span class="resumen" id="resumenCump"></span>
+      <span class="flecha">›</span><h2>Cumplimiento semanal</h2><span class="resumen" id="resumenCump"></span>
     </button>
     <div class="colapsa-cuerpo" id="cuerpoCumplimiento"><div id="listaCump"></div></div>
   </div>
 
   <div class="carta" id="cartaIngresos">
     <button class="colapsa-cab" data-colapsa="ingresos">
-      <span class="flecha">›</span><h2>📅 Ingresos por mes</h2><span class="resumen" id="resumenIngresos"></span>
+      <span class="flecha">›</span><h2>Ingresos por mes</h2><span class="resumen" id="resumenIngresos"></span>
     </button>
     <div class="colapsa-cuerpo" id="cuerpoIngresos">
       <div class="mes-nav"><button id="mesAntes">‹</button><b id="mesTitulo"></b><button id="mesDespues">›</button></div>
@@ -591,21 +632,21 @@ var LIBRERIA = [
 
   <div class="carta" id="cartaConfig">
     <button class="colapsa-cab" data-colapsa="config">
-      <span class="flecha">›</span><h2>⚙️ Configuración</h2><span class="resumen">nombre y precio</span>
+      <span class="flecha">›</span><h2>Configuración</h2><span class="resumen">nombre y precio</span>
     </button>
     <div class="colapsa-cuerpo" id="cuerpoConfig">
       <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Logo de la marca</label>
       <div class="logo-zona">
-        <div class="logo-prev" id="logoPrev">🚀</div>
-        <button class="btn-chico" id="btnSubirLogo">📷 Subir / elegir de la galería</button>
-        <button class="btn-chico" id="btnColoresLogo">🪄 Usar los colores del logo</button>
-        <button class="btn-chico" id="btnQuitarLogo">🗑 Quitar</button>
+        <div class="logo-prev" id="logoPrev"></div>
+        <button class="btn-chico" id="btnSubirLogo">Subir / elegir de la galería</button>
+        <button class="btn-chico" id="btnColoresLogo">Usar los colores del logo</button>
+        <button class="btn-chico" id="btnQuitarLogo">Quitar</button>
         <input type="file" id="inputLogo" accept="image/*" hidden>
       </div>
       <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Colores de la app</label>
       <div class="fila-paletas">
         <div class="paletas" id="paletas"></div>
-        <button class="btn-chico" id="btnAzar" style="width:100%;margin-top:8px">🎲 Sorprendeme: colores al azar</button>
+        <button class="btn-chico" id="btnAzar" style="width:100%;margin-top:8px">Sorprendeme: colores al azar</button>
       </div>
       <div class="campo"><label>Nombre de la app</label><input id="cfgNombre"></div>
       <div class="campo"><label>Precio sugerido de 1 mes</label><input id="cfgPrecio" inputmode="numeric"></div>
@@ -617,7 +658,7 @@ var LIBRERIA = [
 <!-- ════════════ POPUPS ════════════ -->
 <div class="velo" id="veloAdminLogin">
   <div class="popup">
-    <h3>🔒 Ingreso del administrador</h3>
+    <h3>Ingreso del administrador</h3>
     <p class="mini">Este acceso es solo para la administración de la plataforma.<br>Prototipo · admin de prueba: DNI 11111111 · Admin1234</p>
     <div class="campo" style="margin-top:12px"><label>DNI del administrador</label>
       <input id="admDni" inputmode="numeric" placeholder="Ej: 11111111"></div>
@@ -633,7 +674,7 @@ var LIBRERIA = [
 
 <div class="velo" id="veloCrear">
   <div class="popup">
-    <h3>➕ Crear cuenta</h3>
+    <h3>Crear cuenta</h3>
     <div class="campo"><label>Nombre y apellido</label><input id="crNombre" placeholder="Ej: Ana García"></div>
     <div class="campo"><label>DNI</label><input id="crDni" inputmode="numeric" placeholder="Solo números"></div>
     <div class="campo"><label>Teléfono (opcional)</label><input id="crTel" inputmode="tel" placeholder="Ej: 351 5551234"></div>
@@ -641,8 +682,8 @@ var LIBRERIA = [
     <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Membresía inicial</label>
     <div class="pildoras" id="crMembresia">
       <button class="pildora activa" data-mem="1">1 mes</button>
-      <button class="pildora" data-mem="prueba">🧪 Prueba</button>
-      <button class="pildora" data-mem="siempre">♾️ Siempre</button>
+      <button class="pildora" data-mem="prueba">Prueba</button>
+      <button class="pildora" data-mem="siempre">Siempre</button>
     </div>
     </div>
     <div class="popup-botones">
@@ -654,20 +695,20 @@ var LIBRERIA = [
 
 <div class="velo" id="veloCredencial">
   <div class="popup">
-    <h3 id="credTitulo">✅ Cuenta creada</h3>
+    <h3 id="credTitulo">Cuenta creada</h3>
     <p class="mini" id="credDetalle"></p>
     <div class="credencial" id="credTexto"></div>
     <p class="mini">La persona va a tener que elegir su propia contraseña en el primer ingreso.</p>
     <div class="popup-botones">
       <button class="btn-neutro" data-cerrar-velo>Listo</button>
-      <button class="btn-grande" id="btnCopiarCred" style="flex:1">📋 Copiar contraseña</button>
+      <button class="btn-grande" id="btnCopiarCred" style="flex:1">Copiar contraseña</button>
     </div>
   </div>
 </div>
 
 <div class="velo" id="veloPago">
   <div class="popup">
-    <h3>💳 Registrar pago</h3>
+    <h3>Registrar pago</h3>
     <p class="mini" id="pagoQuien"></p>
     <div class="pildoras" id="pagoMeses">
       <button class="pildora activa" data-meses="1">1 mes</button>
@@ -684,7 +725,7 @@ var LIBRERIA = [
 
 <div class="velo" id="veloForzada">
   <div class="popup">
-    <h3>🔑 Elegí tu contraseña</h3>
+    <h3>Elegí tu contraseña</h3>
     <p class="mini">Es tu primer ingreso (o te blanquearon la clave): por seguridad tenés que elegir una contraseña propia. Mínimo 8 caracteres.</p>
     <div class="campo" style="margin-top:12px"><label>Contraseña nueva</label><input id="fzPass1" type="password"></div>
     <div class="campo"><label>Repetila</label><input id="fzPass2" type="password"></div>
@@ -695,7 +736,7 @@ var LIBRERIA = [
 
 <div class="velo" id="veloPlan">
   <div class="popup" style="max-width:530px">
-    <h3 id="planDe">🏋️ Plan</h3>
+    <h3 id="planDe">Plan</h3>
     <div class="dia-pills" id="plTabs"></div>
     <div class="pl-lista" id="plLista"></div>
     <div class="pl-form">
@@ -710,21 +751,21 @@ var LIBRERIA = [
         <div class="campo"><label>Carga / descanso (opcional)</label><input id="plCarga" placeholder="Ej: 40 kg · 90 seg"></div>
         <div class="campo"><label>Nota del profe (opcional)</label><input id="plNota" placeholder="Ej: bajá lento"></div>
       </div>
-      <button class="btn-grande" id="plAgregar">➕ Agregar al día</button>
+      <button class="btn-grande" id="plAgregar">Agregar al día</button>
     </div>
     <div class="pl-grid" style="margin-top:12px">
       <select id="plCopiaDestino" class="buscador" style="margin:0"></select>
-      <button class="btn-chico" id="plCopiar" style="min-height:44px">📋 Copiar este día a →</button>
+      <button class="btn-chico" id="plCopiar" style="min-height:44px">Copiar este día a →</button>
     </div>
     <div class="pl-caja">
-      <label>🧰 Plantillas y copias (guardadas en este dispositivo)</label>
-      <div class="pl-linea"><input id="plNombrePlantilla" placeholder="Nombre para guardar este plan…"><button class="btn-chico" id="plGuardarPlantilla">💾 Guardar</button></div>
-      <div class="pl-linea"><select id="plPlantillas"></select><button class="btn-chico" id="plAplicarPlantilla">📂 Aplicar</button></div>
-      <div class="pl-linea"><select id="plDeAlumno"></select><button class="btn-chico" id="plCopiarAlumno">👥 Copiar</button></div>
+      <label>Plantillas y copias (guardadas en este dispositivo)</label>
+      <div class="pl-linea"><input id="plNombrePlantilla" placeholder="Nombre para guardar este plan…"><button class="btn-chico" id="plGuardarPlantilla">Guardar</button></div>
+      <div class="pl-linea"><select id="plPlantillas"></select><button class="btn-chico" id="plAplicarPlantilla">Aplicar</button></div>
+      <div class="pl-linea"><select id="plDeAlumno"></select><button class="btn-chico" id="plCopiarAlumno">Copiar</button></div>
     </div>
     <div class="popup-botones">
       <button class="btn-neutro" data-cerrar-velo>Cerrar sin guardar</button>
-      <button class="btn-grande" id="plGuardar" style="flex:1">💾 Guardar plan</button>
+      <button class="btn-grande" id="plGuardar" style="flex:1">Guardar plan</button>
     </div>
   </div>
 </div>
@@ -742,11 +783,11 @@ var LIBRERIA = [
 
 <div class="velo" id="veloProgreso">
   <div class="popup" style="max-width:480px">
-    <h3 id="vpTitulo">📈 Progreso</h3>
+    <h3 id="vpTitulo">Progreso</h3>
     <div class="mini" id="vpResumen"></div>
     <div class="grafico" id="vpGraficoPeso"></div>
     <div style="margin-top:14px">
-      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">🏋️ Cargas por ejercicio</label>
+      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Cargas por ejercicio</label>
       <select id="vpEj" class="buscador" style="margin:7px 0 0"></select>
       <div class="grafico" id="vpGraficoCargas"></div>
     </div>
@@ -756,7 +797,7 @@ var LIBRERIA = [
 
 <div class="velo" id="veloTimer">
   <div class="popup" style="text-align:center;max-width:320px">
-    <h3>⏱ Descanso</h3>
+    <h3>Descanso</h3>
     <div class="timer-caja">
       <svg viewBox="0 0 120 120">
         <defs><linearGradient id="gradTimer" x1="0" y1="0" x2="1" y2="1">
@@ -773,15 +814,15 @@ var LIBRERIA = [
 
 <div class="velo" id="veloBienvenida">
   <div class="popup" style="text-align:center">
-    <h3 id="bienvTitulo">¡Bienvenido! 👋</h3>
+    <h3 id="bienvTitulo">¡Bienvenido!</h3>
     <div class="bienvenida-lista" id="bienvLista"></div>
-    <button class="btn-grande" data-cerrar-velo style="width:100%">¡Vamos! 💪</button>
+    <button class="btn-grande" data-cerrar-velo style="width:100%">¡Vamos!</button>
   </div>
 </div>
 
 <div class="velo" id="veloAyuda">
   <div class="popup">
-    <h3>❓ Cómo funciona</h3>
+    <h3>Cómo funciona</h3>
     <div class="bienvenida-lista" id="ayudaLista"></div>
     <div class="popup-botones"><button class="btn-neutro" data-cerrar-velo style="flex:1">Listo, entendido</button></div>
   </div>
@@ -1203,15 +1244,15 @@ function fecha(ms){ var d=new Date(ms); return String(d.getDate()).padStart(2,'0
 function plata(n){ return CONFIG.MONEDA + ' ' + Number(n||0).toLocaleString('es-AR'); }
 function diasQueQuedan(u){ return u.membresia.vence ? Math.ceil((u.membresia.vence - Date.now())/86400000) : null; }
 function badgeDe(u){
-  if (!u.activo) return ['gris','⛔ Desactivada'];
+  if (!u.activo) return ['gris','Desactivada'];
   if (u.rol==='alumno') return ['ok','Activo'];
-  if (u.rol==='admin') return ['ok','👑 Admin'];
-  if (u.membresia.tipo==='siempre') return ['oro','♾️ Para siempre'];
+  if (u.rol==='admin') return ['ok','Admin'];
+  if (u.membresia.tipo==='siempre') return ['oro','Para siempre'];
   var d = diasQueQuedan(u);
-  var pre = u.membresia.tipo==='prueba' ? '🧪 ' : '';
+  var pre = u.membresia.tipo==='prueba' ? 'Prueba · ' : '';
   if (d==null) return ['ok', pre+'Al día'];
   if (d < 0)  return ['mal', pre+'Vencida hace '+Math.abs(d)+'d'];
-  if (d===0)  return ['mal', pre+'Vence HOY'];
+  if (d===0)  return ['mal', pre+'vence HOY'];
   if (d<=3)   return ['por', pre+'Vence en '+d+'d'];
   return ['ok', pre+'Vence '+fecha(u.membresia.vence)];
 }
@@ -1245,7 +1286,7 @@ async function entrar(){
   var r = await Backend.login($('loginDni').value, $('loginPass').value);
   if (r.error){ err.textContent = r.error; err.style.display='block'; return; }
   if (r.usuario.rol !== 'usuario' && r.usuario.rol !== 'alumno'){
-    err.textContent = 'Esa cuenta es de gestión: entrá por el candadito 🔒 de arriba.';
+    err.textContent = 'Esa cuenta es de gestión: entrá por el candadito de arriba a la derecha.';
     err.style.display = 'block'; return;
   }
   sesion = r.usuario;
@@ -1286,34 +1327,36 @@ $('btnForzada').onclick = async function(){
 function esAlumnoRol(){ return sesion && (sesion.rol==='usuario' || sesion.rol==='alumno'); }
 function guiaDeMiRol(){
   if (esAlumnoRol()) return [
-    ['📋','Tu profe te arma el plan: acá lo ves día por día, con los dibujos de cada ejercicio.'],
-    ['✓','Al terminar cada ejercicio marcá ✓ (lo hice) o ✗ (no salió). Con las flechitas ‹ › volvés a corregir.'],
-    ['⏱','Usá el timer de descanso entre series, y anotá el peso que usaste para ver tu progreso.'],
-    ['🔥','Completá el día entero y sumá racha. Tu profe ve tu cumplimiento y te acompaña.']
+    ['nota','Tu profe te arma el plan: acá lo ves día por día, con los dibujos de cada ejercicio.'],
+    ['casa','Al terminar cada ejercicio marcá ✓ (lo hice) o ✗ (no salió). Podés volver a corregir.'],
+    ['reloj','Usá el timer de descanso entre series, y anotá el peso que usaste para ver tu progreso.'],
+    ['fuego','Completá el día entero y sumá racha. Tu profe ve tu cumplimiento y te acompaña.']
   ];
   if (sesion.rol==='entrenador') return [
-    ['➕','Creá a cada alumno con su DNI: la app te da su contraseña para mandársela.'],
-    ['🏋️','Armale el plan por día: elegí de la lista con dibujos o escribí tus propios ejercicios.'],
-    ['🧰','Guardá plantillas y copiá planes entre alumnos: armás una vez, aplicás mil veces.'],
-    ['📈','En Cumplimiento semanal ves quién entrena y quién afloja, día por día.']
+    ['mas','Creá a cada alumno con su DNI: la app te da su contraseña para mandársela.'],
+    ['pesa','Armale el plan por día: elegí de la lista con dibujos o escribí tus propios ejercicios.'],
+    ['copiar','Guardá plantillas y copiá planes entre alumnos: armás una vez, aplicás mil veces.'],
+    ['grafico','En Cumplimiento semanal ves quién entrena y quién afloja, día por día.']
   ];
   return [
-    ['👨‍🏫','Creá a cada entrenador con su DNI y elegí su membresía (mensual, prueba o para siempre).'],
-    ['💳','Registrá sus pagos: el vencimiento corre solo y el tablero te muestra la recaudación.'],
-    ['⚠️','“Necesitan tu atención” te avisa quién vence en los próximos días.'],
-    ['🔒','Cada entrenador ve SOLO a sus alumnos. Vos no ves los planes de nadie: privacidad total.']
+    ['gente','Creá a cada entrenador con su DNI y elegí su membresía (mensual, prueba o para siempre).'],
+    ['tarjeta','Registrá sus pagos: el vencimiento corre solo y el tablero te muestra la recaudación.'],
+    ['alerta','“Necesitan tu atención” te avisa quién vence en los próximos días.'],
+    ['candado','Cada entrenador ve SOLO a sus alumnos. Vos no ves los planes de nadie: privacidad total.']
   ];
 }
 function armarLista(idNodo, items){
-  $(idNodo).innerHTML = items.map(function(x){ return '<div><span>' + x[0] + '</span><div>' + x[1] + '</div></div>'; }).join('');
+  $(idNodo).innerHTML = items.map(function(x){
+    return '<div><span style="color:var(--c1)">' + icono(x[0], 21) + '</span><div>' + x[1] + '</div></div>';
+  }).join('');
 }
 function mostrarBienvenida(){
   var k = CONFIG.CLAVE_DATOS + '_bienv_' + sesion.id;
   if (leer(k, false)) return;
   guardar(k, true);
   $('bienvTitulo').textContent = esAlumnoRol()
-    ? '¡Bienvenido/a, ' + (sesion.nombre.split(' ')[0]||'') + '! 👋'
-    : (sesion.rol==='entrenador' ? '¡Bienvenido, profe! 👨‍🏫' : '¡Bienvenido a tu plataforma! 👑');
+    ? '¡Bienvenido/a, ' + (sesion.nombre.split(' ')[0]||'') + '!'
+    : (sesion.rol==='entrenador' ? '¡Bienvenido, profe!' : '¡Bienvenido a tu plataforma!');
   armarLista('bienvLista', guiaDeMiRol());
   $('veloBienvenida').classList.add('abierto');
 }
@@ -1354,8 +1397,8 @@ function rachaDe(){
 function pintarMotivacion(){
   var r = rachaDe();
   $('homeRacha').innerHTML = r > 0
-    ? '<span class="chip-racha">🔥 Racha: ' + r + ' día' + (r === 1 ? '' : 's') + ' al pie de la letra</span>'
-    : '<span class="chip-racha" style="opacity:.75">🔥 Completá el día de hoy y arrancá tu racha</span>';
+    ? '<span class="chip-racha">Racha: ' + r + ' día' + (r === 1 ? '' : 's') + ' al pie de la letra</span>'
+    : '<span class="chip-racha" style="opacity:.75">Completá el día de hoy y arrancá tu racha</span>';
   // la semana en barras
   var plan = planDe(sesion), DIAS_L = ['D','L','M','X','J','V','S'], html = '', tot = 0, hech = 0;
   for (var i = 6; i >= 0; i--){
@@ -1385,17 +1428,20 @@ function verTab(t){
 }
 document.querySelectorAll('#tabbarAlumno button').forEach(function(b){
   b.onclick = function(){ verTab(b.getAttribute('data-tab')); };
+  b.querySelector('.tab-ico').innerHTML = icono(b.getAttribute('data-tab') === 'hoy' ? 'casa' : 'grafico', 17);
 });
 function pintarHome(){
   diaVista = null;
   verTab('hoy');
   var b = badgeDe(sesion);
-  $('homeMembresia').textContent = '💳 Tu membresía: ' + b[1];
+  $('homeMembresia').textContent = 'Tu membresía: ' + b[1];
   var fpr = $('homePrueba'); fpr.innerHTML = '';
   if (sesion.membresia.tipo === 'prueba'){
     var dq = Math.max(0, diasQueQuedan(sesion));
-    fpr.innerHTML = '<div class="franja-prueba">🔴 VERSIÓN DE PRUEBA · Te queda' + (dq===1?'':'n') + ' ' + dq + ' día' + (dq===1?'':'s') + ' de uso</div>';
+    fpr.innerHTML = '<div class="franja-prueba">' + icono('alerta',14,'vertical-align:-2px') + ' VERSIÓN DE PRUEBA · Te queda' + (dq===1?'':'n') + ' ' + dq + ' día' + (dq===1?'':'s') + ' de uso</div>';
   }
+  var fg = document.querySelector('.racha-card .fuego');
+  if (fg && !fg.innerHTML) fg.innerHTML = icono('fuego', 42);
   pintarMotivacion();
   pintarMiProgreso();
   pintarPlanEstudiante();
@@ -1418,8 +1464,8 @@ async function pintarAdmin(){
   $('cartaIngresos').style.display = soyProfeA ? 'none' : '';
   $('cartaConfig').style.display = soyProfeA ? 'none' : '';
   $('cartaCumplimiento').style.display = soySuperA ? 'none' : '';
-  document.querySelector('[data-colapsa="usuarios"] h2').textContent = soySuperA ? '👥 Entrenadores' : '👥 Estudiantes';
-  $('btnAbrirCrear').textContent = soySuperA ? '➕ Crear entrenador' : '➕ Crear cuenta';
+  document.querySelector('[data-colapsa="usuarios"] h2').textContent = soySuperA ? 'Entrenadores' : 'Estudiantes';
+  $('btnAbrirCrear').innerHTML = icono('mas',16,'vertical-align:-3px;margin-right:6px') + (soySuperA ? 'Crear entrenador' : 'Crear cuenta');
   document.querySelector('#vAdmin .rol').textContent = soySuperA ? 'Dueño' : soyProfeA ? 'Entrenador' : 'Admin';
   var usuarios = await Backend.listarUsuarios();
   var pagos = await Backend.listarPagos();
@@ -1436,7 +1482,7 @@ async function pintarAdmin(){
   var activos = usuarios.filter(function(u){ return u.rol!=='admin' && u.activo; }).length;
   var enPrueba = usuarios.filter(function(u){ return u.membresia.tipo==='prueba' && u.activo && (diasQueQuedan(u)||0)>=0; }).length;
   var chipPlan = usuarios.filter(function(u){ return u.rol!=='admin' && planTieneAlgo(planDe(u)); }).length;
-  $('heroChips').innerHTML = '<span>👥 '+activos+' activos</span><span>🏋️ '+chipPlan+' con plan</span><span>🧪 '+enPrueba+' en prueba</span><span>💳 '+pagos.length+' pagos</span>';
+  $('heroChips').innerHTML = '<span>'+activos+' activos</span><span>'+chipPlan+' con plan</span><span>'+enPrueba+' en prueba</span><span>'+pagos.length+' pagos</span>';
 
   /* atención: vencen hoy / ≤3 días / vencidas */
   var atencion = usuarios.filter(function(u){
@@ -1446,8 +1492,8 @@ async function pintarAdmin(){
   $('atencionBadge').textContent = atencion.length ? '('+atencion.length+')' : '';
   $('listaAtencion').innerHTML = atencion.length ? atencion.map(function(u){
     var b = badgeDe(u);
-    return '<div class="pago-fila"><span>'+(u.membresia.tipo==='prueba'?'🧪':'💳')+' <b>'+u.nombre+'</b></span><span class="badge '+b[0]+'">'+b[1]+'</span></div>';
-  }).join('') : '<p class="mini">Todo tranquilo: nadie vence en los próximos días. 😌</p>';
+    return '<div class="pago-fila"><span><b>'+u.nombre+'</b></span><span class="badge '+b[0]+'">'+b[1]+'</span></div>';
+  }).join('') : '<p class="mini">Todo tranquilo: nadie vence en los próximos días.</p>';
 
   pintarUsuarios(usuarios);
   pintarPagos(pagos);
@@ -1469,25 +1515,25 @@ function pintarUsuarios(usuarios){
     var soyProfeA = sesion && sesion.rol==='entrenador';
     var acciones = u.rol==='admin' ? '' :
       '<div class="u-acciones'+(abierta?' abierto':'')+'">'+
-        (!soySuperA ? '<button class="u-btn" data-accion="plan" data-id="'+u.id+'">🏋️ Armar plan</button>' : '')+
-        (!soySuperA ? '<button class="u-btn" data-accion="progreso" data-id="'+u.id+'">📈 Ver progreso</button>' : '')+
-        (!soyProfeA ? '<button class="u-btn" data-accion="pago" data-id="'+u.id+'">💳 Registrar pago</button>' : '')+
-        (u.telefono ? '<button class="u-btn" data-accion="wa" data-id="'+u.id+'">💬 WhatsApp</button>' : '')+
-        '<button class="u-btn" data-accion="clave" data-id="'+u.id+'">🔑 Blanquear contraseña</button>'+
-        (!soyProfeA ? '<button class="u-btn" data-accion="prueba" data-id="'+u.id+'">🧪 Activar prueba</button>' : '')+
-        (!soyProfeA ? '<button class="u-btn" data-accion="siempre" data-id="'+u.id+'">♾️ Para siempre</button>' : '')+
-        '<button class="u-btn'+(u.activo?' peligro':'')+'" data-accion="activo" data-id="'+u.id+'">'+(u.activo?'⛔ Desactivar':'✅ Reactivar')+'</button>'+
-        '<button class="u-btn peligro" data-accion="borrar" data-id="'+u.id+'">🗑 Eliminar</button>'+
+        (!soySuperA ? '<button class="u-btn" data-accion="plan" data-id="'+u.id+'">'+icono('pesa',15)+' Armar plan</button>' : '')+
+        (!soySuperA ? '<button class="u-btn" data-accion="progreso" data-id="'+u.id+'">'+icono('grafico',15)+' Ver progreso</button>' : '')+
+        (!soyProfeA ? '<button class="u-btn" data-accion="pago" data-id="'+u.id+'">'+icono('tarjeta',15)+' Registrar pago</button>' : '')+
+        (u.telefono ? '<button class="u-btn" data-accion="wa" data-id="'+u.id+'">'+icono('nota',15)+' WhatsApp</button>' : '')+
+        '<button class="u-btn" data-accion="clave" data-id="'+u.id+'">'+icono('llave',15)+' Blanquear contraseña</button>'+
+        (!soyProfeA ? '<button class="u-btn" data-accion="prueba" data-id="'+u.id+'">'+icono('reloj',15)+' Activar prueba</button>' : '')+
+        (!soyProfeA ? '<button class="u-btn" data-accion="siempre" data-id="'+u.id+'">'+icono('infinito',15)+' Para siempre</button>' : '')+
+        '<button class="u-btn'+(u.activo?' peligro':'')+'" data-accion="activo" data-id="'+u.id+'">'+(u.activo?'Desactivar':'Reactivar')+'</button>'+
+        '<button class="u-btn peligro" data-accion="borrar" data-id="'+u.id+'">'+icono('tacho',15)+' Eliminar</button>'+
       '</div>';
     return '<div class="u-fila">'+
-      '<button class="u-cab" data-fila="'+u.id+'"><div><b>'+u.nombre+'</b><div class="dni">DNI '+u.dni+(u.telefono?' · 📱 '+u.telefono:'')+'</div></div>'+
+      '<button class="u-cab" data-fila="'+u.id+'"><div><b>'+u.nombre+'</b><div class="dni">DNI '+u.dni+(u.telefono?' · '+u.telefono:'')+'</div></div>'+
       '<span class="badge '+b[0]+'">'+b[1]+'</span></button>'+acciones+'</div>';
   }).join('') || (filtro
     ? '<p class="mini">No hay cuentas que coincidan con la búsqueda.</p>'
-    : '<div class="vacio-guia"><div class="grande">' + (sesion.rol==='superadmin' ? '👨‍🏫' : '🏃') + '</div>' +
+    : '<div class="vacio-guia"><div class="grande" style="color:var(--c1)">' + icono(sesion.rol==='superadmin' ? 'gente' : 'pesa', 44) + '</div>' +
       (sesion.rol==='superadmin'
         ? '<b>Todavía no tenés entrenadores.</b><br>Creá el primero con el botón de arriba: le das su DNI, elegís la membresía y le mandás sus claves.'
-        : '<b>Todavía no tenés alumnos.</b><br>Creá el primero con “➕ Crear cuenta”: le das su DNI y le armás el plan en dos minutos.') + '</div>');
+        : '<b>Todavía no tenés alumnos.</b><br>Creá el primero con “Crear cuenta”: le das su DNI y le armás el plan en dos minutos.') + '</div>');
 
   document.querySelectorAll('[data-fila]').forEach(function(btn){
     btn.onclick = function(){
@@ -1509,8 +1555,8 @@ async function accionUsuario(accion, id){
     var d = String(u.telefono||'').replace(/\D/g,'').replace(/^0+/,'');
     if (d.length === 10) d = '549' + d;
     else if (d.length === 12 && d.indexOf('54') === 0) d = '549' + d.slice(2);
-    if (d.length < 11){ avisar('Ese teléfono parece incompleto 📵'); return; }
-    window.open('https://wa.me/' + d + '?text=' + encodeURIComponent('¡Hola ' + (u.nombre.split(' ')[0]||'') + '! 💪 '), '_blank');
+    if (d.length < 11){ avisar('Ese teléfono parece incompleto'); return; }
+    window.open('https://wa.me/' + d + '?text=' + encodeURIComponent('¡Hola ' + (u.nombre.split(' ')[0]||'') + '! '), '_blank');
     return;
   }
   if (accion==='progreso'){ abrirProgresoDe(u); return; }
@@ -1523,13 +1569,13 @@ async function accionUsuario(accion, id){
     $('btnPagar').onclick = async function(){
       var meses = Number(document.querySelector('#pagoMeses .pildora.activa').getAttribute('data-meses'));
       await Backend.registrarPago(id, meses, $('pagoMonto').value);
-      $('veloPago').classList.remove('abierto'); avisar('Pago registrado ✓'); pintarAdmin();
+      $('veloPago').classList.remove('abierto'); avisar('Pago registrado'); pintarAdmin();
     };
   }
   if (accion==='clave'){
     confirmar('¿Blanquear la contraseña?', u.nombre + ' va a tener que elegir una nueva en su próximo ingreso.', async function(){
       var r = await Backend.blanquearPassword(id);
-      $('credTitulo').textContent = '🔑 Contraseña blanqueada';
+      $('credTitulo').textContent = 'Contraseña blanqueada';
       $('credDetalle').textContent = 'Pasale esta clave temporal a ' + u.nombre + ':';
       $('credTexto').textContent = r.password;
       $('btnCopiarCred').onclick = function(){ copiar(r.password); };
@@ -1538,12 +1584,12 @@ async function accionUsuario(accion, id){
   }
   if (accion==='prueba'){
     confirmar('¿Activar la prueba?', u.nombre + ' va a tener ' + CONFIG.DIAS_PRUEBA + ' días de uso con la franja roja a la vista.', async function(){
-      await Backend.cambiarMembresia(id,'prueba'); avisar('Prueba activada ✓'); pintarAdmin();
+      await Backend.cambiarMembresia(id,'prueba'); avisar('Prueba activada'); pintarAdmin();
     });
   }
   if (accion==='siempre'){
     confirmar('¿Membresía para siempre?', u.nombre + ' no va a vencer nunca más (badge dorado).', async function(){
-      await Backend.cambiarMembresia(id,'siempre'); avisar('Para siempre ✓'); pintarAdmin();
+      await Backend.cambiarMembresia(id,'siempre'); avisar('Membresía para siempre'); pintarAdmin();
     });
   }
   if (accion==='activo'){
@@ -1605,17 +1651,17 @@ async function pintarPlanEstudiante(){
   var resp = lista.filter(function(e){ return marcas[e.id] !== undefined; }).length;
   var pct = lista.length ? Math.round(resp / lista.length * 100) : 0;
   var sinPlan = !planTieneAlgo(plan);
-  var titulo = sinPlan ? 'Tu plan está en camino ✨'
-    : !lista.length ? 'Descanso ganado 😌'
+  var titulo = sinPlan ? 'Tu plan está en camino'
+    : !lista.length ? 'Descanso ganado'
     : !esHoy ? nombreDia(diaVista)
-    : resp === lista.length ? '¡Día completado! 🏆'
-    : '¡A entrenar! 💪';
+    : resp === lista.length ? '¡Día completado!'
+    : '¡A entrenar!';
   var sub = sinPlan ? 'Tu entrenador lo está preparando'
     : !lista.length ? 'El descanso también entrena'
     : esHoy ? (resp ? ('Respondiste ' + resp + ' de ' + lista.length) : (lista.length + ' ejercicio' + (lista.length===1?'':'s') + ' te espera' + (lista.length===1?'':'n')))
     : (lista.length + ' ejercicio' + (lista.length===1?'':'s') + ' · se entrena el día que toca');
   $('heroAlumno').innerHTML = '<div class="hero-alumno"><div class="ha-info">' +
-    '<small>¡Hola, ' + (sesion.nombre.split(' ')[0]||'') + '! · ' + fechaBonita() + '</small>' +
+    '<small>Hola, ' + (sesion.nombre.split(' ')[0]||'') + ' · ' + fechaBonita() + '</small>' +
     '<h1>' + titulo + '</h1><p>' + sub + '</p></div>' +
     (lista.length && esHoy ? '<div class="ses-anillo hero-anillo" id="heroAnillo"><i>0%</i></div>' : '') +
     '</div>';
@@ -1638,19 +1684,19 @@ async function pintarPlanEstudiante(){
     b.onclick = function(){ diaVista = b.getAttribute('data-dia-ver'); pintarPlanEstudiante(); };
   });
   if (sinPlan){
-    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">✨</div><p><b>Tu entrenador todavía no cargó tu plan.</b><br><span class="mini">En cuanto lo haga, lo vas a ver acá.</span></p></div>';
+    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">' + icono('chispa',52) + '</div><p><b>Tu entrenador todavía no cargó tu plan.</b><br><span class="mini">En cuanto lo haga, lo vas a ver acá.</span></p></div>';
     return;
   }
   if (!lista.length){
-    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">😌</div><p><b>Día de descanso.</b><br><span class="mini">Recargá pilas: mañana se vuelve.</span></p></div>';
+    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">' + icono('luna',52) + '</div><p><b>Día de descanso.</b><br><span class="mini">Recargá pilas: mañana se vuelve.</span></p></div>';
     return;
   }
   var html = lista.map(function(e, i){
     var m = marcas[e.id];
     var img = e.img || imgDe(e.nombre);
-    var thumb = img ? '<img src="' + img + '" alt="">' : '<div class="ses-thumb-emoji">🏃</div>';
+    var thumb = img ? '<img src="' + img + '" alt="">' : '<div class="ses-thumb-emoji">' + icono('pesa',26) + '</div>';
     var peso = esHoy ? (marcas[claveCarga(e.nombre)] || '') : '';
-    var datos = [ (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || ''), e.carga, peso ? ('🏋️ ' + peso) : '' ]
+    var datos = [ (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || ''), e.carga, peso || '' ]
       .filter(Boolean).join(' · ');
     return '<button type="button" class="ses-fila' + (m===true?' hecha':m===false?' fallada':'') + '" data-ses="' + i + '"' +
       (esHoy ? '' : ' disabled') + ' style="animation-delay:' + (i * 75) + 'ms">' +
@@ -1658,7 +1704,7 @@ async function pintarPlanEstudiante(){
       '<span class="ses-tilde' + (m===true?' ok':m===false?' no':'') + '">' + (m===false?'✗':'✓') + '</span></button>';
   }).join('');
   if (esHoy && resp < lista.length){
-    html += '<button type="button" class="ses-empezar" id="sesEmpezar" style="animation-delay:' + (lista.length * 75) + 'ms">▶ ' + (resp ? 'Continuar entrenamiento' : 'Empezar entrenamiento') + '</button>';
+    html += '<button type="button" class="ses-empezar" id="sesEmpezar" style="animation-delay:' + (lista.length * 75) + 'ms">' + icono('play',16,'vertical-align:-2px;margin-right:7px') + (resp ? 'Continuar entrenamiento' : 'Empezar entrenamiento') + '</button>';
   }
   $('planZona').innerHTML = html;
   if (esHoy){
@@ -1705,11 +1751,11 @@ function renderPlayer(){
       confes = '<div class="confes">' + confes + '</div>';
     }
     w.innerHTML = confes + '<div class="pl2-top"><button class="salir" id="pl2Salir">✕ Salir</button></div>' +
-      '<div class="pl2-fin"><div class="g">' + (hechas === lista.length ? '🏆' : '💪') + '</div>' +
+      '<div class="pl2-fin"><div class="g">' + icono(hechas === lista.length ? 'trofeo' : 'pesa', 66, 'color:#f2b63a') + '</div>' +
       '<h1>' + (hechas === lista.length ? '¡Entrenamiento completo!' : 'Día cerrado') + '</h1>' +
       '<p>' + hechas + ' ✓ · ' + (lista.length - hechas) + ' ✗ · ¡Mañana se sigue!</p>' +
       '<div class="fila-bot"><button class="btn-neutro" id="pl2Revisar" style="color:#dde;border-color:rgba(255,255,255,.25)">↺ Revisar</button>' +
-      '<button class="btn-grande" id="pl2Fin" style="flex:1">Terminar 🏁</button></div></div>';
+      '<button class="btn-grande" id="pl2Fin" style="flex:1">Terminar</button></div></div>';
     document.body.appendChild(w);
     $('pl2Salir').onclick = cerrarPlayer; $('pl2Fin').onclick = cerrarPlayer;
     $('pl2Revisar').onclick = function(){ playerRevisando = true; playerIdx = 0; renderPlayer(); };
@@ -1719,7 +1765,7 @@ function renderPlayer(){
   var img = e.img || imgDe(e.nombre);
   var serie = (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || '¡A moverse!');
   var ultima = ultimaCargaDe(e);
-  var sub = [ ultima ? ('🏋️ Última vez: ' + ultima) : '', '⏱ descanso ' + descansoDe(e) + '″' ].filter(Boolean).join(' · ');
+  var sub = [ ultima ? ('Última vez: ' + ultima) : '', 'descanso ' + descansoDe(e) + '″' ].filter(Boolean).join('  ·  ');
   var pesoHoy = marcas[claveCarga(e.nombre)] || '';
   var segs = lista.map(function(x, j){
     return '<i class="' + (marcas[x.id] !== undefined ? 'full' : '') + (j === playerIdx ? ' aqui' : '') + '"></i>';
@@ -1731,14 +1777,14 @@ function renderPlayer(){
       '<span class="pos">' + (playerIdx + 1) + '/' + lista.length + '</span>' +
       '<button class="nav" id="pl2Despues">›</button></div>' +
     '<div class="pl2-zona">' +
-      '<div class="pl2-marco">' + (img ? '<img src="' + img + '" alt="">' : '<div class="emoji">🏃</div>') + '</div>' +
+      '<div class="pl2-marco">' + (img ? '<img src="' + img + '" alt="">' : '<div class="emoji" style="color:var(--c1)">' + icono('pesa',56) + '</div>') + '</div>' +
       '<h1>' + e.nombre + '</h1>' +
       '<div class="pl2-serie">' + serie + '</div>' +
       (sub ? '<div class="pl2-sub">' + sub + '</div>' : '') +
-      (e.nota ? '<div class="pl2-nota">💬 Profe: ' + e.nota + '</div>' : '') +
+      (e.nota ? '<div class="pl2-nota">' + icono('nota',14,'vertical-align:-2px;margin-right:6px;opacity:.8') + '<b>Profe:</b> ' + e.nota + '</div>' : '') +
       (m !== undefined ? '<div class="pl2-estado">' + (m ? '✓ Ya la marcaste hecha' : '✗ Marcada como no salió') + '</div>' : '') +
     '</div>' +
-    '<div class="pl2-peso"><input id="pl2Peso" inputmode="decimal" placeholder="🏋️ Peso usado hoy (ej: 42,5 kg)" value="' + String(pesoHoy).replace(/"/g,'&quot;') + '"></div>' +
+    '<div class="pl2-peso"><input id="pl2Peso" inputmode="decimal" placeholder="Peso usado hoy (ej: 42,5 kg)" value="' + String(pesoHoy).replace(/"/g,'&quot;') + '"></div>' +
     '<div class="pl2-acciones"><button class="pl2-no" id="pl2No">✗</button><button class="pl2-si" id="pl2Si">✓ Hecho</button></div>' +
     '<div class="pl2-pista">Al marcar ✓ arranca solo el descanso y pasa al siguiente</div>';
   document.body.appendChild(w);
@@ -1748,7 +1794,7 @@ function renderPlayer(){
   $('pl2Peso').addEventListener('change', async function(){
     var r = await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), claveCarga(e.nombre), $('pl2Peso').value);
     if (r.hechos) sesion.hechos = r.hechos;
-    avisar($('pl2Peso').value.trim() ? 'Peso anotado 🏋️' : 'Peso borrado');
+    avisar($('pl2Peso').value.trim() ? 'Peso anotado' : 'Peso borrado');
   });
   $('pl2No').onclick = function(){ marcarPlayer(e, false, lista); };
   $('pl2Si').onclick = function(){ marcarPlayer(e, true, lista); };
@@ -1780,7 +1826,7 @@ function graficoLinea(nodo, puntos, unidad, vacioTexto){
   puntos = (puntos || []).filter(function(p){ return p.v != null; });
   if (puntos.length < 2){
     el.innerHTML = '<div class="vacio">' + (puntos.length === 1
-      ? 'Un registro (' + puntos[0].v + ' ' + unidad + '). Con el segundo aparece la línea 📈'
+      ? 'Un registro (' + puntos[0].v + ' ' + unidad + '). Con el segundo aparece la línea.'
       : vacioTexto) + '</div>';
     return;
   }
@@ -1838,7 +1884,7 @@ function pintarMiProgreso(){
     : '<option value="">(anotá el peso usado en tus ejercicios y aparece acá)</option>';
   var sel = $('progEj').value;
   if (sel) graficoLinea('graficoCargas', puntosDeCarga(sesion.hechos, sel), 'kg', '');
-  else $('graficoCargas').innerHTML = '<div class="vacio">Cuando anotes el peso que usás en un ejercicio, acá vas a ver cómo progresa. 🏋️</div>';
+  else $('graficoCargas').innerHTML = '<div class="vacio">Cuando anotes el peso que usás en un ejercicio, acá vas a ver cómo progresa.</div>';
 }
 document.addEventListener('change', function(e){ if (e.target && e.target.id === 'progEj') pintarMiProgreso(); });
 $('progMasMedidas').onclick = function(){ $('progMedidasWrap').hidden = !$('progMedidasWrap').hidden; };
@@ -1848,16 +1894,16 @@ $('progGuardar').onclick = async function(){
     cintura: $('progCintura').value.trim(), pecho: $('progPecho').value.trim(),
     brazo: $('progBrazo').value.trim(), muslo: $('progMuslo').value.trim()
   };
-  if (!datos.peso && !datos.cintura && !datos.pecho && !datos.brazo && !datos.muslo){ avisar('Anotá al menos el peso ⚖️'); return; }
+  if (!datos.peso && !datos.cintura && !datos.pecho && !datos.brazo && !datos.muslo){ avisar('Anotá al menos el peso'); return; }
   var r = await Backend.guardarProgreso(sesion.id, fechaClave(Date.now()), datos);
   if (r.error){ avisar(r.error); return; }
   if (r.progreso) sesion.progreso = r.progreso;
-  avisar('Progreso guardado 📈');
+  avisar('Progreso guardado');
   pintarMiProgreso();
 };
 // El profe mira el progreso de su alumno
 async function abrirProgresoDe(u){
-  $('vpTitulo').textContent = '📈 Progreso de ' + u.nombre;
+  $('vpTitulo').textContent = 'Progreso de ' + u.nombre;
   $('vpResumen').textContent = 'Cargando…';
   $('veloProgreso').classList.add('abierto');
   var r = await Backend.obtenerProgreso(u.id);
@@ -1887,7 +1933,7 @@ function abrirTimer(seg){
   var total = seg;
   function tic(){
     var q = Math.max(0, Math.ceil((fin - Date.now()) / 1000));
-    $('timerNum').textContent = q > 0 ? (q + '″') : '💪';
+    $('timerNum').textContent = q > 0 ? (q + '″') : 'Listo';
     var arco = $('timerArco');
     if (arco) arco.style.strokeDashoffset = (326.7 * (1 - q / total)).toFixed(1);
     if (q <= 0){
@@ -1907,7 +1953,7 @@ $('timerCancelar').onclick = function(){ clearInterval(timerInt); timerInt = nul
 var planEdit=null, planUserId=null, plDia='lun', plEditando=-1;
 function abrirEditorPlan(u){
   planUserId = u.id; planEdit = planDe(u); plDia = claveDia(Date.now()); plEditando = -1;
-  $('planDe').textContent = '🏋️ Plan de ' + u.nombre;
+  $('planDe').textContent = 'Plan de ' + u.nombre;
   $('dlEjercicios').innerHTML = LIBRERIA.map(function(e){ return '<option value="'+e.n+'">'; }).join('');
   llenarCajaPlantillas();
   limpiarFormPlan(); pintarEditorPlan();
@@ -1930,13 +1976,13 @@ function llenarCajaPlantillas(){
   var guardadas = leer(clavePlantillas(), {});
   var nombres = Object.keys(guardadas).sort();
   $('plPlantillas').innerHTML = nombres.length
-    ? nombres.map(function(n){ return '<option value="' + n.replace(/"/g,'&quot;') + '">📂 ' + n + '</option>'; }).join('')
+    ? nombres.map(function(n){ return '<option value="' + n.replace(/"/g,'&quot;') + '">' + n + '</option>'; }).join('')
     : '<option value="">(sin plantillas todavía)</option>';
   var otros = ultimaLista.filter(function(u){
     return u.id !== planUserId && (u.rol==='alumno' || u.rol==='usuario') && planTieneAlgo(planDe(u));
   });
   $('plDeAlumno').innerHTML = otros.length
-    ? otros.map(function(u){ return '<option value="' + u.id + '">👥 el plan de ' + u.nombre + '</option>'; }).join('')
+    ? otros.map(function(u){ return '<option value="' + u.id + '">el plan de ' + u.nombre + '</option>'; }).join('')
     : '<option value="">(ningún otro alumno con plan)</option>';
 }
 $('plGuardarPlantilla').onclick = function(){
@@ -1947,7 +1993,7 @@ $('plGuardarPlantilla').onclick = function(){
   guardadas[nombre] = planEdit;
   guardar(clavePlantillas(), guardadas);
   $('plNombrePlantilla').value = '';
-  llenarCajaPlantillas(); avisar('Plantilla guardada 💾');
+  llenarCajaPlantillas(); avisar('Plantilla guardada');
 };
 $('plAplicarPlantilla').onclick = function(){
   var nombre = $('plPlantillas').value;
@@ -1963,7 +2009,7 @@ $('plCopiarAlumno').onclick = function(){
   planEdit = reIdPlan(planDe(otro));
   limpiarFormPlan(); pintarEditorPlan(); avisar('Plan de ' + otro.nombre.split(' ')[0] + ' copiado: recordá Guardar ✓');
 };
-function limpiarFormPlan(){ ['plNombre','plSeries','plReps','plCarga','plNota'].forEach(function(id){ $(id).value=''; }); plEditando=-1; $('plAgregar').textContent='➕ Agregar al día'; }
+function limpiarFormPlan(){ ['plNombre','plSeries','plReps','plCarga','plNota'].forEach(function(id){ $(id).value=''; }); plEditando=-1; $('plAgregar').textContent='Agregar al día'; }
 function pintarEditorPlan(){
   $('plTabs').innerHTML = DIAS.map(function(d){
     var n = (planEdit[d[0]]||[]).length;
@@ -1975,16 +2021,16 @@ function pintarEditorPlan(){
   var lista = planEdit[plDia]||[];
   $('plLista').innerHTML = lista.length ? lista.map(function(e,i){
     return '<div class="pl-fila"><b>'+e.nombre+'</b><small>'+[e.series&&e.reps?e.series+'×'+e.reps:'',e.carga].filter(Boolean).join(' · ')+'</small>'+
-      '<button data-pl-sube="'+i+'" title="Subir">↑</button>'+
-      '<button data-pl-edita="'+i+'" title="Editar">✏️</button>'+
-      '<button data-pl-borra="'+i+'" title="Quitar">🗑</button></div>';
+      '<button data-pl-sube="'+i+'" title="Subir">'+icono('subir',14)+'</button>'+
+      '<button data-pl-edita="'+i+'" title="Editar">'+icono('lapiz',14)+'</button>'+
+      '<button data-pl-borra="'+i+'" title="Quitar">'+icono('tacho',14)+'</button></div>';
   }).join('') : '<p class="mini">Día vacío: queda como descanso. Agregá ejercicios abajo.</p>';
   document.querySelectorAll('[data-pl-borra]').forEach(function(b){ b.onclick=function(){ planEdit[plDia].splice(Number(b.getAttribute('data-pl-borra')),1); pintarEditorPlan(); }; });
   document.querySelectorAll('[data-pl-sube]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-pl-sube')); if(i>0){ var t=planEdit[plDia][i]; planEdit[plDia][i]=planEdit[plDia][i-1]; planEdit[plDia][i-1]=t; pintarEditorPlan(); } }; });
   document.querySelectorAll('[data-pl-edita]').forEach(function(b){ b.onclick=function(){
     var i=Number(b.getAttribute('data-pl-edita')), e=planEdit[plDia][i]; plEditando=i;
     $('plNombre').value=e.nombre; $('plSeries').value=e.series; $('plReps').value=e.reps; $('plCarga').value=e.carga; $('plNota').value=e.nota;
-    $('plAgregar').textContent='💾 Guardar cambios del ejercicio';
+    $('plAgregar').textContent='Guardar cambios del ejercicio';
   }; });
   $('plCopiaDestino').innerHTML = DIAS.filter(function(d){ return d[0]!==plDia; })
     .map(function(d){ return '<option value="'+d[0]+'">a '+d[1]+'</option>'; }).join('');
@@ -2009,7 +2055,7 @@ $('plCopiar').onclick = function(){
 $('plGuardar').onclick = async function(){
   await Backend.guardarPlan(planUserId, planEdit);
   $('veloPlan').classList.remove('abierto');
-  avisar('Plan guardado 💪'); pintarAdmin();
+  avisar('Plan guardado'); pintarAdmin();
 };
 
 /* — cumplimiento semanal (lo ve el entrenador) — */
@@ -2038,7 +2084,7 @@ $('btnAbrirCrear').onclick = function(){
   var soySuperA = sesion && sesion.rol==='superadmin';
   var soyProfeA = sesion && sesion.rol==='entrenador';
   $('crMembresiaWrap').style.display = soyProfeA ? 'none' : '';
-  document.querySelector('#veloCrear h3').textContent = soySuperA ? '➕ Crear entrenador' : soyProfeA ? '➕ Crear alumno' : '➕ Crear cuenta';
+  document.querySelector('#veloCrear h3').textContent = soySuperA ? 'Crear entrenador' : soyProfeA ? 'Crear alumno' : 'Crear cuenta';
   $('crNombre').value=''; $('crDni').value=''; $('crTel').value='';
   document.querySelectorAll('#crMembresia .pildora').forEach(function(p,i){ p.classList.toggle('activa', i===0); });
   $('veloCrear').classList.add('abierto');
@@ -2055,7 +2101,7 @@ $('btnCrear').onclick = async function(){
   var r = await Backend.crearUsuario({ nombre:$('crNombre').value, dni:$('crDni').value, telefono:$('crTel').value, membresia:mem });
   if (r.error){ avisar(r.error); return; }
   $('veloCrear').classList.remove('abierto');
-  $('credTitulo').textContent = '✅ Cuenta creada';
+  $('credTitulo').textContent = 'Cuenta creada';
   $('credDetalle').textContent = r.usuario.nombre + ' ya puede entrar con su DNI ' + r.usuario.dni + '. Esta es su contraseña temporal, copiala y mandásela:';
   $('credTexto').textContent = r.password;
   $('btnCopiarCred').onclick = function(){ copiar(r.password); };
@@ -2074,7 +2120,7 @@ function pintarPagos(pagos){
   $('mesTitulo').textContent = MESES[Number(partes[1])-1] + ' ' + partes[0];
   $('resumenIngresos').textContent = plata(total) + ' este mes';
   $('listaPagos').innerHTML = del.length ? del.map(function(p){
-    return '<div class="pago-fila"><span>💳 <b>'+p.nombre+'</b> · '+p.meses+' mes'+(p.meses>1?'es':'')+' · '+fecha(p.fecha)+'</span><span class="monto">'+plata(p.monto)+'</span></div>';
+    return '<div class="pago-fila"><span><b>'+p.nombre+'</b> · '+p.meses+' mes'+(p.meses>1?'es':'')+' · '+fecha(p.fecha)+'</span><span class="monto">'+plata(p.monto)+'</span></div>';
   }).join('') + '<div class="pago-fila" style="border:0"><span><b>Total del mes</b></span><span class="monto">'+plata(total)+'</span></div>'
   : '<p class="mini">Sin pagos registrados este mes.</p>';
 }
@@ -2179,15 +2225,15 @@ function pintarPaletas(){
       ' style="background:linear-gradient(135deg,'+p.c1+','+p.c2+')"><span>'+p.nombre+'</span></button>';
   }).join('');
   document.querySelectorAll('[data-paleta]').forEach(function(b){
-    b.onclick = function(){ var p = PALETAS[Number(b.getAttribute('data-paleta'))]; setColores(p.c1, p.c2); avisar(p.nombre+' ✓'); };
+    b.onclick = function(){ var p = PALETAS[Number(b.getAttribute('data-paleta'))]; setColores(p.c1, p.c2); avisar(p.nombre); };
   });
   var logo = m.logo;
-  $('logoPrev').innerHTML = logo ? '<img src="'+logo+'" alt="logo">' : CONFIG.APP_EMOJI;
+  $('logoPrev').innerHTML = logo ? '<img src="'+logo+'" alt="logo">' : LOGO_SVG;
 }
 $('btnAzar').onclick = function(){
   var h = Math.floor(Math.random()*360);
   setColores(hslHex(h,.62,.55), hslHex(h+40+Math.floor(Math.random()*50),.6,.5));
-  avisar('🎲 ¡Nuevos colores!');
+  avisar('¡Nuevos colores!');
 };
 
 /* — subir logo (galería/cámara), achicado a 256px para que pese poco — */
@@ -2204,7 +2250,7 @@ $('inputLogo').addEventListener('change', function(){
       cv.width = Math.max(1, Math.round(img.width*esc)); cv.height = Math.max(1, Math.round(img.height*esc));
       cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
       guardarMarca({ logo: cv.toDataURL('image/png') });
-      pintarPaletas(); avisar('Logo guardado ✓');
+      pintarPaletas(); avisar('Logo guardado');
     };
     img.src = lector.result;
   };
@@ -2214,10 +2260,10 @@ $('inputLogo').addEventListener('change', function(){
 $('btnQuitarLogo').onclick = function(){ guardarMarca({ logo:null }); pintarPaletas(); avisar('Logo quitado'); };
 $('btnColoresLogo').onclick = function(){
   var m = leerMarca();
-  if (!m.logo){ avisar('Primero subí un logo 📷'); return; }
+  if (!m.logo){ avisar('Primero subí un logo'); return; }
   coloresDesdeLogo(m.logo, function(colores){
     if (!colores){ avisar('El logo no tiene colores vivos: elegí una paleta'); return; }
-    setColores(colores[0], colores[1]); avisar('🪄 Colores del logo ✓');
+    setColores(colores[0], colores[1]); avisar('Colores del logo aplicados');
   });
 };
 
@@ -2231,7 +2277,7 @@ function aplicarMarca(){
   document.title = CONFIG.APP_NOMBRE + ' · Ingreso';
   document.querySelectorAll('[data-marca-nombre]').forEach(function(n){ n.textContent = CONFIG.APP_NOMBRE; });
   document.querySelectorAll('[data-marca-emoji]').forEach(function(n){
-    n.innerHTML = extra.logo ? '<img src="'+extra.logo+'" alt="">' : CONFIG.APP_EMOJI;
+    n.innerHTML = extra.logo ? '<img src="'+extra.logo+'" alt="">' : LOGO_SVG;
   });
 }
 $('btnGuardarCfg').onclick = function(){
@@ -2240,7 +2286,7 @@ $('btnGuardarCfg').onclick = function(){
 };
 
 /* tema oscuro */
-function alternarTema(){ document.body.classList.toggle('dark'); guardar(CONFIG.CLAVE_DATOS+'_tema', document.body.classList.contains('dark')?'dark':'claro'); }
+function alternarTema(){ document.body.classList.toggle('dark'); guardar(CONFIG.CLAVE_DATOS+'_tema', document.body.classList.contains('dark')?'dark':'claro'); if (window.__pintarTema) window.__pintarTema(); }
 $('btnTema1').onclick = alternarTema; $('btnTema2').onclick = alternarTema;
 
 /* la PWA: instalable y con los dibujos disponibles sin conexión */
@@ -2251,8 +2297,13 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
 /* arranque */
 (function(){
   if (leer(CONFIG.CLAVE_DATOS+'_tema','claro')==='dark') document.body.classList.add('dark');
+  ['btnAyuda1','btnAyuda2'].forEach(function(id){ if ($(id)) $(id).innerHTML = icono('ayuda',17); });
+  ['btnSalir1','btnSalir2'].forEach(function(id){ if ($(id)) $(id).innerHTML = icono('salir',15) + ' Salir'; });
+  function pintarTema(){ var d = document.body.classList.contains('dark');
+    ['btnTema1','btnTema2'].forEach(function(id){ if ($(id)) $(id).innerHTML = icono(d ? 'sol' : 'luna', 16); }); }
+  window.__pintarTema = pintarTema; pintarTema();
   if (Backend === BackendSupabase){
-    document.querySelector('.login-pie').textContent = '☁️ Conectado a Popups Fitness';
+    document.querySelector('.login-pie').textContent = 'Conectado a Popups Fitness';
   }
   aplicarMarca();
   $('cfgNombre').value = CONFIG.APP_NOMBRE; $('cfgPrecio').value = CONFIG.PRECIO_MES;
