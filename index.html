@@ -132,8 +132,8 @@ var LIBRERIA = [
 </script>
 <style>
   :root{
-    --c1:#4f7df2; --c2:#8b63e8;      /* se pisan desde CONFIG al arrancar */
-    --tinta:#1d1d2c; --gris:#6b6c7a; --fondo:#f2f4fb; --carta:#ffffff;
+    --c1:#7c3aed; --c2:#3b82f6;      /* se pisan desde CONFIG al arrancar */
+    --tinta:#23233f; --gris:#8d8bb0; --fondo:#f3f2fc; --carta:#ffffff;
     --borde:#e4e7f3; --ok:#1e9e60; --rojo:#e02424; --dorado:#b8860b;
   }
   body.dark{ --tinta:#f0f0f6; --gris:#a0a1b2; --fondo:#12131f; --carta:#1e2030; --borde:#2c2f45; }
@@ -171,13 +171,13 @@ var LIBRERIA = [
   .vista.activa{ display:block; }
   .top{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
   .top .marca{ font-weight:900; font-size:17px; letter-spacing:-.3px; }
-  .top .rol{ font-size:10px; font-weight:900; color:var(--c1); background:rgba(79,125,242,.12);
+  .top .rol{ font-size:10px; font-weight:900; color:var(--c1); background:rgba(124,58,237,.12);
              padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.5px; }
   .top .der{ margin-left:auto; display:flex; gap:8px; }
   .btn-chico{ min-height:38px; padding:0 14px; border:1px solid var(--borde); border-radius:11px;
               background:var(--carta); color:var(--tinta); font-size:12.5px; font-weight:800; }
   .carta{ background:var(--carta); border:1px solid var(--borde); border-radius:20px; padding:18px; margin-bottom:14px;
-          box-shadow:0 8px 26px rgba(20,25,70,.06); }
+          box-shadow:0 8px 26px rgba(99,70,237,.08); }
   .carta h2{ font-size:15px; margin-bottom:4px; }
   .carta .mini{ color:var(--gris); font-size:12px; }
 
@@ -374,15 +374,17 @@ var LIBRERIA = [
                justify-content:center; flex:none; }
   .ses-anillo i{ width:40px; height:40px; border-radius:50%; background:rgba(25,28,64,.4); display:flex;
                  align-items:center; justify-content:center; font-style:normal; font-size:11px; font-weight:900; }
-  .ses-fila{ width:100%; display:flex; align-items:center; gap:11px; background:var(--carta); border:1px solid var(--borde);
-             border-radius:16px; padding:10px 12px; margin-bottom:8px; text-align:left; color:var(--tinta);
-             font:inherit; cursor:pointer; }
-  .ses-fila img, .ses-thumb-emoji{ width:52px; height:52px; border-radius:12px; object-fit:contain; background:#fff;
-                                   border:1px solid var(--borde); flex:none; }
+  .ses-fila{ width:100%; display:flex; align-items:center; gap:13px; background:var(--carta); border:0;
+             border-radius:20px; padding:12px; margin-bottom:11px; text-align:left; color:var(--tinta);
+             font:inherit; cursor:pointer; box-shadow:0 8px 24px rgba(99,70,237,.1); }
+  body.dark .ses-fila{ border:1px solid var(--borde); box-shadow:none; }
+  .ses-fila img, .ses-thumb-emoji{ width:58px; height:58px; border-radius:15px; object-fit:contain; background:#f6f5ff;
+                                   border:0; flex:none; }
+  body.dark .ses-fila img, body.dark .ses-thumb-emoji{ background:#fff; }
   .ses-thumb-emoji{ display:flex; align-items:center; justify-content:center; font-size:26px; }
   .ses-fila .d{ flex:1; min-width:0; }
-  .ses-fila b{ font-size:13.5px; display:block; }
-  .ses-fila small{ color:var(--gris); font-size:11px; font-weight:700; }
+  .ses-fila b{ font-size:15px; display:block; letter-spacing:-.2px; }
+  .ses-fila small{ color:var(--gris); font-size:12px; font-weight:700; }
   .ses-tilde{ width:38px; height:38px; border-radius:50%; border:2.5px solid var(--borde); color:transparent;
               font-weight:900; flex:none; display:flex; align-items:center; justify-content:center; font-size:16px; }
   .ses-tilde.ok{ background:var(--ok); border-color:var(--ok); color:#fff; }
@@ -438,10 +440,10 @@ var LIBRERIA = [
   .pl2-fin .fila-bot{ display:flex; gap:10px; margin-top:24px; width:100%; }
 
   /* ---------- v5: motion ---------- */
-  .hero-alumno{ display:flex; align-items:center; gap:12px; border-radius:26px; padding:22px 20px; color:#fff;
-    position:relative; overflow:hidden; margin-bottom:12px;
-    background:linear-gradient(120deg,var(--c1),var(--c2),#d9569b,var(--c1)); background-size:280% 280%;
-    animation:gradVivo 10s ease infinite; box-shadow:0 16px 40px rgba(79,125,242,.3); }
+  .hero-alumno{ display:flex; align-items:center; gap:12px; border-radius:28px; padding:26px 21px; color:#fff;
+    position:relative; overflow:hidden; margin-bottom:14px;
+    background:linear-gradient(120deg,var(--c1),var(--c2),#c026d3,var(--c1)); background-size:280% 280%;
+    animation:gradVivo 10s ease infinite; box-shadow:0 18px 44px rgba(99,70,237,.38); }
   @keyframes gradVivo{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
   .hero-alumno::after{ content:''; position:absolute; width:190px; height:190px; border-radius:50%;
     background:rgba(255,255,255,.13); top:-80px; right:-55px; animation:flota 7s ease-in-out infinite; }
@@ -449,8 +451,8 @@ var LIBRERIA = [
     background:rgba(255,255,255,.1); bottom:-45px; left:-25px; animation:flota 9s ease-in-out infinite reverse; }
   @keyframes flota{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(16px) } }
   .hero-alumno .ha-info{ flex:1; min-width:0; position:relative; z-index:1; }
-  .hero-alumno small{ font-size:11.5px; font-weight:800; opacity:.9; text-transform:capitalize; }
-  .hero-alumno h1{ font-size:25px; letter-spacing:-.6px; margin:4px 0 3px; }
+  .hero-alumno small{ font-size:11px; font-weight:800; opacity:.88; text-transform:uppercase; letter-spacing:1.8px; }
+  .hero-alumno h1{ font-size:30px; letter-spacing:-1px; margin:5px 0 3px; font-weight:900; }
   .hero-alumno p{ font-size:12.5px; opacity:.92; font-weight:700; }
   .hero-anillo{ width:64px; height:64px; position:relative; z-index:1; }
   .hero-anillo i{ width:48px; height:48px; font-size:12px; }
@@ -459,8 +461,8 @@ var LIBRERIA = [
   .ses-tilde.ok, .ses-tilde.no{ animation:tildePop .4s cubic-bezier(.3,1.7,.5,1); }
   @keyframes tildePop{ from{ transform:scale(.3) rotate(-30deg); } }
   .ses-empezar{ animation:latidoBtn 2.4s ease-in-out infinite; }
-  @keyframes latidoBtn{ 0%,100%{ box-shadow:0 12px 30px rgba(79,125,242,.35); transform:scale(1); }
-    50%{ box-shadow:0 18px 46px rgba(139,99,232,.55); transform:scale(1.018); } }
+  @keyframes latidoBtn{ 0%,100%{ box-shadow:0 12px 30px rgba(124,58,237,.35); transform:scale(1); }
+    50%{ box-shadow:0 18px 46px rgba(59,130,246,.55); transform:scale(1.018); } }
   .tabbar{ position:fixed; left:50%; transform:translateX(-50%); bottom:14px; display:flex; gap:6px;
     background:rgba(255,255,255,.88); backdrop-filter:blur(16px); border:1px solid var(--borde);
     border-radius:999px; padding:6px; z-index:30; box-shadow:0 14px 38px rgba(20,25,70,.2); }
@@ -468,8 +470,8 @@ var LIBRERIA = [
   .tabbar button{ display:flex; align-items:center; gap:7px; border:0; background:none; border-radius:999px;
     min-height:47px; padding:0 20px; font:inherit; font-weight:900; font-size:13px; color:var(--gris);
     cursor:pointer; transition:all .28s cubic-bezier(.22,.9,.35,1); }
-  .tabbar button.on{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff;
-    box-shadow:0 8px 22px rgba(79,125,242,.4); transform:scale(1.04); }
+  .tabbar button.on{ background:linear-gradient(120deg,var(--c1),var(--c2)); color:#fff;
+    box-shadow:0 8px 22px rgba(124,58,237,.4); transform:scale(1.04); }
   .panel-tab{ animation:panelEntra .38s cubic-bezier(.22,.9,.35,1) backwards; }
   @keyframes panelEntra{ from{ opacity:0; transform:translateY(16px); } }
   .racha-card{ display:flex; align-items:center; gap:14px; }
@@ -2379,7 +2381,7 @@ document.querySelectorAll('[data-colapsa]').forEach(function(cab){
    ║     logo. Todo persiste en el dispositivo.                 ║
    ╚══════════════════════════════════════════════════════════╝ */
 var PALETAS = [
-  { nombre:'Océano',  c1:'#4f7df2', c2:'#8b63e8' },
+  { nombre:'Violeta', c1:'#7c3aed', c2:'#3b82f6' },
   { nombre:'Menta',   c1:'#1fa971', c2:'#38b6d8' },
   { nombre:'Fuego',   c1:'#f2622e', c2:'#e8385c' },
   { nombre:'Rosa',    c1:'#e84f9a', c2:'#8b63e8' },
