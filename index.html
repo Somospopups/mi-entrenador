@@ -119,8 +119,8 @@ var LIBRERIA = [
   { n:'Plancha lateral',                 img:'img/plancha-lateral.jpg' },
   { n:'Abdominales cruzados',            img:'img/abdominales-cruzados.jpg', img2:'img/abdominales-cruzados-2.jpg' },
   { n:'Encogimientos de hombros',        img:'img/encogimientos.jpg', img2:'img/encogimientos-2.jpg' },
-  { n:'Cinta: trote',                    img:'img/cinta.jpg', img2:'img/cinta-2.jpg' },
-  { n:'Cinta: caminata',                 img:'img/cinta.jpg', img2:'img/cinta-2.jpg' },
+  { n:'Cinta: trote',                    img:'img/cinta.jpg', img2:'img/cinta-2.jpg', img3:'img/cinta-3.jpg' },
+  { n:'Cinta: caminata',                 img:'img/cinta.jpg', img2:'img/cinta-2.jpg', img3:'img/cinta-3.jpg' },
   { n:'Bicicleta fija',                  img:'img/bicicleta-fija.jpg', img2:'img/bicicleta-fija-2.jpg' },
   { n:'Soga (saltos)',                   img:'img/soga.jpg', img2:'img/soga-2.jpg' },
   { n:'Estiramientos',                   img:'img/estiramientos.jpg', img2:'img/estiramientos-2.jpg' },
@@ -485,9 +485,8 @@ var LIBRERIA = [
     font-size:36px; margin:0; }
   .anim2{ position:relative; width:88%; height:88%; }
   .anim2 img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
-              transition:opacity .3s ease-in-out; }
-  .anim2 .fb{ opacity:0; }
-  .anim2.f2 .fb{ opacity:1; } .anim2.f2 .fa{ opacity:0; }
+              opacity:0; transition:opacity .34s ease-in-out; }
+  .anim2 img.on{ opacity:1; }
   .confes{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .ico{ display:inline-block; vertical-align:-3px; flex:none; }
   button .ico{ pointer-events:none; }
@@ -1694,6 +1693,16 @@ document.addEventListener('error', function(ev){
     t.style.visibility = 'hidden';
   }
 }, true);
+function imgsDe(nombre){
+  var nm=String(nombre||'').trim().toLowerCase();
+  for (var i=0;i<LIBRERIA.length;i++) if (LIBRERIA[i].n.toLowerCase()===nm){
+    var e=LIBRERIA[i];
+    if (e.img && e.img2 && e.img3) return [e.img, e.img3, e.img2, e.img3];
+    if (e.img && e.img2) return [e.img, e.img2];
+    return e.img ? [e.img] : [];
+  }
+  return [];
+}
 function img2De(nombre){
   var n=String(nombre||'').trim().toLowerCase();
   for (var i=0;i<LIBRERIA.length;i++) if (LIBRERIA[i].n.toLowerCase()===n) return LIBRERIA[i].img2||null;
@@ -1857,8 +1866,9 @@ function renderPlayer(){
       '<button class="nav" id="pl2Despues">›</button></div>' +
     '<div class="pl2-zona">' +
       '<div class="pl2-marco">' + (function(){
-        var b = img2De(e.nombre);
-        if (img && b) return '<div class="anim2"><img class="fa" src="' + img + '" alt=""><img class="fb" src="' + b + '" alt=""></div>';
+        var cuadros = imgsDe(e.nombre);
+        if (img && cuadros.length > 1) return '<div class="anim2">' +
+          cuadros.map(function(src, i){ return '<img' + (i===0 ? ' class="on"' : '') + ' src="' + src + '" alt="">'; }).join('') + '</div>';
         if (img) return '<img src="' + img + '" alt="">';
         return '<div class="emoji" style="color:var(--c1)">' + icono('pesa',56) + '</div>';
       })() + '</div>' +
@@ -2008,10 +2018,15 @@ async function abrirProgresoDe(u){
   $('vpEj').onchange = pintarCarga; pintarCarga();
 }
 
-/* el latido de las animaciones de técnica: alterna los dos cuadros */
+/* el latido de las animaciones de técnica: recorre los cuadros con fundido */
 setInterval(function(){
-  document.querySelectorAll('.anim2').forEach(function(n){ n.classList.toggle('f2'); });
-}, 1000);
+  document.querySelectorAll('.anim2').forEach(function(n){
+    var fs = n.querySelectorAll('img'); if (fs.length < 2) return;
+    var idx = (Number(n.getAttribute('data-cuadro') || 0) + 1) % fs.length;
+    n.setAttribute('data-cuadro', idx);
+    for (var i=0;i<fs.length;i++) fs[i].classList.toggle('on', i===idx);
+  });
+}, 650);
 
 /* — el timer de descanso — */
 var timerInt = null;
