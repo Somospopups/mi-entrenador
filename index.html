@@ -367,6 +367,57 @@ var LIBRERIA = [
   .pl2-fin h1{ font-size:24px; margin-top:12px; }
   .pl2-fin p{ color:#a6aac2; font-size:13px; margin-top:6px; }
   .pl2-fin .fila-bot{ display:flex; gap:10px; margin-top:24px; width:100%; }
+
+  /* ---------- v5: motion ---------- */
+  .hero-alumno{ display:flex; align-items:center; gap:12px; border-radius:26px; padding:22px 20px; color:#fff;
+    position:relative; overflow:hidden; margin-bottom:12px;
+    background:linear-gradient(120deg,var(--c1),var(--c2),#d9569b,var(--c1)); background-size:280% 280%;
+    animation:gradVivo 10s ease infinite; box-shadow:0 16px 40px rgba(79,125,242,.3); }
+  @keyframes gradVivo{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  .hero-alumno::after{ content:''; position:absolute; width:190px; height:190px; border-radius:50%;
+    background:rgba(255,255,255,.13); top:-80px; right:-55px; animation:flota 7s ease-in-out infinite; }
+  .hero-alumno::before{ content:''; position:absolute; width:90px; height:90px; border-radius:50%;
+    background:rgba(255,255,255,.1); bottom:-45px; left:-25px; animation:flota 9s ease-in-out infinite reverse; }
+  @keyframes flota{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(16px) } }
+  .hero-alumno .ha-info{ flex:1; min-width:0; position:relative; z-index:1; }
+  .hero-alumno small{ font-size:11.5px; font-weight:800; opacity:.9; text-transform:capitalize; }
+  .hero-alumno h1{ font-size:25px; letter-spacing:-.6px; margin:4px 0 3px; }
+  .hero-alumno p{ font-size:12.5px; opacity:.92; font-weight:700; }
+  .hero-anillo{ width:64px; height:64px; position:relative; z-index:1; }
+  .hero-anillo i{ width:48px; height:48px; font-size:12px; }
+  .ses-fila{ animation:filaEntra .5s cubic-bezier(.22,.9,.35,1) backwards; }
+  @keyframes filaEntra{ from{ opacity:0; transform:translateY(20px) scale(.98); } }
+  .ses-tilde.ok, .ses-tilde.no{ animation:tildePop .4s cubic-bezier(.3,1.7,.5,1); }
+  @keyframes tildePop{ from{ transform:scale(.3) rotate(-30deg); } }
+  .ses-empezar{ animation:latidoBtn 2.4s ease-in-out infinite; }
+  @keyframes latidoBtn{ 0%,100%{ box-shadow:0 12px 30px rgba(79,125,242,.35); transform:scale(1); }
+    50%{ box-shadow:0 18px 46px rgba(139,99,232,.55); transform:scale(1.018); } }
+  .tabbar{ position:fixed; left:50%; transform:translateX(-50%); bottom:14px; display:flex; gap:6px;
+    background:rgba(255,255,255,.88); backdrop-filter:blur(16px); border:1px solid var(--borde);
+    border-radius:999px; padding:6px; z-index:30; box-shadow:0 14px 38px rgba(20,25,70,.2); }
+  body.dark .tabbar{ background:rgba(28,30,48,.88); }
+  .tabbar button{ display:flex; align-items:center; gap:7px; border:0; background:none; border-radius:999px;
+    min-height:47px; padding:0 20px; font:inherit; font-weight:900; font-size:13px; color:var(--gris);
+    cursor:pointer; transition:all .28s cubic-bezier(.22,.9,.35,1); }
+  .tabbar button.on{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff;
+    box-shadow:0 8px 22px rgba(79,125,242,.4); transform:scale(1.04); }
+  .panel-tab{ animation:panelEntra .38s cubic-bezier(.22,.9,.35,1) backwards; }
+  @keyframes panelEntra{ from{ opacity:0; transform:translateY(16px); } }
+  .racha-card{ display:flex; align-items:center; gap:14px; }
+  .racha-card .fuego{ font-size:42px; animation:flamea 1.6s ease-in-out infinite; }
+  @keyframes flamea{ 0%,100%{ transform:scale(1) rotate(-3deg); } 50%{ transform:scale(1.14) rotate(3deg); } }
+  .semana .dia i b{ transition:height .9s cubic-bezier(.22,.9,.35,1); }
+  .timer-caja{ position:relative; width:172px; height:172px; margin:8px auto 2px; }
+  .timer-caja svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .timer-caja .tfondo{ fill:none; stroke:var(--fondo); stroke-width:9; }
+  .timer-caja #timerArco{ fill:none; stroke:url(#gradTimer); stroke-width:9; stroke-linecap:round;
+    stroke-dasharray:326.7; transition:stroke-dashoffset .26s linear; }
+  .timer-caja .timer-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:36px; margin:0; }
+  .confes{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .confes span{ position:absolute; top:-20px; width:9px; height:15px; border-radius:3px; opacity:.95;
+    animation:caeConfe linear forwards; }
+  @keyframes caeConfe{ to{ transform:translateY(115vh) rotate(760deg); } }
   /* editor del plan (admin) */
   .pl-lista{ margin:10px 0; }
   .pl-fila{ display:flex; align-items:center; gap:8px; border:1px solid var(--borde); border-radius:12px;
@@ -444,44 +495,47 @@ var LIBRERIA = [
     <div class="der"><button class="btn-chico" id="btnAyuda1">?</button><button class="btn-chico" id="btnTema1">🌙</button><button class="btn-chico" id="btnSalir1">Salir ↪</button></div>
   </div>
   <div id="homePrueba"></div>
-  <div class="carta">
-    <div class="hola" id="homeHola">¡Hola!</div>
-    <div class="home-fecha" id="homeFecha"></div>
-    <div class="mini" id="homeMembresia"></div>
-    <div id="homeRacha"></div>
-  </div>
-  <div class="carta">
-    <h2 id="planTitulo">🏋️ Tu plan de hoy</h2>
+
+  <div id="tabHoy" class="panel-tab">
+    <div id="heroAlumno"></div>
     <div class="dia-pills" id="planPills"></div>
-    <div class="progreso" id="planProgresoWrap" hidden><i id="planProgreso" style="width:0%"></i></div>
-    <div class="mini" id="planResumen"></div>
-    <div id="planZona" style="margin-top:6px"></div>
+    <div id="planZona"></div>
   </div>
-  <div class="carta" id="cartaSemana">
-    <h2>📊 Tu semana</h2>
-    <div class="semana" id="semanaBars"></div>
-    <div class="mini" id="semanaTexto" style="margin-top:9px"></div>
+
+  <div id="tabProg" class="panel-tab" hidden>
+    <div class="carta racha-card"><div class="fuego">🔥</div><div id="homeRacha" style="flex:1"></div></div>
+    <div class="carta" id="cartaSemana">
+      <h2>📊 Tu semana</h2>
+      <div class="semana" id="semanaBars"></div>
+      <div class="mini" id="semanaTexto" style="margin-top:9px"></div>
+    </div>
+    <div class="carta" id="cartaProgreso">
+      <h2>📈 Mi progreso</h2>
+      <div class="prog-linea">
+        <input id="progPeso" inputmode="decimal" placeholder="⚖️ Tu peso de hoy (kg)">
+        <button class="btn-chico" id="progMasMedidas">➕ Medidas</button>
+        <button class="btn-chico" id="progGuardar" style="background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;border:0">Guardar</button>
+      </div>
+      <div class="prog-medidas" id="progMedidasWrap" hidden>
+        <input id="progCintura" inputmode="decimal" placeholder="Cintura (cm)">
+        <input id="progPecho" inputmode="decimal" placeholder="Pecho (cm)">
+        <input id="progBrazo" inputmode="decimal" placeholder="Brazo (cm)">
+        <input id="progMuslo" inputmode="decimal" placeholder="Muslo (cm)">
+      </div>
+      <div class="grafico" id="graficoPeso"></div>
+      <div style="margin-top:14px">
+        <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">🏋️ Tus cargas por ejercicio</label>
+        <select id="progEj" class="buscador" style="margin:7px 0 0"></select>
+        <div class="grafico" id="graficoCargas"></div>
+      </div>
+    </div>
+    <div class="carta"><div class="mini" id="homeMembresia"></div></div>
   </div>
-  <div class="carta" id="cartaProgreso">
-    <h2>📈 Mi progreso</h2>
-    <div class="prog-linea">
-      <input id="progPeso" inputmode="decimal" placeholder="⚖️ Tu peso de hoy (kg)">
-      <button class="btn-chico" id="progMasMedidas">➕ Medidas</button>
-      <button class="btn-chico" id="progGuardar" style="background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;border:0">Guardar</button>
-    </div>
-    <div class="prog-medidas" id="progMedidasWrap" hidden>
-      <input id="progCintura" inputmode="decimal" placeholder="Cintura (cm)">
-      <input id="progPecho" inputmode="decimal" placeholder="Pecho (cm)">
-      <input id="progBrazo" inputmode="decimal" placeholder="Brazo (cm)">
-      <input id="progMuslo" inputmode="decimal" placeholder="Muslo (cm)">
-    </div>
-    <div class="grafico" id="graficoPeso"></div>
-    <div style="margin-top:14px">
-      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">🏋️ Tus cargas por ejercicio</label>
-      <select id="progEj" class="buscador" style="margin:7px 0 0"></select>
-      <div class="grafico" id="graficoCargas"></div>
-    </div>
-  </div>
+
+  <nav class="tabbar" id="tabbarAlumno">
+    <button data-tab="hoy" class="on">🏠<span>Hoy</span></button>
+    <button data-tab="prog">📈<span>Progreso</span></button>
+  </nav>
 </div>
 
 <!-- ════════════ PANEL DEL ADMINISTRADOR ════════════ -->
@@ -703,7 +757,15 @@ var LIBRERIA = [
 <div class="velo" id="veloTimer">
   <div class="popup" style="text-align:center;max-width:320px">
     <h3>⏱ Descanso</h3>
-    <div class="timer-num" id="timerNum">60″</div>
+    <div class="timer-caja">
+      <svg viewBox="0 0 120 120">
+        <defs><linearGradient id="gradTimer" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#5b8def"/><stop offset="1" stop-color="#a06bff"/></linearGradient></defs>
+        <circle class="tfondo" cx="60" cy="60" r="52"/>
+        <circle id="timerArco" cx="60" cy="60" r="52"/>
+      </svg>
+      <div class="timer-num" id="timerNum">60″</div>
+    </div>
     <p class="mini">Respirá hondo. La próxima serie te espera.</p>
     <button class="btn-neutro" id="timerCancelar" style="width:100%;margin-top:12px">Cortar el descanso</button>
   </div>
@@ -1303,26 +1365,42 @@ function pintarMotivacion(){
     tot += prog.length; hech += done;
     var pct = prog.length ? Math.round(done / prog.length * 100) : 0;
     html += '<div class="dia' + (prog.length ? '' : ' descanso') + (i === 0 ? ' hoy' : '') + '">' +
-      '<i><b style="height:' + pct + '%"></b></i><span>' + DIAS_L[new Date(t).getDay()] + '</span></div>';
+      '<i><b style="height:0%" data-sube="' + pct + '"></b></i><span>' + DIAS_L[new Date(t).getDay()] + '</span></div>';
   }
   $('semanaBars').innerHTML = html;
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    document.querySelectorAll('#semanaBars [data-sube]').forEach(function(b){ b.style.height = b.getAttribute('data-sube') + '%'; });
+  }); });
   $('semanaTexto').textContent = tot ? ('Esta semana llevás ' + hech + ' de ' + tot + ' ejercicios hechos ✓') : 'Cuando tengas plan, acá vas a ver tu semana.';
 }
+function verTab(t){
+  var hoy = t === 'hoy';
+  $('tabHoy').hidden = !hoy; $('tabProg').hidden = hoy;
+  document.querySelectorAll('#tabbarAlumno button').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-tab') === t);
+  });
+  var panel = hoy ? $('tabHoy') : $('tabProg');
+  panel.classList.remove('panel-tab'); void panel.offsetWidth; panel.classList.add('panel-tab');
+  if (!hoy) pintarMotivacion();   // re-anima las barras al entrar
+}
+document.querySelectorAll('#tabbarAlumno button').forEach(function(b){
+  b.onclick = function(){ verTab(b.getAttribute('data-tab')); };
+});
 function pintarHome(){
   diaVista = null;
-  $('homeHola').textContent = '¡Hola, ' + (sesion.nombre.split(' ')[0] || '') + '! 👋';
-  $('homeFecha').textContent = fechaBonita();
+  verTab('hoy');
+  var b = badgeDe(sesion);
+  $('homeMembresia').textContent = '💳 Tu membresía: ' + b[1];
+  var fpr = $('homePrueba'); fpr.innerHTML = '';
+  if (sesion.membresia.tipo === 'prueba'){
+    var dq = Math.max(0, diasQueQuedan(sesion));
+    fpr.innerHTML = '<div class="franja-prueba">🔴 VERSIÓN DE PRUEBA · Te queda' + (dq===1?'':'n') + ' ' + dq + ' día' + (dq===1?'':'s') + ' de uso</div>';
+  }
   pintarMotivacion();
   pintarMiProgreso();
   pintarPlanEstudiante();
-  var b = badgeDe(sesion);
-  $('homeMembresia').textContent = 'Tu membresía: ' + b[1].replace(/^[^\s]+\s/,'');
-  var f = $('homePrueba'); f.innerHTML='';
-  if (sesion.membresia.tipo==='prueba'){
-    var d = Math.max(0, diasQueQuedan(sesion));
-    f.innerHTML = '<div class="franja-prueba">🔴 VERSIÓN DE PRUEBA · Te queda' + (d===1?'':'n') + ' ' + d + ' día' + (d===1?'':'s') + ' de uso</div>';
-  }
 }
+
 
 /* ╔══════════════════════════════════════════════════════════╗
    ║ 7 · PANEL DEL ADMINISTRADOR                                ║
@@ -1522,6 +1600,35 @@ function ultimaCargaDe(e){
 async function pintarPlanEstudiante(){
   var plan = planDe(sesion), hoyK = claveDia(Date.now());
   if (!diaVista) diaVista = hoyK;
+  var lista = plan[diaVista]||[], esHoy = diaVista===hoyK;
+  var marcas = esHoy ? marcasDeHoy() : {};
+  var resp = lista.filter(function(e){ return marcas[e.id] !== undefined; }).length;
+  var pct = lista.length ? Math.round(resp / lista.length * 100) : 0;
+  var sinPlan = !planTieneAlgo(plan);
+  var titulo = sinPlan ? 'Tu plan está en camino ✨'
+    : !lista.length ? 'Descanso ganado 😌'
+    : !esHoy ? nombreDia(diaVista)
+    : resp === lista.length ? '¡Día completado! 🏆'
+    : '¡A entrenar! 💪';
+  var sub = sinPlan ? 'Tu entrenador lo está preparando'
+    : !lista.length ? 'El descanso también entrena'
+    : esHoy ? (resp ? ('Respondiste ' + resp + ' de ' + lista.length) : (lista.length + ' ejercicio' + (lista.length===1?'':'s') + ' te espera' + (lista.length===1?'':'n')))
+    : (lista.length + ' ejercicio' + (lista.length===1?'':'s') + ' · se entrena el día que toca');
+  $('heroAlumno').innerHTML = '<div class="hero-alumno"><div class="ha-info">' +
+    '<small>¡Hola, ' + (sesion.nombre.split(' ')[0]||'') + '! · ' + fechaBonita() + '</small>' +
+    '<h1>' + titulo + '</h1><p>' + sub + '</p></div>' +
+    (lista.length && esHoy ? '<div class="ses-anillo hero-anillo" id="heroAnillo"><i>0%</i></div>' : '') +
+    '</div>';
+  if (lista.length && esHoy){
+    var an = $('heroAnillo'), t0 = Date.now();
+    (function anima(){
+      if (!document.body.contains(an)) return;
+      var k = Math.min(1, (Date.now() - t0) / 650), v = Math.round(pct * k);
+      an.style.background = 'conic-gradient(#fff 0 ' + v + '%, rgba(255,255,255,.25) ' + v + '% 100%)';
+      an.querySelector('i').textContent = v + '%';
+      if (k < 1) requestAnimationFrame(anima);
+    })();
+  }
   $('planPills').innerHTML = DIAS.map(function(d){
     var n = (plan[d[0]]||[]).length;
     return '<button class="dia-pill'+(d[0]===diaVista?' activa':'')+(d[0]===hoyK?' hoy':'')+'" data-dia-ver="'+d[0]+'">'+
@@ -1530,45 +1637,28 @@ async function pintarPlanEstudiante(){
   document.querySelectorAll('[data-dia-ver]').forEach(function(b){
     b.onclick = function(){ diaVista = b.getAttribute('data-dia-ver'); pintarPlanEstudiante(); };
   });
-  var lista = plan[diaVista]||[], esHoy = diaVista===hoyK;
-  $('planTitulo').textContent = esHoy ? '🏋️ Tu plan de hoy' : '🏋️ ' + nombreDia(diaVista);
-  if (!planTieneAlgo(plan)){
-    $('planZona').innerHTML = '<p class="mini">Tu entrenador todavía no te armó el plan. En cuanto lo cargue, lo vas a ver acá. 💬</p>';
-    $('planResumen').textContent=''; $('planProgresoWrap').hidden = true; return;
+  if (sinPlan){
+    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">✨</div><p><b>Tu entrenador todavía no cargó tu plan.</b><br><span class="mini">En cuanto lo haga, lo vas a ver acá.</span></p></div>';
+    return;
   }
   if (!lista.length){
-    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">😌</div><p><b>Día de descanso.</b><br><span class="mini">El descanso también entrena.</span></p></div>';
-    $('planResumen').textContent=''; $('planProgresoWrap').hidden = true; return;
+    $('planZona').innerHTML = '<div class="mz-fin"><div class="grande">😌</div><p><b>Día de descanso.</b><br><span class="mini">Recargá pilas: mañana se vuelve.</span></p></div>';
+    return;
   }
-  var marcas = esHoy ? marcasDeHoy() : {};
-  var resp = lista.filter(function(e){ return marcas[e.id] !== undefined; }).length;
-  var hechas = lista.filter(function(e){ return marcas[e.id] === true; }).length;
-  $('planProgresoWrap').hidden = !esHoy;
-  if (esHoy){
-    $('planProgreso').style.width = Math.round(resp / lista.length * 100) + '%';
-    $('planResumen').textContent = resp === lista.length
-      ? ('💪 Día completado: ' + hechas + ' ✓ · ' + (resp - hechas) + ' ✗')
-      : 'Tocá ▶ para entrenar guiado, o cualquier ejercicio para ir directo.';
-  } else {
-    $('planResumen').textContent = 'Estás espiando otro día: se entrena el día que toca.';
-  }
-  var pct = Math.round(resp / lista.length * 100);
-  var html = '<div class="ses-head"><div><b>' + nombreDia(diaVista) + '</b>' +
-    '<small>' + lista.length + ' ejercicio' + (lista.length===1?'':'s') + (esHoy ? ' · respondiste ' + resp : '') + '</small></div>' +
-    '<div class="ses-anillo" style="background:conic-gradient(#fff 0 ' + pct + '%, rgba(255,255,255,.25) ' + pct + '% 100%)"><i>' + pct + '%</i></div></div>';
-  html += lista.map(function(e, i){
+  var html = lista.map(function(e, i){
     var m = marcas[e.id];
     var img = e.img || imgDe(e.nombre);
     var thumb = img ? '<img src="' + img + '" alt="">' : '<div class="ses-thumb-emoji">🏃</div>';
     var peso = esHoy ? (marcas[claveCarga(e.nombre)] || '') : '';
     var datos = [ (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || ''), e.carga, peso ? ('🏋️ ' + peso) : '' ]
       .filter(Boolean).join(' · ');
-    return '<button type="button" class="ses-fila' + (m===true?' hecha':m===false?' fallada':'') + '" data-ses="' + i + '"' + (esHoy ? '' : ' disabled') + '>' +
+    return '<button type="button" class="ses-fila' + (m===true?' hecha':m===false?' fallada':'') + '" data-ses="' + i + '"' +
+      (esHoy ? '' : ' disabled') + ' style="animation-delay:' + (i * 75) + 'ms">' +
       thumb + '<div class="d"><b>' + e.nombre + '</b><small>' + datos + '</small></div>' +
       '<span class="ses-tilde' + (m===true?' ok':m===false?' no':'') + '">' + (m===false?'✗':'✓') + '</span></button>';
   }).join('');
   if (esHoy && resp < lista.length){
-    html += '<button type="button" class="ses-empezar" id="sesEmpezar">▶ ' + (resp ? 'Continuar entrenamiento' : 'Empezar entrenamiento') + '</button>';
+    html += '<button type="button" class="ses-empezar" id="sesEmpezar" style="animation-delay:' + (lista.length * 75) + 'ms">▶ ' + (resp ? 'Continuar entrenamiento' : 'Empezar entrenamiento') + '</button>';
   }
   $('planZona').innerHTML = html;
   if (esHoy){
@@ -1605,7 +1695,16 @@ function renderPlayer(){
   // ¿día terminado? el cierre con festejo
   if (resp === lista.length && !playerRevisando){
     var hechas = lista.filter(function(x){ return marcas[x.id] === true; }).length;
-    w.innerHTML = '<div class="pl2-top"><button class="salir" id="pl2Salir">✕ Salir</button></div>' +
+    var confes = '';
+    if (hechas === lista.length){
+      var colores = ['#5b8def','#a06bff','#27c47a','#f2b63a','#e8619a','#ff8f6b'];
+      for (var ci = 0; ci < 30; ci++){
+        confes += '<span style="left:' + Math.floor(Math.random()*100) + '%;background:' + colores[ci % colores.length] +
+          ';animation-duration:' + (2.4 + Math.random()*2.2).toFixed(1) + 's;animation-delay:' + (Math.random()*1.4).toFixed(1) + 's"></span>';
+      }
+      confes = '<div class="confes">' + confes + '</div>';
+    }
+    w.innerHTML = confes + '<div class="pl2-top"><button class="salir" id="pl2Salir">✕ Salir</button></div>' +
       '<div class="pl2-fin"><div class="g">' + (hechas === lista.length ? '🏆' : '💪') + '</div>' +
       '<h1>' + (hechas === lista.length ? '¡Entrenamiento completo!' : 'Día cerrado') + '</h1>' +
       '<p>' + hechas + ' ✓ · ' + (lista.length - hechas) + ' ✗ · ¡Mañana se sigue!</p>' +
@@ -1785,9 +1884,12 @@ function abrirTimer(seg){
   $('veloTimer').classList.add('abierto');
   var fin = Date.now() + seg * 1000;
   clearInterval(timerInt);
+  var total = seg;
   function tic(){
     var q = Math.max(0, Math.ceil((fin - Date.now()) / 1000));
-    $('timerNum').textContent = q > 0 ? (q + '″') : '¡A darle! 💪';
+    $('timerNum').textContent = q > 0 ? (q + '″') : '💪';
+    var arco = $('timerArco');
+    if (arco) arco.style.strokeDashoffset = (326.7 * (1 - q / total)).toFixed(1);
     if (q <= 0){
       clearInterval(timerInt); timerInt = null;
       try{ if (navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
