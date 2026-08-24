@@ -2154,11 +2154,22 @@ $('timerCancelar').onclick = function(){ clearInterval(timerInt); timerInt = nul
     // 5 · ya estamos en el home: quedarse (no salir de la app)
     return false;
   }
-  // candado: siempre hay una entrada de historial para amortiguar el "atrás"
-  try { history.pushState({ app:1 }, ''); } catch(e){}
+  /* Candado de historial. IMPORTANTE: Chrome en Android saltea las entradas
+     de historial creadas SIN interacción del usuario (las considera spam),
+     así que lo armamos recién en el primer toque — y lo reforzamos en cada
+     toque siguiente por si el navegador consumió la entrada. */
+  var candadoPuesto = false;
+  function ponerCandado(){
+    if (candadoPuesto) return;
+    candadoPuesto = true;
+    try { history.pushState({ app:1 }, ''); } catch(e){}
+  }
+  window.addEventListener('pointerdown', ponerCandado, { passive:true });
+  window.addEventListener('keydown', ponerCandado, { passive:true });
   window.addEventListener('popstate', function(){
     try { atras(); } catch(e){}
-    try { history.pushState({ app:1 }, ''); } catch(e){}
+    candadoPuesto = false;          // el atrás consumió la entrada…
+    ponerCandado();                 // …la reponemos al instante (ya hubo gesto)
   });
 })();
 
