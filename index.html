@@ -319,6 +319,37 @@ var LIBRERIA = [
   .pl-linea select, .pl-linea input{ flex:1; min-width:0; border:1.5px solid var(--borde); border-radius:10px;
                                      background:var(--fondo); padding:9px 10px; font-size:12px; color:var(--tinta); }
   .pl-linea .btn-chico{ min-height:40px; flex:none; }
+  /* editor cómodo del plan */
+  .pl-card{ display:flex; align-items:center; gap:10px; border:1px solid var(--borde); border-radius:14px;
+            padding:9px 10px; margin-bottom:7px; background:var(--carta); }
+  .pl-card img, .pl-card .sin-img{ width:46px; height:46px; border-radius:10px; object-fit:contain;
+            background:#fff; border:1px solid var(--borde); flex:none; }
+  .pl-card .sin-img{ display:flex; align-items:center; justify-content:center; color:var(--c1); }
+  .pl-card .d{ flex:1; min-width:0; }
+  .pl-card b{ font-size:12.5px; display:block; }
+  .pl-card small{ color:var(--gris); font-size:10.5px; font-weight:700; }
+  .pl-card button{ width:32px; height:32px; border:1px solid var(--borde); border-radius:9px;
+                   background:var(--fondo); color:var(--tinta); flex:none; }
+  .pk-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:300px;
+            overflow-y:auto; margin-top:10px; padding-right:2px; }
+  .pk-item{ border:1.5px solid var(--borde); border-radius:14px; background:var(--carta); padding:8px 6px;
+            text-align:center; cursor:pointer; font-size:10px; font-weight:800; color:var(--tinta);
+            font-family:inherit; line-height:1.25; }
+  .pk-item img{ width:100%; height:60px; object-fit:contain; margin-bottom:4px; }
+  .pk-item:hover, .pk-item:active{ border-color:var(--c1); background:rgba(79,125,242,.06); }
+  .pk-elegido{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .pk-elegido img{ width:64px; height:64px; border-radius:12px; object-fit:contain; background:#fff;
+                   border:1px solid var(--borde); }
+  .pk-pista{ background:rgba(79,125,242,.08); border:1px solid rgba(79,125,242,.2); border-radius:11px;
+             padding:9px 12px; font-size:11.5px; color:var(--tinta); margin:10px 0 4px; line-height:1.5; }
+  .pk-pista b{ color:var(--c1); }
+  .ant-fila{ display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px dashed var(--borde);
+             font-size:11.5px; }
+  .ant-fila .d{ flex:1; min-width:0; }
+  .ant-fila b{ display:block; font-size:12px; }
+  .ant-fila small{ color:var(--gris); font-size:10px; font-weight:700; }
+  .ant-fila .uso{ color:var(--ok); font-weight:800; }
+  .ant-fila .btn-chico{ min-height:34px; padding:0 12px; font-size:11px; }
   /* ---------- mi progreso ---------- */
   .prog-linea{ display:flex; gap:6px; margin-top:8px; }
   .prog-linea input{ flex:1; min-width:0; border:1.5px solid var(--borde); border-radius:11px; background:var(--fondo);
@@ -744,19 +775,11 @@ var LIBRERIA = [
     <h3 id="planDe">Plan</h3>
     <div class="dia-pills" id="plTabs"></div>
     <div class="pl-lista" id="plLista"></div>
-    <div class="pl-form">
-      <div class="campo"><label>Ejercicio (elegí de la lista con animación o escribí el tuyo)</label>
-        <input id="plNombre" list="dlEjercicios" placeholder="Ej: Sentadilla con barra">
-        <datalist id="dlEjercicios"></datalist></div>
-      <div class="pl-grid">
-        <div class="campo"><label>Series</label><input id="plSeries" inputmode="numeric" placeholder="Ej: 4"></div>
-        <div class="campo"><label>Repeticiones / tiempo</label><input id="plReps" placeholder="Ej: 10-12 · 40 seg"></div>
-      </div>
-      <div class="pl-grid">
-        <div class="campo"><label>Carga / descanso (opcional)</label><input id="plCarga" placeholder="Ej: 40 kg · 90 seg"></div>
-        <div class="campo"><label>Nota del profe (opcional)</label><input id="plNota" placeholder="Ej: bajá lento"></div>
-      </div>
-      <button class="btn-grande" id="plAgregar">Agregar al día</button>
+    <button class="btn-grande" id="plAbrirPicker" style="margin-top:4px">+ Agregar ejercicio</button>
+    <div class="pl-caja" id="plAnteriorCaja" hidden>
+      <label id="plAnteriorTitulo">Plan anterior de este día</label>
+      <div id="plAnteriorLista"></div>
+      <button class="btn-chico" id="plRepetirDia" style="width:100%;margin-top:8px">Repetir todos estos ejercicios</button>
     </div>
     <div class="pl-grid" style="margin-top:12px">
       <select id="plCopiaDestino" class="buscador" style="margin:0"></select>
@@ -782,6 +805,38 @@ var LIBRERIA = [
     <div class="popup-botones">
       <button class="btn-neutro" data-cerrar-velo>No</button>
       <button class="btn-grande" id="btnConfirmar" style="flex:1">Sí, dale</button>
+    </div>
+  </div>
+</div>
+
+<div class="velo" id="veloPicker">
+  <div class="popup" style="max-width:520px">
+    <div id="pkPaso1">
+      <h3>Elegí el ejercicio</h3>
+      <input class="buscador" id="pkBusca" placeholder="Buscar: sentadilla, press, curl…" style="margin-top:8px">
+      <div class="pk-grid" id="pkGrid"></div>
+      <div class="popup-botones">
+        <button class="btn-neutro" data-cerrar-velo>Cancelar</button>
+        <button class="btn-chico" id="pkPropio" style="flex:1;min-height:52px">Ejercicio propio</button>
+      </div>
+    </div>
+    <div id="pkPaso2" hidden>
+      <h3 id="pkTitulo2">Detalles</h3>
+      <div class="pk-elegido" id="pkElegido"></div>
+      <div class="campo"><label>Nombre</label><input id="pkNombre" placeholder="Ej: Sentadilla búlgara"></div>
+      <div class="pl-grid">
+        <div class="campo"><label>Series</label><input id="pkSeries" inputmode="numeric" placeholder="4"></div>
+        <div class="campo"><label>Reps / tiempo</label><input id="pkReps" placeholder="10-12 · 40 seg"></div>
+      </div>
+      <div class="pl-grid">
+        <div class="campo"><label>Carga / descanso</label><input id="pkCarga" placeholder="40 kg · 90 seg"></div>
+        <div class="campo"><label>Nota para el alumno</label><input id="pkNota" placeholder="Bajá lento"></div>
+      </div>
+      <div class="pk-pista" id="pkPista" hidden></div>
+      <div class="popup-botones">
+        <button class="btn-neutro" id="pkVolver">‹ Volver</button>
+        <button class="btn-grande" id="pkAgregar" style="flex:1">Agregar al día</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1970,17 +2025,167 @@ function abrirTimer(seg){
 $('timerCancelar').onclick = function(){ clearInterval(timerInt); timerInt = null; $('veloTimer').classList.remove('abierto'); };
 
 /* — el editor del entrenador — */
-var planEdit=null, planUserId=null, plDia='lun', plEditando=-1;
-function abrirEditorPlan(u){
-  planUserId = u.id; planEdit = planDe(u); plDia = claveDia(Date.now()); plEditando = -1;
+var planEdit=null, planUserId=null, plDia='lun', plVivoOriginal=null, editorCargas={}, pkEditando=-1;
+function soloDias(plan){
+  var v = planVacio();
+  DIAS.forEach(function(d){ if (Array.isArray(plan[d[0]])) v[d[0]] = plan[d[0]]; });
+  return v;
+}
+function planAnteriorDe(){ return (plVivoOriginal && plVivoOriginal.__anterior) || null; }
+// la última carga REAL que registró el alumno para un ejercicio
+function ultimaCargaReal(nombre){
+  var k = claveCarga(nombre), fechas = Object.keys(editorCargas || {}).sort().reverse();
+  for (var i = 0; i < fechas.length; i++){
+    var v = (editorCargas[fechas[i]] || {})[k];
+    if (v) return { valor: v, fecha: fechas[i] };
+  }
+  return null;
+}
+// lo que le habías puesto la vez anterior (mismo día primero, después cualquiera)
+function recetaAnterior(nombre){
+  var ant = planAnteriorDe(); if (!ant) return null;
+  var n = String(nombre||'').trim().toLowerCase(), hallado = null;
+  (ant[plDia] || []).forEach(function(e){ if (e.nombre.toLowerCase() === n) hallado = e; });
+  if (!hallado) DIAS.forEach(function(d){ (ant[d[0]] || []).forEach(function(e){ if (!hallado && e.nombre.toLowerCase() === n) hallado = e; }); });
+  return hallado;
+}
+async function abrirEditorPlan(u){
+  planUserId = u.id;
+  // copias profundas: lo que se edita no puede tocar la referencia del plan vivo
+  plVivoOriginal = u.plan ? JSON.parse(JSON.stringify(u.plan)) : null;
+  planEdit = JSON.parse(JSON.stringify(planDe(u)));
+  plDia = claveDia(Date.now()); pkEditando = -1;
+  editorCargas = {};
   $('planDe').textContent = 'Plan de ' + u.nombre;
-  $('dlEjercicios').innerHTML = LIBRERIA.map(function(e){ return '<option value="'+e.n+'">'; }).join('');
   llenarCajaPlantillas();
-  limpiarFormPlan(); pintarEditorPlan();
+  pintarEditorPlan();
   $('veloPlan').classList.add('abierto');
+  // las cargas reales del alumno llegan en el fondo y refrescan las pistas
+  try{ var r = await Backend.obtenerProgreso(u.id); editorCargas = r.cargas || {}; pintarEditorPlan(); }catch(e){}
+}
+function pintarEditorPlan(){
+  $('plTabs').innerHTML = DIAS.map(function(d){
+    var n = (planEdit[d[0]]||[]).length;
+    return '<button class="dia-pill'+(d[0]===plDia?' activa':'')+'" data-pl-dia="'+d[0]+'">'+DIA_CORTO[d[0]]+'<i>'+(n||'—')+'</i></button>';
+  }).join('');
+  document.querySelectorAll('[data-pl-dia]').forEach(function(b){
+    b.onclick = function(){ plDia = b.getAttribute('data-pl-dia'); pintarEditorPlan(); };
+  });
+  var lista = planEdit[plDia]||[];
+  $('plLista').innerHTML = lista.length ? lista.map(function(e, i){
+    var img = e.img || imgDe(e.nombre);
+    var thumb = img ? '<img src="'+img+'" alt="">' : '<div class="sin-img">'+icono('pesa',20)+'</div>';
+    var uso = ultimaCargaReal(e.nombre);
+    var datos = [ e.series && e.reps ? (e.series+' × '+e.reps) : (e.series||e.reps||''), e.carga ].filter(Boolean).join(' · ');
+    return '<div class="pl-card">'+thumb+'<div class="d"><b>'+e.nombre+'</b><small>'+ (datos||'sin detalle') +
+      (uso ? ' · <span style="color:var(--ok);font-weight:800">usó '+uso.valor+'</span>' : '') + '</small></div>'+
+      '<button data-pl-sube="'+i+'" title="Subir">'+icono('subir',14)+'</button>'+
+      '<button data-pl-edita="'+i+'" title="Editar">'+icono('lapiz',14)+'</button>'+
+      '<button data-pl-borra="'+i+'" title="Quitar">'+icono('tacho',14)+'</button></div>';
+  }).join('') : '<p class="mini">Día vacío: queda como descanso. Tocá “+ Agregar ejercicio”.</p>';
+  document.querySelectorAll('[data-pl-borra]').forEach(function(b){ b.onclick=function(){ planEdit[plDia].splice(Number(b.getAttribute('data-pl-borra')),1); pintarEditorPlan(); }; });
+  document.querySelectorAll('[data-pl-sube]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-pl-sube')); if(i>0){ var t=planEdit[plDia][i]; planEdit[plDia][i]=planEdit[plDia][i-1]; planEdit[plDia][i-1]=t; pintarEditorPlan(); } }; });
+  document.querySelectorAll('[data-pl-edita]').forEach(function(b){ b.onclick=function(){ abrirPicker(Number(b.getAttribute('data-pl-edita'))); }; });
+  // ── el plan anterior, a la vista para decidir qué repetir ──
+  var ant = planAnteriorDe();
+  var filasAnt = ant ? (ant[plDia] || []) : [];
+  $('plAnteriorCaja').hidden = !filasAnt.length;
+  if (filasAnt.length){
+    $('plAnteriorTitulo').textContent = 'Plan anterior · ' + nombreDia(plDia) +
+      (plVivoOriginal && plVivoOriginal.__fecha ? ' (guardado el ' + plVivoOriginal.__fecha.split('-').reverse().slice(0,2).join('/') + ')' : '');
+    $('plAnteriorLista').innerHTML = filasAnt.map(function(e, i){
+      var uso = ultimaCargaReal(e.nombre);
+      return '<div class="ant-fila"><div class="d"><b>'+e.nombre+'</b>'+
+        '<small>Le pusiste: '+[e.series&&e.reps?(e.series+' × '+e.reps):'',e.carga].filter(Boolean).join(' · ')+
+        (uso ? ' · <span class="uso">usó '+uso.valor+'</span>' : '')+'</small></div>'+
+        '<button class="btn-chico" data-ant-rep="'+i+'">Repetir</button></div>';
+    }).join('');
+    document.querySelectorAll('[data-ant-rep]').forEach(function(b){
+      b.onclick = function(){
+        var e = filasAnt[Number(b.getAttribute('data-ant-rep'))];
+        planEdit[plDia].push({ id:'e'+Date.now()+Math.floor(Math.random()*999), nombre:e.nombre,
+          img:e.img||imgDe(e.nombre), series:e.series, reps:e.reps, carga:e.carga, nota:e.nota });
+        avisar(e.nombre + ' repetido'); pintarEditorPlan();
+      };
+    });
+    $('plRepetirDia').onclick = function(){
+      filasAnt.forEach(function(e){
+        planEdit[plDia].push({ id:'e'+Date.now()+Math.floor(Math.random()*99999), nombre:e.nombre,
+          img:e.img||imgDe(e.nombre), series:e.series, reps:e.reps, carga:e.carga, nota:e.nota });
+      });
+      avisar('Día anterior repetido'); pintarEditorPlan();
+    };
+  }
+  $('plCopiaDestino').innerHTML = DIAS.filter(function(d){ return d[0]!==plDia; })
+    .map(function(d){ return '<option value="'+d[0]+'">a '+d[1]+'</option>'; }).join('');
 }
 
-/* — plantillas del profe (viven en este dispositivo) y copias entre alumnos — */
+/* ── el picker visual: buscá, tocá el dibujo, ajustá y listo ── */
+function abrirPicker(editIdx){
+  pkEditando = (editIdx === undefined ? -1 : editIdx);
+  $('pkBusca').value = '';
+  pintarGrilla('');
+  if (pkEditando >= 0){
+    var e = planEdit[plDia][pkEditando];
+    elegirEjercicio(e.nombre, e.img || imgDe(e.nombre), e);
+  } else {
+    $('pkPaso1').hidden = false; $('pkPaso2').hidden = true;
+  }
+  $('veloPicker').classList.add('abierto');
+}
+function pintarGrilla(filtro){
+  var f = filtro.toLowerCase();
+  $('pkGrid').innerHTML = LIBRERIA.filter(function(e){ return !f || e.n.toLowerCase().indexOf(f) >= 0; })
+    .map(function(e, i){
+      return '<button type="button" class="pk-item" data-pk="'+e.n.replace(/"/g,'&quot;')+'">'+
+        (e.img ? '<img src="'+e.img+'" alt="">' : icono('pesa',30)) + e.n + '</button>';
+    }).join('') || '<p class="mini" style="grid-column:1/-1">Nada con ese nombre: usá “Ejercicio propio”.</p>';
+  document.querySelectorAll('[data-pk]').forEach(function(b){
+    b.onclick = function(){ var n = b.getAttribute('data-pk'); elegirEjercicio(n, imgDe(n), null); };
+  });
+}
+$('pkBusca').addEventListener('input', function(){ pintarGrilla(this.value); });
+$('pkPropio').onclick = function(){ elegirEjercicio('', null, null); };
+$('pkVolver').onclick = function(){
+  if (pkEditando >= 0){ $('veloPicker').classList.remove('abierto'); pkEditando = -1; }
+  else { $('pkPaso2').hidden = true; $('pkPaso1').hidden = false; }
+};
+function elegirEjercicio(nombre, img, existente){
+  $('pkPaso1').hidden = true; $('pkPaso2').hidden = false;
+  $('pkTitulo2').textContent = pkEditando >= 0 ? 'Editar ejercicio' : 'Detalles';
+  $('pkElegido').innerHTML = img ? '<img src="'+img+'" alt="">' : '';
+  var receta = existente || recetaAnterior(nombre);
+  $('pkNombre').value = nombre || '';
+  $('pkSeries').value = receta ? (receta.series||'') : '';
+  $('pkReps').value   = receta ? (receta.reps||'') : '';
+  $('pkCarga').value  = receta ? (receta.carga||'') : '';
+  $('pkNota').value   = receta ? (receta.nota||'') : '';
+  // la pista de oro: qué le pusiste antes y qué usó de verdad
+  var pistas = [];
+  if (!existente && receta) pistas.push('La vez pasada le pusiste <b>' + [receta.series&&receta.reps?(receta.series+' × '+receta.reps):'',receta.carga].filter(Boolean).join(' · ') + '</b>.');
+  var uso = nombre ? ultimaCargaReal(nombre) : null;
+  if (uso) pistas.push('El alumno usó <b>' + uso.valor + '</b> la última vez (' + uso.fecha.split('-').reverse().slice(0,2).join('/') + ').');
+  $('pkPista').hidden = !pistas.length;
+  $('pkPista').innerHTML = pistas.join('<br>');
+  $('pkAgregar').textContent = pkEditando >= 0 ? 'Guardar cambios' : 'Agregar al día';
+}
+$('pkAgregar').onclick = function(){
+  var nombre = $('pkNombre').value.trim();
+  if (!nombre){ avisar('Ponele nombre al ejercicio'); return; }
+  var e = { id:'e'+Date.now()+Math.floor(Math.random()*999), nombre:nombre, img:imgDe(nombre),
+            series:$('pkSeries').value.trim(), reps:$('pkReps').value.trim(),
+            carga:$('pkCarga').value.trim(), nota:$('pkNota').value.trim() };
+  if (pkEditando >= 0){ e.id = planEdit[plDia][pkEditando].id; planEdit[plDia][pkEditando] = e; }
+  else planEdit[plDia].push(e);
+  var editaba = pkEditando >= 0;
+  pkEditando = -1;
+  if (editaba) $('veloPicker').classList.remove('abierto');
+  else { $('pkPaso2').hidden = true; $('pkPaso1').hidden = false; $('pkBusca').value=''; pintarGrilla(''); avisar(nombre + ' agregado'); }
+  pintarEditorPlan();
+};
+$('plAbrirPicker').onclick = function(){ abrirPicker(); };
+
+/* ── plantillas del profe y copias entre días/alumnos ── */
 function clavePlantillas(){ return CONFIG.CLAVE_DATOS + '_plantillas_' + (sesion ? sesion.id : ''); }
 function reIdPlan(plan){
   var nuevo = planVacio();
@@ -2010,7 +2215,7 @@ $('plGuardarPlantilla').onclick = function(){
   if (!nombre){ avisar('Ponele un nombre a la plantilla'); return; }
   if (!planTieneAlgo(planEdit)){ avisar('El plan está vacío: agregá ejercicios primero'); return; }
   var guardadas = leer(clavePlantillas(), {});
-  guardadas[nombre] = planEdit;
+  guardadas[nombre] = soloDias(planEdit);
   guardar(clavePlantillas(), guardadas);
   $('plNombrePlantilla').value = '';
   llenarCajaPlantillas(); avisar('Plantilla guardada');
@@ -2020,60 +2225,35 @@ $('plAplicarPlantilla').onclick = function(){
   var guardadas = leer(clavePlantillas(), {});
   if (!nombre || !guardadas[nombre]){ avisar('No hay plantilla para aplicar'); return; }
   planEdit = reIdPlan(guardadas[nombre]);
-  limpiarFormPlan(); pintarEditorPlan(); avisar('Plantilla aplicada: recordá Guardar plan ✓');
+  pintarEditorPlan(); avisar('Plantilla aplicada: recordá Guardar plan');
 };
 $('plCopiarAlumno').onclick = function(){
   var id = $('plDeAlumno').value;
   var otro = ultimaLista.find(function(u){ return u.id === id; });
   if (!otro){ avisar('No hay plan para copiar'); return; }
   planEdit = reIdPlan(planDe(otro));
-  limpiarFormPlan(); pintarEditorPlan(); avisar('Plan de ' + otro.nombre.split(' ')[0] + ' copiado: recordá Guardar ✓');
-};
-function limpiarFormPlan(){ ['plNombre','plSeries','plReps','plCarga','plNota'].forEach(function(id){ $(id).value=''; }); plEditando=-1; $('plAgregar').textContent='Agregar al día'; }
-function pintarEditorPlan(){
-  $('plTabs').innerHTML = DIAS.map(function(d){
-    var n = (planEdit[d[0]]||[]).length;
-    return '<button class="dia-pill'+(d[0]===plDia?' activa':'')+'" data-pl-dia="'+d[0]+'">'+DIA_CORTO[d[0]]+'<i>'+(n||'—')+'</i></button>';
-  }).join('');
-  document.querySelectorAll('[data-pl-dia]').forEach(function(b){
-    b.onclick = function(){ plDia = b.getAttribute('data-pl-dia'); limpiarFormPlan(); pintarEditorPlan(); };
-  });
-  var lista = planEdit[plDia]||[];
-  $('plLista').innerHTML = lista.length ? lista.map(function(e,i){
-    return '<div class="pl-fila"><b>'+e.nombre+'</b><small>'+[e.series&&e.reps?e.series+'×'+e.reps:'',e.carga].filter(Boolean).join(' · ')+'</small>'+
-      '<button data-pl-sube="'+i+'" title="Subir">'+icono('subir',14)+'</button>'+
-      '<button data-pl-edita="'+i+'" title="Editar">'+icono('lapiz',14)+'</button>'+
-      '<button data-pl-borra="'+i+'" title="Quitar">'+icono('tacho',14)+'</button></div>';
-  }).join('') : '<p class="mini">Día vacío: queda como descanso. Agregá ejercicios abajo.</p>';
-  document.querySelectorAll('[data-pl-borra]').forEach(function(b){ b.onclick=function(){ planEdit[plDia].splice(Number(b.getAttribute('data-pl-borra')),1); pintarEditorPlan(); }; });
-  document.querySelectorAll('[data-pl-sube]').forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute('data-pl-sube')); if(i>0){ var t=planEdit[plDia][i]; planEdit[plDia][i]=planEdit[plDia][i-1]; planEdit[plDia][i-1]=t; pintarEditorPlan(); } }; });
-  document.querySelectorAll('[data-pl-edita]').forEach(function(b){ b.onclick=function(){
-    var i=Number(b.getAttribute('data-pl-edita')), e=planEdit[plDia][i]; plEditando=i;
-    $('plNombre').value=e.nombre; $('plSeries').value=e.series; $('plReps').value=e.reps; $('plCarga').value=e.carga; $('plNota').value=e.nota;
-    $('plAgregar').textContent='Guardar cambios del ejercicio';
-  }; });
-  $('plCopiaDestino').innerHTML = DIAS.filter(function(d){ return d[0]!==plDia; })
-    .map(function(d){ return '<option value="'+d[0]+'">a '+d[1]+'</option>'; }).join('');
-}
-$('plAgregar').onclick = function(){
-  var nombre = $('plNombre').value.trim();
-  if (!nombre){ avisar('Poné el nombre del ejercicio'); return; }
-  var e = { id:'e'+Date.now()+Math.floor(Math.random()*999), nombre:nombre, img:imgDe(nombre),
-            series:$('plSeries').value.trim(), reps:$('plReps').value.trim(),
-            carga:$('plCarga').value.trim(), nota:$('plNota').value.trim() };
-  if (plEditando>=0){ e.id = planEdit[plDia][plEditando].id; planEdit[plDia][plEditando]=e; }
-  else planEdit[plDia].push(e);
-  limpiarFormPlan(); pintarEditorPlan();
+  pintarEditorPlan(); avisar('Plan de ' + otro.nombre.split(' ')[0] + ' copiado: recordá Guardar');
 };
 $('plCopiar').onclick = function(){
   var destino = $('plCopiaDestino').value; if (!destino) return;
   planEdit[destino] = (planEdit[plDia]||[]).map(function(e){
-    return { id:'e'+Date.now()+Math.floor(Math.random()*99999), nombre:e.nombre, img:e.img||imgDe(e.nombre), series:e.series, reps:e.reps, carga:e.carga, nota:e.nota };
+    return { id:'e'+Date.now()+Math.floor(Math.random()*99999), nombre:e.nombre, img:e.img||imgDe(e.nombre),
+             series:e.series, reps:e.reps, carga:e.carga, nota:e.nota };
   });
-  avisar('Copiado a '+nombreDia(destino)+' ✓'); pintarEditorPlan();
+  avisar('Copiado a ' + nombreDia(destino)); pintarEditorPlan();
 };
+
 $('plGuardar').onclick = async function(){
-  await Backend.guardarPlan(planUserId, planEdit);
+  var final = soloDias(planEdit);
+  var vivo = plVivoOriginal ? soloDias(plVivoOriginal) : null;
+  if (vivo && planTieneAlgo(vivo) && JSON.stringify(vivo) !== JSON.stringify(final)){
+    final.__anterior = vivo;                       // el plan que estaba, queda de referencia
+    final.__fecha = fechaClave(Date.now());
+  } else if (plVivoOriginal && plVivoOriginal.__anterior){
+    final.__anterior = plVivoOriginal.__anterior;  // sin cambios: se conserva la referencia previa
+    final.__fecha = plVivoOriginal.__fecha;
+  }
+  await Backend.guardarPlan(planUserId, final);
   $('veloPlan').classList.remove('abierto');
   avisar('Plan guardado'); pintarAdmin();
 };
