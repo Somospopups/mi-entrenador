@@ -1680,6 +1680,20 @@ function imgDe(nombre){
   for (var i=0;i<LIBRERIA.length;i++) if (LIBRERIA[i].n.toLowerCase()===n) return LIBRERIA[i].img||null;
   return null;
 }
+/* Si un dibujo falla al cargar (caché viejo, red caída un instante),
+   reintenta una vez salteando el caché; si vuelve a fallar, se oculta prolijo. */
+document.addEventListener('error', function(ev){
+  var t = ev.target;
+  if (!t || t.tagName !== 'IMG') return;
+  if (!t.__reintento){
+    t.__reintento = 1;
+    var src = t.getAttribute('src') || '';
+    if (!src) return;
+    setTimeout(function(){ t.src = src + (src.indexOf('?')<0 ? '?r=' : '&r=') + Date.now(); }, 350);
+  } else {
+    t.style.visibility = 'hidden';
+  }
+}, true);
 function img2De(nombre){
   var n=String(nombre||'').trim().toLowerCase();
   for (var i=0;i<LIBRERIA.length;i++) if (LIBRERIA[i].n.toLowerCase()===n) return LIBRERIA[i].img2||null;
