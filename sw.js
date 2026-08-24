@@ -1,7 +1,7 @@
 /* Mi Entrenador · service worker v1
    - index: red primero (las novedades llegan solas), caché de respaldo offline
    - dibujos e íconos: caché primero (no cambian nunca) */
-const CACHE = 'entrenador-v8';
+const CACHE = 'entrenador-v9';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html', './manifest.json', './icon-192.png'])).then(() => self.skipWaiting()));
 });
