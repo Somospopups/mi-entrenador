@@ -394,18 +394,27 @@ var LIBRERIA = [
              box-shadow:0 8px 24px rgba(99,70,237,.1);
              backdrop-filter:blur(16px) saturate(1.4); -webkit-backdrop-filter:blur(16px) saturate(1.4); }
   body.dark .ses-fila{ background:rgba(30,32,48,.55); border-color:rgba(255,255,255,.08); box-shadow:none; }
-  .ses-fila img, .ses-thumb-emoji{ width:58px; height:58px; border-radius:15px; object-fit:contain; background:#f6f5ff;
-                                   border:0; flex:none; }
+  .ses-fila img, .ses-thumb-emoji{ width:64px; height:64px; border-radius:16px; object-fit:contain;
+                                   background:linear-gradient(135deg,#f6f5ff,#eef1ff); border:0; flex:none; }
   body.dark .ses-fila img, body.dark .ses-thumb-emoji{ background:#fff; }
   .ses-thumb-emoji{ display:flex; align-items:center; justify-content:center; font-size:26px; }
+  .ses-fila{ transition:transform .16s ease; }
+  .ses-fila:active{ transform:scale(.98); }
   .ses-fila .d{ flex:1; min-width:0; }
   .ses-fila b{ font-size:15px; display:block; letter-spacing:-.2px; }
   .ses-fila small{ color:var(--gris); font-size:12px; font-weight:700; }
-  .ses-tilde{ width:38px; height:38px; border-radius:50%; border:2.5px solid var(--borde); color:transparent;
-              font-weight:900; flex:none; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .ses-datos{ display:flex; gap:6px; margin-top:5px; flex-wrap:wrap; }
+  .ses-datos i{ font-style:normal; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:999px;
+                background:color-mix(in srgb, var(--c1) 13%, transparent); color:var(--c1); }
+  .ses-datos i.sd-extra{ background:rgba(141,139,176,.16); color:var(--gris); }
+  .sd-ult{ display:block; margin-top:5px; color:var(--ok); font-size:11.5px; font-weight:800; }
+  .ses-tilde{ width:40px; height:40px; border-radius:50%; border:2.5px dashed color-mix(in srgb, var(--c1) 38%, transparent);
+              color:transparent; font-weight:900; flex:none; display:flex; align-items:center; justify-content:center;
+              font-size:16px; background:rgba(255,255,255,.4); }
+  .ses-tilde.ok, .ses-tilde.no{ border-style:solid; }
   .ses-tilde.ok{ background:var(--ok); border-color:var(--ok); color:#fff; }
   .ses-tilde.no{ background:rgba(224,36,36,.12); border-color:var(--rojo); color:var(--rojo); }
-  .ses-fila.hecha{ opacity:.55; } .ses-fila.hecha b{ text-decoration:line-through; }
+  .ses-fila.hecha{ opacity:.55; } .ses-fila.hecha .d > b{ text-decoration:line-through; }
   .ses-fila.fallada{ opacity:.75; }
   .ses-fila[disabled]{ pointer-events:none; }
   .ses-empezar{ width:100%; min-height:56px; border:0; border-radius:16px; margin-top:6px;
@@ -1806,11 +1815,17 @@ async function pintarPlanEstudiante(){
     var img = e.img || imgDe(e.nombre);
     var thumb = img ? '<img src="' + img + '" alt="">' : '<div class="ses-thumb-emoji">' + icono('pesa',26) + '</div>';
     var peso = esHoy ? (marcas[claveCarga(e.nombre)] || '') : '';
-    var datos = [ (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || ''), e.carga, peso || '' ]
-      .filter(Boolean).join(' · ');
+    var sxr = (e.series && e.reps) ? (e.series + ' × ' + e.reps) : (e.series || e.reps || '');
+    var pastillas = (sxr ? '<i>' + sxr + '</i>' : '') + (e.carga ? '<i class="sd-extra">' + e.carga + '</i>' : '');
+    var ult = ultimaCargaDe(e);
+    var linea3 = peso ? ('Hoy usaste <b>' + peso + '</b>')
+      : (ult ? ('La última vez usaste <b>' + ult + '</b>') : '');
     return '<button type="button" class="ses-fila' + (m===true?' hecha':m===false?' fallada':'') + '" data-ses="' + i + '"' +
       (esHoy ? '' : ' disabled') + ' style="animation-delay:' + (i * 75) + 'ms">' +
-      thumb + '<div class="d"><b>' + e.nombre + '</b><small>' + datos + '</small></div>' +
+      thumb + '<div class="d"><b>' + e.nombre + '</b>' +
+      (pastillas ? '<span class="ses-datos">' + pastillas + '</span>' : '') +
+      (linea3 ? '<small class="sd-ult">' + linea3 + '</small>' : '') +
+      '</div>' +
       '<span class="ses-tilde' + (m===true?' ok':m===false?' no':'') + '">' + (m===false?'✗':'✓') + '</span></button>';
   }).join('');
   if (esHoy && resp < lista.length){
