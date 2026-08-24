@@ -139,6 +139,14 @@ var LIBRERIA = [
   body.dark{ --tinta:#f0f0f6; --gris:#a0a1b2; --fondo:#12131f; --carta:#1e2030; --borde:#2c2f45; }
   *{ box-sizing:border-box; margin:0; }
   body{ font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--fondo); color:var(--tinta); min-height:100vh; }
+  body::before, body::after{ content:''; position:fixed; border-radius:50%; z-index:-1; pointer-events:none;
+    filter:blur(70px); }
+  body::before{ width:360px; height:360px; top:-100px; right:-90px;
+    background:color-mix(in srgb, var(--c1) 26%, transparent); animation:flota 12s ease-in-out infinite; }
+  body::after{ width:320px; height:320px; bottom:-90px; left:-100px;
+    background:color-mix(in srgb, var(--c2) 22%, transparent); animation:flota 15s ease-in-out infinite reverse; }
+  body.dark::before{ background:color-mix(in srgb, var(--c1) 18%, transparent); }
+  body.dark::after{ background:color-mix(in srgb, var(--c2) 15%, transparent); }
   button{ font:inherit; cursor:pointer; }
   input,select{ font:inherit; color:var(--tinta); }
 
@@ -174,10 +182,14 @@ var LIBRERIA = [
   .top .rol{ font-size:10px; font-weight:900; color:var(--c1); background:rgba(124,58,237,.12);
              padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.5px; }
   .top .der{ margin-left:auto; display:flex; gap:8px; }
-  .btn-chico{ min-height:38px; padding:0 14px; border:1px solid var(--borde); border-radius:11px;
-              background:var(--carta); color:var(--tinta); font-size:12.5px; font-weight:800; }
-  .carta{ background:var(--carta); border:1px solid var(--borde); border-radius:20px; padding:18px; margin-bottom:14px;
-          box-shadow:0 8px 26px rgba(99,70,237,.08); }
+  .btn-chico{ min-height:38px; padding:0 14px; border:1px solid rgba(255,255,255,.7); border-radius:11px;
+              background:rgba(255,255,255,.5); color:var(--tinta); font-size:12.5px; font-weight:800;
+              backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  body.dark .btn-chico{ background:rgba(30,32,48,.5); border-color:rgba(255,255,255,.1); }
+  .carta{ background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.7); border-radius:20px;
+          padding:18px; margin-bottom:14px; box-shadow:0 8px 26px rgba(99,70,237,.1);
+          backdrop-filter:blur(18px) saturate(1.4); -webkit-backdrop-filter:blur(18px) saturate(1.4); }
+  body.dark .carta{ background:rgba(30,32,48,.55); border-color:rgba(255,255,255,.08); }
   .carta h2{ font-size:15px; margin-bottom:4px; }
   .carta .mini{ color:var(--gris); font-size:12px; }
 
@@ -235,8 +247,10 @@ var LIBRERIA = [
 
   /* ---------- plan de entrenamiento ---------- */
   .dia-pills{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin:10px 0; }
-  .dia-pill{ flex:1; min-width:44px; min-height:42px; border:1.5px solid var(--borde); border-radius:11px;
-             background:var(--carta); color:var(--tinta); font-size:11.5px; font-weight:800; }
+  .dia-pill{ flex:1; min-width:44px; min-height:42px; border:1.5px solid rgba(255,255,255,.7); border-radius:11px;
+             background:rgba(255,255,255,.5); color:var(--tinta); font-size:11.5px; font-weight:800;
+             backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  body.dark .dia-pill{ background:rgba(30,32,48,.5); border-color:rgba(255,255,255,.1); }
   .dia-pill i{ display:block; font-style:normal; font-size:8.5px; opacity:.75; }
   .dia-pill.hoy{ border-color:var(--c1); }
   .dia-pill.activa{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent; }
@@ -374,10 +388,12 @@ var LIBRERIA = [
                justify-content:center; flex:none; }
   .ses-anillo i{ width:40px; height:40px; border-radius:50%; background:rgba(25,28,64,.4); display:flex;
                  align-items:center; justify-content:center; font-style:normal; font-size:11px; font-weight:900; }
-  .ses-fila{ width:100%; display:flex; align-items:center; gap:13px; background:var(--carta); border:0;
-             border-radius:20px; padding:12px; margin-bottom:11px; text-align:left; color:var(--tinta);
-             font:inherit; cursor:pointer; box-shadow:0 8px 24px rgba(99,70,237,.1); }
-  body.dark .ses-fila{ border:1px solid var(--borde); box-shadow:none; }
+  .ses-fila{ width:100%; display:flex; align-items:center; gap:13px; background:rgba(255,255,255,.55);
+             border:1px solid rgba(255,255,255,.7); border-radius:20px; padding:12px; margin-bottom:11px;
+             text-align:left; color:var(--tinta); font:inherit; cursor:pointer;
+             box-shadow:0 8px 24px rgba(99,70,237,.1);
+             backdrop-filter:blur(16px) saturate(1.4); -webkit-backdrop-filter:blur(16px) saturate(1.4); }
+  body.dark .ses-fila{ background:rgba(30,32,48,.55); border-color:rgba(255,255,255,.08); box-shadow:none; }
   .ses-fila img, .ses-thumb-emoji{ width:58px; height:58px; border-radius:15px; object-fit:contain; background:#f6f5ff;
                                    border:0; flex:none; }
   body.dark .ses-fila img, body.dark .ses-thumb-emoji{ background:#fff; }
@@ -464,9 +480,10 @@ var LIBRERIA = [
   @keyframes latidoBtn{ 0%,100%{ box-shadow:0 12px 30px rgba(124,58,237,.35); transform:scale(1); }
     50%{ box-shadow:0 18px 46px rgba(59,130,246,.55); transform:scale(1.018); } }
   .tabbar{ position:fixed; left:50%; transform:translateX(-50%); bottom:14px; display:flex; gap:6px;
-    background:rgba(255,255,255,.88); backdrop-filter:blur(16px); border:1px solid var(--borde);
+    background:rgba(255,255,255,.5); backdrop-filter:blur(22px) saturate(1.5);
+    -webkit-backdrop-filter:blur(22px) saturate(1.5); border:1px solid rgba(255,255,255,.7);
     border-radius:999px; padding:6px; z-index:30; box-shadow:0 14px 38px rgba(20,25,70,.2); }
-  body.dark .tabbar{ background:rgba(28,30,48,.88); }
+  body.dark .tabbar{ background:rgba(28,30,48,.55); border-color:rgba(255,255,255,.1); }
   .tabbar button{ display:flex; align-items:center; gap:7px; border:0; background:none; border-radius:999px;
     min-height:47px; padding:0 20px; font:inherit; font-weight:900; font-size:13px; color:var(--gris);
     cursor:pointer; transition:all .28s cubic-bezier(.22,.9,.35,1); }
@@ -526,10 +543,13 @@ var LIBRERIA = [
 
   /* ---------- popups ---------- */
   .velo{ display:none; position:fixed; inset:0; background:rgba(15,16,35,.55); z-index:50;
-         align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px); }
+         align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px); }
   .velo.abierto{ display:flex; }
-  .popup{ width:100%; max-width:420px; max-height:86vh; overflow-y:auto; background:var(--carta);
-          border-radius:22px; padding:24px 22px; box-shadow:0 30px 80px rgba(10,12,40,.4); }
+  .popup{ width:100%; max-width:420px; max-height:86vh; overflow-y:auto; background:rgba(255,255,255,.78);
+          border:1px solid rgba(255,255,255,.8); border-radius:22px; padding:24px 22px;
+          box-shadow:0 30px 80px rgba(10,12,40,.4);
+          backdrop-filter:blur(26px) saturate(1.5); -webkit-backdrop-filter:blur(26px) saturate(1.5); }
+  body.dark .popup{ background:rgba(30,32,48,.8); border-color:rgba(255,255,255,.1); }
   .popup h3{ font-size:17px; margin-bottom:14px; }
   .pildoras{ display:flex; gap:7px; margin:4px 0 14px; }
   .pildora{ flex:1; min-height:44px; border:1.5px solid var(--borde); border-radius:12px; background:var(--fondo);

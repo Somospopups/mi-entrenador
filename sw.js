@@ -2,7 +2,7 @@
    - index: red primero (las novedades llegan solas), caché de respaldo offline
    - dibujos e íconos: caché primero (no cambian nunca)
    - IMPORTANTE: nunca se guardan respuestas fallidas (404, etc.) */
-const CACHE = 'entrenador-v18';
+const CACHE = 'entrenador-v19';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html', './manifest.json', './icon-192.png'])).then(() => self.skipWaiting()));
 });
