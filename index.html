@@ -422,46 +422,69 @@ var LIBRERIA = [
                 font-weight:900; box-shadow:0 12px 30px rgba(79,125,242,.35); cursor:pointer; }
   body.sin-scroll{ overflow:hidden; }
 
-  /* ---------- modo entrenamiento (IDEA B, oscuro) ---------- */
+  /* ---------- modo entrenamiento (claro, vidrio, anillo) ---------- */
   #playerWrap{ position:fixed; inset:0; z-index:45; display:flex; flex-direction:column; padding:16px;
-               background:linear-gradient(165deg,#151726,#232647 60%,#2b2555); color:#fff; overflow-y:auto; }
-  .pl2-top{ display:flex; align-items:center; gap:9px; }
-  .pl2-top .salir{ background:none; border:0; color:#9aa0b8; font-size:13px; font-weight:800; cursor:pointer; }
+               background:linear-gradient(170deg,#f6f4ff,#eef1fd 60%,#f3effc); color:var(--tinta); overflow-y:auto; }
+  #playerWrap::before{ content:''; position:fixed; width:430px; height:430px; border-radius:50%; top:2%;
+    left:50%; transform:translateX(-50%); pointer-events:none;
+    background:radial-gradient(circle, color-mix(in srgb, var(--c1) 17%, transparent),
+      color-mix(in srgb, var(--c2) 9%, transparent) 55%, transparent 72%); filter:blur(36px); }
+  .pl2-top{ display:flex; align-items:center; gap:9px; position:relative; }
+  .pl2-top .salir{ background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.75); border-radius:999px;
+    padding:9px 14px; color:var(--gris); font-size:13px; font-weight:800; cursor:pointer;
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
   .pl2-seg{ flex:1; display:flex; gap:4px; }
-  .pl2-seg i{ flex:1; height:5px; border-radius:99px; background:rgba(255,255,255,.16); }
-  .pl2-seg i.full{ background:linear-gradient(90deg,#5b8def,#a06bff); }
-  .pl2-seg i.aqui{ outline:1.5px solid rgba(255,255,255,.65); }
-  .pl2-top .pos{ font-size:11px; color:#9aa0b8; font-weight:800; white-space:nowrap; }
-  .pl2-top .nav{ width:34px; height:34px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
-                 background:rgba(255,255,255,.06); color:#dde; font-weight:900; cursor:pointer; }
+  .pl2-seg i{ flex:1; height:5px; border-radius:99px; background:color-mix(in srgb, var(--c1) 15%, transparent); }
+  .pl2-seg i.full{ background:linear-gradient(90deg,var(--c1),var(--c2)); }
+  .pl2-seg i.aqui{ outline:1.5px solid color-mix(in srgb, var(--c1) 55%, transparent); }
+  .pl2-top .pos{ font-size:11px; color:var(--gris); font-weight:800; white-space:nowrap; }
+  .pl2-top .nav{ width:36px; height:36px; border-radius:50%; border:1px solid rgba(255,255,255,.8);
+                 background:rgba(255,255,255,.55); color:var(--c1); font-weight:900; cursor:pointer;
+                 backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
   .pl2-zona{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-             text-align:center; padding:14px 0; }
-  .pl2-marco{ width:min(76vw,290px); height:min(56vw,225px); background:#fff; border-radius:26px; display:flex;
-              align-items:center; justify-content:center; box-shadow:0 26px 60px rgba(0,0,0,.45); }
-  .pl2-marco img{ width:88%; height:88%; object-fit:contain; }
+             text-align:center; padding:14px 0; position:relative; }
+  .pl2-orbe{ position:relative; width:min(76vw,296px); height:min(76vw,296px); }
+  .pl2-anillo{ position:absolute; inset:0; border-radius:50%;
+    -webkit-mask:radial-gradient(circle, transparent 68%, #000 69%); mask:radial-gradient(circle, transparent 68%, #000 69%); }
+  .pl2-marco{ position:absolute; inset:15px; background:#fff; border-radius:50%; display:flex; overflow:hidden;
+              align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.9);
+              box-shadow:0 24px 60px rgba(99,70,237,.22); }
+  .pl2-marco > img{ width:104%; height:104%; object-fit:cover; flex:none; }
+  .pl2-marco .anim2{ width:104%; height:104%; flex:none; }
+  .pl2-marco .anim2 img{ object-fit:cover; }
   .pl2-marco .emoji{ font-size:64px; }
-  .pl2-zona h1{ font-size:23px; letter-spacing:-.5px; margin-top:18px; }
-  .pl2-serie{ font-size:36px; font-weight:900; margin-top:6px; background:linear-gradient(90deg,#7ba2ff,#c39bff);
+  .pl2-paso{ position:absolute; bottom:6px; right:8px; background:rgba(255,255,255,.85); color:var(--c1);
+    border:1px solid rgba(255,255,255,.9); border-radius:999px; padding:7px 13px; font-size:12px; font-weight:900;
+    box-shadow:0 8px 20px rgba(99,70,237,.18); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .pl2-zona h1{ font-size:25px; letter-spacing:-.5px; margin-top:24px; }
+  .pl2-serie{ font-size:40px; font-weight:900; margin-top:4px; letter-spacing:-1px;
+              background:linear-gradient(90deg,var(--c1),var(--c2));
               -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .pl2-sub{ color:#a6aac2; font-size:12.5px; margin-top:5px; font-weight:700; }
-  .pl2-nota{ margin-top:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.13);
-             border-radius:13px; padding:9px 14px; font-size:12.5px; color:#dde; max-width:320px; }
-  .pl2-estado{ margin-top:10px; font-size:11px; font-weight:900; border-radius:99px; padding:5px 12px;
-               background:rgba(255,255,255,.12); }
-  .pl2-peso{ display:flex; gap:8px; margin:4px 0 12px; }
-  .pl2-peso input{ flex:1; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07);
-                   border-radius:13px; color:#fff; padding:12px 14px; font-size:13px; outline:none; }
-  .pl2-peso input::placeholder{ color:#8b90ad; }
-  .pl2-acciones{ display:flex; gap:11px; }
-  .pl2-no{ flex:1; min-height:60px; border-radius:17px; border:1.5px solid rgba(224,36,36,.55);
-           background:rgba(224,36,36,.18); color:#ff9d9d; font-size:24px; font-weight:900; cursor:pointer; }
-  .pl2-si{ flex:2; min-height:60px; border:0; border-radius:17px; background:linear-gradient(135deg,#1e9e60,#27c47a);
-           color:#fff; font-size:22px; font-weight:900; box-shadow:0 12px 30px rgba(30,158,96,.35); cursor:pointer; }
-  .pl2-pista{ color:#7d829e; text-align:center; font-size:10px; margin-top:8px; }
-  .pl2-fin{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .pl2-sub{ color:var(--gris); font-size:12.5px; margin-top:6px; font-weight:700; }
+  .pl2-nota{ margin-top:12px; background:rgba(255,255,255,.6); border:1px solid rgba(255,255,255,.8);
+             border-radius:999px; padding:9px 16px; font-size:12.5px; color:#6b6d92; max-width:330px;
+             box-shadow:0 6px 16px rgba(99,70,237,.08); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  .pl2-estado{ margin-top:10px; font-size:11px; font-weight:900; border-radius:99px; padding:6px 13px;
+               background:rgba(255,255,255,.65); border:1px solid rgba(255,255,255,.85); color:var(--ok);
+               box-shadow:0 4px 12px rgba(99,70,237,.08); }
+  .pl2-peso{ display:flex; gap:8px; margin:4px 0 12px; position:relative; }
+  .pl2-peso input{ flex:1; border:1px solid rgba(255,255,255,.8); background:rgba(255,255,255,.6);
+                   border-radius:999px; color:var(--tinta); padding:14px 18px; font-size:14px; outline:none;
+                   box-shadow:0 6px 18px rgba(99,70,237,.08);
+                   backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .pl2-peso input::placeholder{ color:var(--gris); }
+  .pl2-acciones{ display:flex; gap:10px; align-items:center; position:relative; }
+  .pl2-no{ width:60px; min-height:60px; flex:none; border-radius:50%; border:1px solid rgba(255,255,255,.85);
+           background:rgba(255,255,255,.6); color:#e05c5c; font-size:20px; font-weight:900; cursor:pointer;
+           box-shadow:0 6px 16px rgba(99,70,237,.1); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  .pl2-si{ flex:1; min-height:60px; border:0; border-radius:999px; background:linear-gradient(120deg,var(--c1),var(--c2));
+           color:#fff; font-size:19px; font-weight:900; box-shadow:0 12px 30px rgba(124,58,237,.35); cursor:pointer; }
+  .pl2-pista{ color:var(--gris); text-align:center; font-size:10px; margin-top:8px; }
+  .pl2-fin{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+            position:relative; }
   .pl2-fin .g{ font-size:64px; }
   .pl2-fin h1{ font-size:24px; margin-top:12px; }
-  .pl2-fin p{ color:#a6aac2; font-size:13px; margin-top:6px; }
+  .pl2-fin p{ color:var(--gris); font-size:13px; margin-top:6px; }
   .pl2-fin .fila-bot{ display:flex; gap:10px; margin-top:24px; width:100%; }
 
   /* ---------- v5: motion ---------- */
@@ -1902,13 +1925,22 @@ function renderPlayer(){
       '<span class="pos">' + (playerIdx + 1) + '/' + lista.length + '</span>' +
       '<button class="nav" id="pl2Despues">›</button></div>' +
     '<div class="pl2-zona">' +
-      '<div class="pl2-marco">' + (function(){
-        var cuadros = imgsDe(e.nombre);
-        if (img && cuadros.length > 1) return '<div class="anim2">' +
-          cuadros.map(function(src, i){ return '<img' + (i===0 ? ' class="on"' : '') + ' src="' + src + '" alt="">'; }).join('') + '</div>';
-        if (img) return '<img src="' + img + '" alt="">';
-        return '<div class="emoji" style="color:var(--c1)">' + icono('pesa',56) + '</div>';
-      })() + '</div>' +
+      (function(){
+        var resp = lista.filter(function(x){ return marcas[x.id] !== undefined; }).length;
+        var pct = lista.length ? Math.round(resp / lista.length * 100) : 0;
+        var dib = (function(){
+          var cuadros = imgsDe(e.nombre);
+          if (img && cuadros.length > 1) return '<div class="anim2">' +
+            cuadros.map(function(src, i){ return '<img' + (i===0 ? ' class="on"' : '') + ' src="' + src + '" alt="">'; }).join('') + '</div>';
+          if (img) return '<img src="' + img + '" alt="">';
+          return '<div class="emoji" style="color:var(--c1)">' + icono('pesa',56) + '</div>';
+        })();
+        return '<div class="pl2-orbe">' +
+          '<div class="pl2-anillo" style="background:conic-gradient(from -90deg, var(--c1) 0 ' + pct + '%, color-mix(in srgb, var(--c1) 14%, transparent) ' + pct + '% 100%)"></div>' +
+          '<div class="pl2-marco">' + dib + '</div>' +
+          (lista.length ? '<div class="pl2-paso">' + resp + ' de ' + lista.length + ' ✓</div>' : '') +
+        '</div>';
+      })() +
       '<h1>' + e.nombre + '</h1>' +
       '<div class="pl2-serie">' + serie + '</div>' +
       (sub ? '<div class="pl2-sub">' + sub + '</div>' : '') +
