@@ -429,13 +429,26 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
   #rPantFin .r-head{ padding:22px 28px 8px; }
 
   /* ── CONSTRUCTOR (a pantalla completa, cómodo en PC) ── */
-  #rAppBuilder .r-head, #rAppBuilder .r-biblio, #rAppBuilder .r-plan-zona{ max-width:1200px; margin-left:auto; margin-right:auto; }
-  #rAppBuilder .r-head{ padding:22px 28px 8px; }
-  #rAppBuilder .r-grilla{ grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:14px; }
+  #rAppBuilder .r-head{ max-width:none; padding:20px 26px 6px; align-items:center; }
+  #rAppBuilder .r-head .r-atras{ position:absolute; left:22px; top:18px; width:42px; height:42px; flex-basis:42px; font-size:22px; }
+  #rAppBuilder .r-head h1{ text-align:center; flex:1; font-size:21px; }
+  #rAppBuilder .r-biblio, #rAppBuilder .r-plan-zona, #rAppBuilder .r-pildoras{ max-width:none; }
   #rAppBuilder .r-biblio{ padding-left:28px; padding-right:28px; }
-  #rAppBuilder .r-mazo{ min-height:140px; }
-  #rAppBuilder .r-barra{ max-width:1200px; margin:0 auto; display:flex; }
-  #rAppBuilder .r-barra .r-btn-prin{ flex:0 0 320px; }
+  #rAppBuilder .r-grilla{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px 14px; }
+  #rAppBuilder .r-mazo{ min-height:150px; }
+  #rAppBuilder .r-plan-titulo{ max-width:none; padding-left:14px; padding-right:14px; }
+
+  /* la barra de abajo pasa a ser un FAB redondo abajo a la derecha */
+  #rAppBuilder .r-barra{ max-width:none; background:none; backdrop-filter:none; border-top:none;
+    padding:0; pointer-events:none; }
+  #rAppBuilder .r-barra > div{ position:absolute; left:30px; bottom:26px; z-index:30; pointer-events:auto; }
+  #rAppBuilder .r-barra .r-btn-prin{ position:absolute; right:30px; bottom:24px; z-index:40;
+    width:74px; height:74px; border-radius:50%; padding:0; font-size:0; flex:0 0 auto;
+    box-shadow:0 16px 36px rgba(124,58,237,.45); pointer-events:auto; }
+  #rAppBuilder .r-barra .r-btn-prin::before{ content:'💾'; font-size:28px; line-height:1; }
+  #rAppBuilder .r-barra .r-btn-prin:hover{ transform:translateY(-2px); }
+  /* espacio al final de la grilla para que el FAB no tape la última fila */
+  #rAppBuilder .r-grilla{ padding-bottom:110px; }
 
   /* hojas (bottom sheets) pasan a ventanas centradas en PC */
   #rAppProfe .r-velo, #rAppBuilder .r-velo{ display:flex; align-items:center; justify-content:center; }

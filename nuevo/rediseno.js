@@ -780,7 +780,7 @@ function crearEstructura(){
       '<input class="r-busca" id="bBusca" placeholder="Buscar: sentadilla, press, curl…" style="margin:8px 0 9px;width:100%">'+
       '<div class="r-grilla" id="bGrilla"></div></div>'+
     '<div class="r-barra"><div style="font-size:13px;font-weight:800;white-space:nowrap"><span id="bN">0</span> ejercicios<small style="display:block;font-size:10px;font-weight:500;color:var(--gris)" id="bDiaNom"></small></div>'+
-      '<button class="r-btn-prin" id="bGuardar" style="flex:1">Guardar plan</button></div>'+
+      '<button class="r-btn-prin" id="bGuardar" style="flex:1" title="Guardar plan">Guardar plan</button></div>'+
     // hoja detalles
     '<div class="r-velo" id="bVelo"><div class="r-hoja"><div class="r-agarre"></div>'+
       '<div class="r-dh"><span id="bHImg"></span><div><b id="bHNom"></b><small id="bHSub"></small></div></div>'+
