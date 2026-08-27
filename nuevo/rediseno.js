@@ -499,6 +499,10 @@ function rHojaCobro(u, alGuardar){
 R.entrenador = T;
 R.rIrPantalla = rIrPantalla;
 R.rPintarAlumnos = rPintarAlumnos;
+R.rLeer = rLeer;
+R.rGuardar = rGuardar;
+R.rDemoPlanKey = rDemoPlanKey;
+R.rPropios = rPropios;
 R.rToastProfe = function(msg){ rToast(msg, $('rAppProfe')); };
 R.rCategoria = rCategoria;
 R.rManchas = rManchas;
@@ -520,7 +524,7 @@ function nuevoId(){ return 'e'+Date.now()+Math.floor(Math.random()*99999); }
 
 B.abrir = function(u){
   B.userId = u.id; B.nombre = u.nombre; B.demo = !!u.demo;
-  var planBase = u.demo ? rLeer(rDemoPlanKey(u.id), null) : u.plan;
+  var planBase = u.demo ? R.rLeer(R.rDemoPlanKey(u.id), null) : u.plan;
   B.vivos = planBase ? JSON.parse(JSON.stringify(planBase)) : null;
   B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] };  // plan nuevo: arranca vacío
   B.dia = claveDia(Date.now()); B.cat = 'todo';
@@ -783,7 +787,7 @@ function conectar(){
           final.__anterior = vivoDias; final.__fecha = fechaClave(Date.now());
         } else if (vivo.__anterior){ final.__anterior=vivo.__anterior; final.__fecha=vivo.__fecha; }
       }
-      rGuardar(rDemoPlanKey(B.userId), final);
+      R.rGuardar(R.rDemoPlanKey(B.userId), final);
       B.cerrar(); avisar('Plan guardado (prueba)');
       R.entrenador.usuario.plan = final;
       R.rIrPantalla('ficha');
