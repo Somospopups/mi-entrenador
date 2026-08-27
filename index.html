@@ -1109,6 +1109,11 @@ var BackendLocal = {
     var u = db.usuarios.find(function(x){ return x.id===userId; });
     if (u){ u.activo = !!activo; this._guardar(); } return { ok:true };
   },
+  async buscarCuentaPorDni(dni){
+    var db = await this._cargar(); var d = String(dni||'').replace(/\D/g,'');
+    var p = db.usuarios.find(function(x){ return String(x.dni).replace(/\D/g,'')===d; });
+    return p ? { cuenta:p } : { noExiste:true };
+  },
   async eliminarUsuario(userId){
     var db = await this._cargar();
     db.usuarios = db.usuarios.filter(function(x){ return x.id!==userId; });
@@ -1335,6 +1340,16 @@ var BackendSupabase = {
       (rm.data || []).forEach(function(x){ (marcas[x.alumno_id] = marcas[x.alumno_id] || {})[x.fecha] = x.marcas || {}; });
     }
     return lista.map(function(p){ return nubeMapear(p, { plan: planes[p.user_id] || null, hechos: marcas[p.user_id] || {} }); });
+  },
+  /* Buscar CUALQUIER cuenta por DNI (solo lo usa el superadmin para liberar DNI) */
+  async buscarCuentaPorDni(dni){
+    var d = String(dni||'').replace(/\D/g,'');
+    if (!d) return { error:'DNI inválido' };
+    var r = await nubeApi('/rest/v1/fit_perfiles?select=*&dni=eq.' + d);
+    if (!r.ok) return { error:'No se pudo consultar la cuenta.' };
+    var p = (r.data||[])[0];
+    if (!p) return { noExiste:true };
+    return { cuenta: nubeMapear(p, {}) };
   },
   async crearUsuario(datos){
     var r = await nubeApi('/functions/v1/' + NUBE.fnAlta, { method: 'POST',

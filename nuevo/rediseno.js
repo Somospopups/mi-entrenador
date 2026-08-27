@@ -549,8 +549,8 @@ function rHojaAlta(){
         rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
         return;
       }
-      // existe pero no es tuyo (alumno de otro profe o gestor): no se puede tocar
-      rToast('Ese DNI ya pertenece a otra cuenta. Hablá con soporte.', $('rAppProfe'));
+      // existe pero no es tuyo (alumno de otro profe o un entrenador): el dueño puede liberarlo
+      rToast('Ese DNI ya está usado en otra cuenta. Pedile al dueño que lo libere desde su panel.', $('rAppProfe'));
       $('rAltaCrear').textContent='Crear cuenta';
       return;
     }
@@ -1355,14 +1355,15 @@ document.addEventListener('click', function(ev){
 
 function montar(){
   if(!window.sesion) return;
-  if(sesion.rol==='entrenador'){
-    window.Rediseno.ocultarAlumno();
+  window.Rediseno.ocultarAlumno && window.Rediseno.ocultarAlumno();
+  window.Rediseno.ocultarEntrenador && window.Rediseno.ocultarEntrenador();
+  window.Rediseno.ocultarOwner && window.Rediseno.ocultarOwner();
+  if(sesion.rol==='superadmin'){
+    window.Rediseno.renderOwner && window.Rediseno.renderOwner();
+  } else if(sesion.rol==='entrenador'){
     window.Rediseno.renderEntrenador();
   } else if(sesion.rol==='alumno' || sesion.rol==='usuario'){
-    window.Rediseno.ocultarEntrenador();
     window.Rediseno.renderAlumno();
-  } else {
-    window.Rediseno.ocultarAlumno(); window.Rediseno.ocultarEntrenador();
   }
 }
 // cuando entra a la app
@@ -1393,6 +1394,8 @@ R.atras = function(){
   }
   // 1 · el constructor de planes (mazo del profe) → vuelve a la ficha/lista
   if (visible(build)){ R.builder.cerrar(); return 'capa'; }
+  // 1b · panel del dueño (superadmin)
+  if (R.atrasOwner){ var oo = R.atrasOwner(); if (oo !== 'fuera') return oo; }
   // 2 · espacio del ENTRENADOR
   if (visible(profe)){
     if (R.entrenador && R.entrenador.pantalla === 'ficha'){
@@ -1417,8 +1420,111 @@ var _salir = window.salir;
 window.salir = function(){
   window.Rediseno && window.Rediseno.ocultarAlumno && window.Rediseno.ocultarAlumno();
   window.Rediseno && window.Rediseno.ocultarEntrenador && window.Rediseno.ocultarEntrenador();
+  window.Rediseno && window.Rediseno.ocultarOwner && window.Rediseno.ocultarOwner();
   _salir && _salir();
 };
 // refrescar el mazo del alumno cuando vuelve del progreso
 window.__rAlumnoRender = function(){ if(window.sesion && (sesion.rol==='alumno'||sesion.rol==='usuario')) window.Rediseno.renderAlumno(); };
+})();
+
+/* ════════════════════════════════════════════════════════════
+   PANEL DEL DUEÑO (superadmin) · liberar DNI borrando cuentas
+   ════════════════════════════════════════════════════════════ */
+(function(){
+var R = window.Rediseno;
+var O = { app:null };
+R.owner = O;
+
+function o$(id){ return document.getElementById(id); }
+function oEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function oToast(m){ var t=o$('rOwnToast'); if(!t) return; t.textContent=m; t.classList.add('ver'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('ver'); },2200); }
+
+function crearEstructura(){
+  var d=document.createElement('div');
+  d.className='r-app'; d.id='rAppOwner';
+  d.innerHTML='<div class="r-manchas"><i></i><i></i><i></i></div>'+
+    '<div class="r-head"><h1>Panel del dueño<small class="r-sub">Hola, '+(window.sesion&&sesion.nombre?sesion.nombre.split(' ')[0]:'')+'</small></h1>'+
+      '<button class="r-sync-btn" id="oSync" title="Sincronizar">🔄</button>'+
+      '<button class="r-salir-btn" id="oSalir" title="Cerrar sesión">🚪</button></div>'+
+    '<div style="padding:8px 16px 30px;overflow-y:auto;flex:1">'+
+      '<div class="r-caja" style="margin-bottom:14px">'+
+        '<h3>🗑️ Liberar un DNI</h3>'+
+        '<p style="font-size:12.5px;color:var(--gris);margin:2px 0 10px;line-height:1.4">Buscá cualquier cuenta por DNI (alumno o entrenador) y podés borrarla para que se pueda volver a crear. Al borrar, el DNI queda libre al instante.</p>'+
+        '<div style="display:flex;gap:8px">'+
+          '<input id="oDni" inputmode="numeric" placeholder="DNI de la cuenta" class="r-busca" style="margin:0;width:auto;flex:1">'+
+          '<button class="r-chato" id="oBuscar" style="flex:0 0 auto">Buscar</button></div>'+
+        '<div id="oRes" style="margin-top:12px"></div></div>'+
+      '<p style="font-size:10.5px;color:var(--gris);text-align:center;line-height:1.5">Los entrenadores solo pueden sobrescribir <b>sus propios</b> alumnos.<br>Si un DNI está tomado por otra cuenta, liberalo desde acá.</p>'+
+    '</div>'+
+    '<div class="r-toast" id="rOwnToast"></div>';
+  return d;
+}
+
+R.renderOwner = function(){
+  if (!o$('rAppOwner')) document.body.appendChild(crearEstructura());
+  o$('rAppOwner').classList.add('ver');
+  o$('oSalir').onclick = function(){ if(confirm('¿Cerrar tu sesión?')){ R.ocultarOwner(); salir(); } };
+  o$('oSync').onclick = function(){ oToast('✓ Datos actualizados'); };
+  var buscar = function(){ oBuscar(); };
+  o$('oBuscar').onclick = buscar;
+  o$('oDni').addEventListener('keydown', function(e){ if(e.key==='Enter') buscar(); });
+};
+R.ocultarOwner = function(){ var a=o$('rAppOwner'); if(a) a.classList.remove('ver'); };
+
+var oActual = null;
+async function oBuscar(){
+  var dni = o$('oDni').value; var res = o$('oRes');
+  var d = String(dni||'').replace(/\D/g,'');
+  if (d.length<7){ oToast('Escribí el DNI completo'); return; }
+  res.innerHTML = '<div style="color:var(--gris);font-size:13px;padding:6px 2px">Buscando…</div>';
+  var r;
+  try{ r = await Backend.buscarCuentaPorDni(d); }catch(e){ r = { error:'Sin conexión' }; }
+  if (r && r.error){ res.innerHTML=''; oToast(r.error||'No se pudo buscar'); return; }
+  if (r && r.noExiste){
+    res.innerHTML = '<div style="background:#eafaf0;border:1px solid #bfe8cf;border-radius:13px;padding:13px;font-size:13px;color:#15803d">✅ Ese DNI <b>no tiene ninguna cuenta</b>: está libre para crear.</div>';
+    oActual=null; return;
+  }
+  oActual = r.cuenta;
+  var u = oActual;
+  var rolTxt = u.rol==='alumno'?'Alumno':u.rol==='entrenador'?'Entrenador':u.rol==='superadmin'?'Dueño':'Administrador';
+  var esSuper = u.rol==='superadmin'||u.rol==='admin';
+  res.innerHTML =
+    '<div style="background:#fafaff;border:1.5px solid var(--borde);border-radius:15px;padding:14px">'+
+      '<div style="display:flex;align-items:center;gap:12px">'+
+        '<span class="r-avatar">'+(u.nombre?oEsc(u.nombre.charAt(0).toUpperCase()):'?')+'</span>'+
+        '<div style="flex:1;min-width:0"><b style="font-size:15px">'+oEsc(u.nombre)+'</b>'+
+        '<small style="display:block;color:var(--gris);font-size:12px;margin-top:2px">'+rolTxt+' · DNI '+oEsc(u.dni)+(u.telefono?' · '+oEsc(u.telefono):'')+'</small></div>'+
+      '</div>'+
+      (esSuper
+        ? '<div style="margin-top:12px;font-size:12.5px;color:#d97706;background:#fff8e6;border:1px solid #ffe2a8;border-radius:11px;padding:10px">🔒 Es una cuenta de administración: no se puede borrar.</div>'
+        : '<button class="r-btn-prin" id="oBorrar" style="margin-top:13px;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 10px 24px rgba(220,38,38,.3)">🗑️ Borrar esta cuenta y liberar DNI</button>'+
+          '<div style="font-size:11px;color:var(--gris);margin-top:8px;text-align:center">Se borra el acceso, el plan y el historial. Es irreversible.</div>')+
+    '</div>';
+  var btn = o$('oBorrar');
+  if (btn) btn.onclick = oBorrar;
+}
+
+async function oBorrar(){
+  if (!oActual) return;
+  var u = oActual;
+  if (!confirm('¿BORRAR la cuenta de '+u.nombre+' (DNI '+u.dni+')?\n\nSe elimina el acceso y todos sus datos. El DNI queda libre para volver a crear. Esta acción NO se puede deshacer.')) return;
+  var btn = o$('oBorrar'); if(btn){ btn.disabled=true; btn.textContent='Borrando…'; }
+  var r;
+  try{ r = await Backend.eliminarUsuario(u.id); }catch(e){ r = { error:'Sin conexión' }; }
+  if (r && r.error){ if(btn){ btn.disabled=false; btn.textContent='🗑️ Borrar esta cuenta y liberar DNI'; } oToast(r.error||'No se pudo borrar'); return; }
+  o$('oRes').innerHTML = '<div style="background:#eafaf0;border:1px solid #bfe8cf;border-radius:13px;padding:13px;font-size:13px;color:#15803d">✅ Cuenta borrada. El DNI <b>'+oEsc(u.dni)+'</b> ya está libre. El profe puede crearla de nuevo.</div>';
+  o$('oDni').value=''; oActual=null;
+  oToast('Cuenta borrada');
+}
+
+// Atrás de Android: en el panel del dueño es raíz (doble-toque lo maneja index)
+R.atrasOwner = function(){
+  var a=o$('rAppOwner');
+  if (a && a.classList.contains('ver')){
+    var velos = Array.prototype.slice.call(document.querySelectorAll('#rAppOwner .r-velo.abierto'));
+    if (velos.length){ velos[velos.length-1].classList.remove('abierto'); return 'capa'; }
+    return 'raiz';
+  }
+  return 'fuera';
+};
 })();
