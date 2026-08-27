@@ -907,10 +907,10 @@ function crearEstructura(){
   var d=document.createElement('div');
   d.className='r-app'; d.id='rAppAlumno';
   d.innerHTML='<div class="r-manchas"><i></i><i></i><i></i></div>'+
-    '<div class="r-deck-top"><div><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b></div>'+
+    '<div class="r-deck-top"><div class="r-deck-titulo"><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b></div>'+
+      '<div class="r-deck-dias" id="dDias"></div>'+
       '<div class="r-anillo-wrap"><div class="r-anillo" id="dAnillo"></div><i id="dAnilloTxt">0%</i></div>'+
       '<button class="r-menu-btn" id="dMenu" title="Menú">☰</button></div>'+
-    '<div class="r-deck-dias" id="dDias"></div>'+
     '<div class="r-deck-puntos" id="dPuntos"></div>'+
     '<div class="r-deck-zona" id="dZona"><button class="r-nav-dia izq" id="dIzq">‹</button><button class="r-nav-dia der" id="dDer">›</button></div>'+
     '<div class="r-deck-botones" id="dBotones"><button class="r-bbtn no" id="dNo">✗</button><button class="r-bbtn ok" id="dSi">✓</button></div>'+
@@ -1036,6 +1036,8 @@ function dPintarDias(){
   d$('dDias').querySelectorAll('[data-dia]').forEach(function(b){
     b.onclick=function(){ D.dia=b.getAttribute('data-dia'); D.idx=0; dRender(); };
   });
+  var act = d$('dDias').querySelector('.r-dp.activo');
+  if (act && act.scrollIntoView) act.scrollIntoView({inline:'center', block:'nearest'});
 }
 function dPintarAnillo(){
   var lista=dLista(D.dia), marcas=dMarcasHoy(D.dia);
