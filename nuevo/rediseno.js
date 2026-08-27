@@ -833,7 +833,8 @@ function crearEstructura(){
   d.innerHTML = R && R.rManchas ? '' : '';
   d.innerHTML = '<div class="r-manchas"><i></i><i></i><i></i></div>'+
     '<div class="r-head"><button class="r-atras" id="bAtras">‹</button>'+
-      '<h1>Armar plan<small>Plan de <span id="bNombre"></span></small></h1></div>'+
+      '<h1>Armar plan<small>Plan de <span id="bNombre"></span></small></h1>'+
+      '<button class="r-salir-btn" id="bSalir" title="Cerrar sesión">🚪</button></div>'+
     '<div class="r-pildoras"><div class="r-pcentro" id="bDias"></div></div>'+
     '<div class="r-plan-zona"><div class="r-plan-titulo"><b>Sesión</b><span id="bAyuda"></span></div>'+
       '<div class="r-mazo" id="bMazo"></div></div>'+
@@ -855,7 +856,8 @@ function crearEstructura(){
         '<div class="r-campo"><label>Repeticiones / tiempo</label><input id="bHReps" placeholder="10-12 · 40 seg"><div class="r-sugiere" data-p="reps"><button>8-10</button><button>10-12</button><button>40 seg</button></div></div>'+
         '<div class="r-campo"><label>Peso / carga</label><input id="bHCarga" placeholder="40 kg · desc. 90 seg"><div class="r-sugiere" data-p="carga"><button>sin peso</button><button>mancuernas</button></div></div>'+
         '<div class="r-campo"><label>Comentario para el alumno</label><input id="bHNota" placeholder="Ej: bajá lento"></div>'+
-      '</div><div class="r-hb"><button class="r-cancela" id="bHCancela">Cancelar</button><button class="r-listo" id="bHListo">Listo</button></div></div></div>'+
+      '</div><div class="r-hb"><button class="r-cancela" id="bHCancela">Cancelar</button><button class="r-listo" id="bHListo">Listo</button></div>'+
+      '<button class="r-quitar" id="bHQuitar" style="display:none;margin-top:10px;width:100%;border:1.5px solid rgba(220,38,38,.4);background:rgba(220,38,38,.08);color:#dc2626;border-radius:13px;padding:11px;font-size:13.5px;font-weight:800">🗑️ Quitar del plan</button></div></div>'+
     // hoja ejercicio propio
     '<div class="r-velo" id="bVeloPropio"><div class="r-hoja"><div class="r-agarre"></div>'+
       '<b style="font-size:17px">Ejercicio propio</b>'+
@@ -980,12 +982,30 @@ function bAbrirHoja(tipo, ref){
   if (uso) pistas.push('El alumno usó <b>'+uso+'</b> la última vez.');
   var pista = b$('bHPista'); pista.hidden = !pistas.length; pista.innerHTML = pistas.join('<br>') || '💬 Ajustá series, peso o dejá una nota.';
   if (!pistas.length) pista.innerHTML='💬 Ajustá series, peso o dejá una nota para el alumno.';
+  var q = b$('bHQuitar'); if (q) q.style.display = (tipo==='plan') ? 'block' : 'none';
   b$('bVelo').classList.add('abierto');
 }
 function conectar(){
   b$('bAtras').onclick = function(){ B.cerrar(); };
+  var bSalir = b$('bSalir');
+  if (bSalir) bSalir.onclick = function(){
+    R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); });
+  };
   b$('bBusca').addEventListener('input', function(){ bPintarGrilla(); });
   b$('bHCancela').onclick = function(){ b$('bVelo').classList.remove('abierto'); };
+  var bQuitar = b$('bHQuitar');
+  if (bQuitar){
+    bQuitar.onclick = function(){
+      if (B.editando && B.editando.tipo==='plan'){
+        var idx = B.editando.ref;
+        if (typeof idx === 'number' && B.plan[B.dia][idx]){
+          B.plan[B.dia].splice(idx,1);
+          b$('bVelo').classList.remove('abierto');
+          bPintarMazo(); bPintarGrilla(); bPintarDias();
+        }
+      }
+    };
+  }
   b$('bVelo').onclick = function(ev){ if (ev.target===this) this.classList.remove('abierto'); };
   b$('bVelo').querySelectorAll('.r-sugiere button').forEach(function(b){
     b.onclick=function(){ var map={series:'bHSeries',reps:'bHReps',carga:'bHCarga'}; b$(map[b.parentElement.getAttribute('data-p')]).value=b.textContent.trim(); };
