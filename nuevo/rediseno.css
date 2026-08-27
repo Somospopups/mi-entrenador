@@ -460,10 +460,12 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
     padding:12px 30px calc(12px + env(safe-area-inset-bottom)); pointer-events:auto;
     display:flex; align-items:center; justify-content:space-between; gap:16px; }
   #rAppBuilder .r-barra > div{ position:static !important; flex:0 0 auto; }
-  #rAppBuilder .r-barra .r-btn-prin{ width:64px !important; height:64px; flex:0 0 64px !important;
-    border-radius:50%; padding:0; margin:0 0 0 auto; font-size:0; display:grid; place-items:center; line-height:0;
-    box-shadow:0 14px 30px rgba(124,58,237,.5); }
-  #rAppBuilder .r-barra .r-btn-prin::before{ content:'💾'; font-size:28px; line-height:1; display:block; }
+  #rAppBuilder .r-barra .r-btn-prin{ width:64px !important; height:64px !important; flex:0 0 64px !important;
+    border-radius:50%; padding:0 !important; margin:0 0 0 auto !important; font-size:0 !important; line-height:1 !important;
+    display:inline-flex !important; align-items:center; justify-content:center; text-align:center; vertical-align:middle;
+    box-shadow:0 14px 30px rgba(124,58,237,.5); overflow:hidden; }
+  #rAppBuilder .r-barra .r-btn-prin::before{ content:'💾'; font-size:27px; line-height:1; display:inline-block;
+    width:auto; height:auto; margin:0; padding:0; transform:translateY(1px); }
   #rAppBuilder .r-barra .r-btn-prin:hover{ transform:translateY(-2px); }
   /* espacio al final de la grilla para que la barra no tape la última fila */
   #rAppBuilder .r-grilla{ padding-bottom:120px; }

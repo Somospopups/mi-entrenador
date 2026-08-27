@@ -992,8 +992,18 @@ function bAbrirHoja(tipo, ref){
 function conectar(){
   b$('bAtras').onclick = function(){ B.cerrar(); };
   var bSalir = b$('bSalir');
-  if (bSalir) bSalir.onclick = function(){
-    R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); });
+  if (bSalir) bSalir.onclick = function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){
+      var ap=b$('rAppBuilder'); if(ap) ap.classList.remove('ver');          // 1) cerrar el constructor
+      var pv=b$('rAppProfe'); if(pv) pv.classList.remove('ver');           // 2) cerrar panel profe
+      var bl=document.querySelectorAll('.r-velo.abierto,.velo.abierto');
+      for(var i=0;i<bl.length;i++){ bl[i].classList.remove('abierto'); bl[i].classList.remove('ver'); }
+      try{ if(typeof window.salir==='function') window.salir(); else salir(); }catch(e){
+        if(typeof salir==='function'){ try{ salir(); }catch(_){} }
+      }
+      var lg2=document.getElementById('vLogin'); if(lg2){ lg2.style.display='flex'; }   // 3) forzar login a la vista
+    });
   };
   b$('bBusca').addEventListener('input', function(){ bPintarGrilla(); });
   b$('bHCancela').onclick = function(){ b$('bVelo').classList.remove('abierto'); };
@@ -1686,10 +1696,16 @@ R.atras = function(){
 // al salir
 var _salir = window.salir;
 window.salir = function(){
-  window.Rediseno && window.Rediseno.ocultarAlumno && window.Rediseno.ocultarAlumno();
-  window.Rediseno && window.Rediseno.ocultarEntrenador && window.Rediseno.ocultarEntrenador();
-  window.Rediseno && window.Rediseno.ocultarOwner && window.Rediseno.ocultarOwner();
-  _salir && _salir();
+  try{
+    window.Rediseno && window.Rediseno.ocultarAlumno && window.Rediseno.ocultarAlumno();
+    window.Rediseno && window.Rediseno.ocultarEntrenador && window.Rediseno.ocultarEntrenador();
+    window.Rediseno && window.Rediseno.ocultarOwner && window.Rediseno.ocultarOwner();
+  }catch(e){}
+  ['rAppProfe','rAppAlumno','rAppOwner','rAppBuilder'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.classList.remove('ver');
+  });
+  try{ _salir && _salir(); }catch(e){}
+  var lg=document.getElementById('vLogin'); if(lg){ lg.style.display='flex'; }
 };
 // refrescar el mazo del alumno cuando vuelve del progreso
 window.__rAlumnoRender = function(){ if(window.sesion && (sesion.rol==='alumno'||sesion.rol==='usuario')) window.Rediseno.renderAlumno(); };
