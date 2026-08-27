@@ -1186,6 +1186,45 @@ function leerNubeSesion(){
 function limpiarNubeSesion(){
   try{ localStorage.removeItem(claveNubeSesion()); }catch(e){}
 }
+
+/* ── Cola OFFLINE: marcas/pesos hechos sin internet se mandan solos
+   cuando vuelve la señal (se reagrupan por día para no perder nada) ── */
+function claveColaOffline(){ return CONFIG.CLAVE_DATOS + '_cola_offline'; }
+async function vaciarColaOffline(){
+  if (!sesion || !nubeSesion.token) return;
+  if (navigator.onLine === false) return;
+  var q; try{ q = leer(claveColaOffline(), []); }catch(e){ q = []; }
+  if (!q || !q.length) return;
+  var porDia = {};
+  q.forEach(function(a){
+    if (a.userId !== sesion.id) return;
+    var f = a.fecha; if (!porDia[f]) porDia[f] = {};
+    if (a.tipo === 'marca') porDia[f][a.ejId] = !!a.valor;
+    else if (a.tipo === 'peso'){ if (a.peso) porDia[f][a.clave] = a.peso; else delete porDia[f][a.clave]; }
+  });
+  var dias = Object.keys(porDia);
+  var okTodo = true;
+  for (var i=0;i<dias.length;i++){
+    var f = dias[i];
+    var base = (sesion.hechos && sesion.hechos[f]) || {};
+    var marcas = {}; Object.keys(base).forEach(function(k){ marcas[k]=base[k]; });
+    Object.keys(porDia[f]).forEach(function(k){
+      if (porDia[f][k] === undefined) delete marcas[k]; else marcas[k] = porDia[f][k];
+    });
+    var r;
+    try{
+      r = await nubeApi('/rest/v1/fit_marcas', { method:'POST',
+        headers: { 'Prefer':'resolution=merge-duplicates,return=minimal' },
+        body: [{ alumno_id: sesion.id, fecha: f, marcas: marcas, actualizado: new Date().toISOString() }] });
+    }catch(e){ r = { ok:false, status:0 }; }
+    if (!r.ok){ okTodo = false; break; }
+  }
+  if (okTodo){ try{ guardar(claveColaOffline(), []); }catch(e){} avisar && avisar('Sincronizado ✓'); }
+}
+window.addEventListener('online', function(){ try{ vaciarColaOffline(); }catch(e){} });
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'visible'){ try{ vaciarColaOffline(); }catch(e){} }
+});
 async function nubeApi(ruta, opciones){
   opciones = opciones || {};
   var headers = { 'apikey': NUBE.anon, 'Content-Type': 'application/json' };
@@ -1357,30 +1396,79 @@ var BackendSupabase = {
     return { ok: true };
   },
   async marcarHecho(userId, fecha, ejercicioId, valor){
-    var actuales = (sesion && sesion.hechos && sesion.hechos[fecha]) || {};
-    var nuevas = {}; Object.keys(actuales).forEach(function(k){ nuevas[k] = actuales[k]; });
+    var nuevas = this._marcasCon(fecha);
     nuevas[ejercicioId] = !!valor;
-    var r = await nubeApi('/rest/v1/fit_marcas', { method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body: [{ alumno_id: userId, fecha: fecha, marcas: nuevas, actualizado: new Date().toISOString() }] });
-    if (!r.ok) return { error: 'No se pudo guardar la marca.' };
-    var hechos = {}; Object.keys(sesion.hechos || {}).forEach(function(k){ hechos[k] = sesion.hechos[k]; });
-    hechos[fecha] = nuevas;
-    return { ok: true, hechos: hechos };
+    return this._guardarMarcas(userId, fecha, nuevas, { tipo:'marca', userId:userId, fecha:fecha, ejId:ejercicioId, valor:!!valor, ej:ejercicioId });
   },
   async guardarPeso(userId, fecha, ejercicioId, peso){
-    var actuales = (sesion && sesion.hechos && sesion.hechos[fecha]) || {};
-    var nuevas = {}; Object.keys(actuales).forEach(function(k){ nuevas[k] = actuales[k]; });
+    var nuevas = this._marcasCon(fecha);
     var t = String(peso||'').trim();
     var clave = String(ejercicioId).indexOf('p:') === 0 ? ejercicioId : 'p:'+ejercicioId;
     if (t) nuevas[clave] = t; else delete nuevas[clave];
-    var r = await nubeApi('/rest/v1/fit_marcas', { method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body: [{ alumno_id: userId, fecha: fecha, marcas: nuevas, actualizado: new Date().toISOString() }] });
-    if (!r.ok) return { error: 'No se pudo guardar el peso.' };
-    var hechos = {}; Object.keys(sesion.hechos || {}).forEach(function(k){ hechos[k] = sesion.hechos[k]; });
-    hechos[fecha] = nuevas;
-    return { ok: true, hechos: hechos };
+    return this._guardarMarcas(userId, fecha, nuevas, { tipo:'peso', userId:userId, fecha:fecha, ejId:ejercicioId, peso:t, clave:clave, ej:ejercicioId });
+  },
+  /* ── núcleo: estado de marcas del día + guardado con cola offline ── */
+  _marcasCon(fecha){
+    var actuales = (sesion && sesion.hechos && sesion.hechos[fecha]) || {};
+    var nuevas = {}; Object.keys(actuales).forEach(function(k){ nuevas[k] = actuales[k]; });
+    return nuevas;
+  },
+  _aplicarHechos(fecha, nuevas){
+    var hechos = {}; Object.keys((sesion&&sesion.hechos)||{}).forEach(function(k){ hechos[k] = sesion.hechos[k]; });
+    hechos[fecha] = nuevas; sesion.hechos = hechos;
+    return { ok:true, hechos:hechos };
+  },
+  async _guardarMarcas(userId, fecha, nuevas, accionPend){
+    var red;
+    try {
+      red = await nubeApi('/rest/v1/fit_marcas', { method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: [{ alumno_id: userId, fecha: fecha, marcas: nuevas, actualizado: new Date().toISOString() }] });
+    } catch(e){ red = { ok:false, status:0 }; }   // sin internet
+    var falloRed = !red.ok && (!red.status || red.status === 429 || red.status >= 500);
+    if (falloRed || navigator.onLine === false){
+      try{ var q = leer(claveColaOffline(), []); q.push(accionPend); guardar(claveColaOffline(), q); }catch(e){}
+      return this._aplicarHechos(fecha, nuevas);  // queda en el celu y se sincroniza solo
+    }
+    if (!red.ok) return { error: 'No se pudo guardar.' };
+    return this._aplicarHechos(fecha, nuevas);
+  },
+  /* ── COBROS de alumnos (los registra el entrenador) ── */
+  async listarCobrosNube(){
+    try{
+      var r = await nubeApi('/rest/v1/fit_cobros?select=alumno_id,alumno_nombre,monto,creado,dedup&order=creado.asc');
+      if (!r.ok) return { error:true };
+      return { cobros: (r.data||[]).map(function(c){
+        return { alumnoId:c.alumno_id, alumno:c.alumno_nombre, monto:Number(c.monto)||0,
+                 fecha: Date.parse(c.creado) || Date.now(), dedup:c.dedup, _nube:true };
+      }) };
+    }catch(e){ return { error:true }; }
+  },
+  async registrarCobroNube(alumnoId, nombre, monto, dedup){
+    try{
+      var r = await nubeApi('/rest/v1/rpc/fit_registrar_cobro', { method:'POST',
+        body: { p_alumno:String(alumnoId||''), p_nombre:String(nombre||''), p_monto:Number(monto)||0, p_dedup:String(dedup) } });
+      if (!r.ok) return { error:true };
+      return { ok:true };
+    }catch(e){ return { error:true }; }
+  },
+  /* ── EJERCICIOS PROPIOS del entrenador ── */
+  async listarEjpropiosNube(){
+    try{
+      var r = await nubeApi('/rest/v1/fit_ejercicios_propios?select=nombre,emoji,categoria');
+      if (!r.ok) return { error:true };
+      return { propios: (r.data||[]).map(function(e){
+        return { n:e.nombre, emoji:e.emoji||'🏋️', cat:e.categoria||'mios', propio:true, _nube:true };
+      }) };
+    }catch(e){ return { error:true }; }
+  },
+  async guardarEjpropioNube(nombre, emoji, categoria){
+    try{
+      var r = await nubeApi('/rest/v1/rpc/fit_guardar_ejpropio', { method:'POST',
+        body: { p_nombre:String(nombre||''), p_emoji:String(emoji||'🏋️'), p_categoria:String(categoria||'mios') } });
+      if (!r.ok) return { error:true };
+      return { ok:true };
+    }catch(e){ return { error:true }; }
   },
   async guardarProgreso(userId, fecha, datos){
     var r = await nubeApi('/rest/v1/fit_progreso', { method: 'POST',
@@ -1544,6 +1632,7 @@ function aLaApp(){
   if (esAlumnoRol()){ mostrar('home'); pintarHome(); }
   else { mostrar('admin'); pintarAdmin(); }
   mostrarBienvenida();
+  try{ vaciarColaOffline(); }catch(e){}   // mandar lo que quedó sin conexión
 }
 function abrirAyuda(){ armarLista('ayudaLista', guiaDeMiRol()); $('veloAyuda').classList.add('abierto'); }
 

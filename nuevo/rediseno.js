@@ -75,6 +75,58 @@ var T = R.entrenador = {
 function rCobrosKey(){ return CONFIG.CLAVE_DATOS+'_cobros_'+(sesion?sesion.id:'x'); }
 function rCobros(){ return rLeer(rCobrosKey(), []); }
 function rGuardarCobros(p){ rGuardar(rCobrosKey(), p); }
+function rNubeOk(){ return !!(window.Backend && Backend.registrarCobroNube); }
+function rEsDemoId(id){ return String(id||'').indexOf('demo_')===0; }
+function rNuevoDedup(){ return 'c'+Date.now()+Math.floor(Math.random()*1e6); }
+
+/* sube un cobro puntual a la nube (fuego y olvido); los demo no suben */
+function rSubirCobro(c){
+  if (!rNubeOk() || rEsDemoId(c.alumnoId)) return;
+  Backend.registrarCobroNube(c.alumnoId, c.alumno, c.monto, c.dedup).then(function(r){
+    if (r && r.ok){ var ps=rCobros().map(function(x){ return x.dedup===c.dedup ? Object.assign({},x,{_nube:true}) : x; }); rGuardarCobros(ps); }
+  }).catch(function(){});
+}
+/* sincroniza cobros con la nube: trae los de otros dispositivos y sube los pendientes */
+async function rSyncCobros(){
+  if (!rNubeOk()) return;
+  try{
+    var r = await Backend.listarCobrosNube();
+    if (r && r.error) return;
+    var locales = rCobros().slice();
+    (r.cobros||[]).forEach(function(nc){
+      if (!locales.some(function(x){ return x.dedup===nc.dedup; })) locales.push(nc);
+    });
+    rGuardarCobros(locales);
+    // subir pendientes (sin marca _nube y que no sean demo)
+    var pend = locales.filter(function(x){ return !x._nube && !rEsDemoId(x.alumnoId) && x.dedup; });
+    for (var i=0;i<pend.length;i++){
+      var rr = await Backend.registrarCobroNube(pend[i].alumnoId, pend[i].alumno, pend[i].monto, pend[i].dedup);
+      if (rr && rr.ok){ var dd=pend[i].dedup;
+        var ps=rCobros().map(function(x){ return x.dedup===dd ? Object.assign({},x,{_nube:true}) : x; }); rGuardarCobros(ps); }
+    }
+  }catch(e){}
+}
+/* sincroniza ejercicios propios con la nube */
+async function rSyncPropios(){
+  if (!window.Backend || !Backend.guardarEjpropioNube) return;
+  try{
+    var r = await Backend.listarEjpropiosNube();
+    if (r && r.error) return;
+    var locales = rPropios().slice();
+    (r.propios||[]).forEach(function(np){
+      if (!locales.some(function(x){ return String(x.n).toLowerCase()===String(np.n).toLowerCase(); })) locales.push(np);
+    });
+    rGuardar(clavePropios(), locales);
+    var pend = locales.filter(function(x){ return !x._nube; });
+    for (var i=0;i<pend.length;i++){
+      var rr = await Backend.guardarEjpropioNube(pend[i].n, pend[i].emoji||'🏋️', pend[i].cat||'mios');
+      if (rr && rr.ok){ var nm=String(pend[i].n).toLowerCase();
+        var ps=rPropios().map(function(x){ return String(x.n).toLowerCase()===nm ? Object.assign({},x,{_nube:true}) : x; });
+        rGuardar(clavePropios(), ps); }
+    }
+  }catch(e){}
+}
+function rSyncNube(){ rSyncCobros().then(function(){ try{ rHeadCobros(); if(T.pantalla==='finanzas') rPintarFinanzas(); }catch(e){} }); rSyncPropios(); }
 
 /* ── alumnos de PRUEBA (demo) ──
    El dueño/administrador puede ser "cargado como alumno" por los entrenadores
@@ -132,6 +184,7 @@ function rRenderEntrenador(){
   var app = $('rAppProfe');
   app.classList.add('ver');
   rIrPantalla('lista');
+  try{ rSyncNube(); }catch(e){}   // cobros y ejercicios propios: nube + local
 }
 function rIrPantalla(cual){
   T.pantalla = cual;
@@ -486,8 +539,11 @@ function rHojaCobro(u, alGuardar){
     var monto = parseInt(String($('rCobroMonto').value).replace(/\D/g,''),10);
     if (!monto){ rToast('Ponele el monto', $('rAppProfe')); return; }
     var pagos = rCobros();
-    pagos.push({ alumnoId:u.id, alumno:u.nombre, monto:monto, fecha:Date.now() });
+    var cNuevo = { alumnoId:u.id, alumno:u.nombre, monto:monto, fecha:Date.now(), dedup:rNuevoDedup() };
+    if (rEsDemoId(u.id)) cNuevo._nube = true;   // demo: nunca sube
+    pagos.push(cNuevo);
     rGuardarCobros(pagos);
+    rSubirCobro(cNuevo);
     rCerrarVelo(v); v.remove();
     rToast('✓ Pago de '+(u.nombre.split(' ')[0]||'')+' registrado', $('rAppProfe'));
     rHeadCobros(); rActualizarBotonAbono(u);
@@ -533,10 +589,28 @@ B.abrir = function(u){
     conectar();
   }
   $('rAppBuilder').classList.add('ver');
+  // borrador automático: si el plan NUEVO todavía no se guardó y hay un borrador, lo recupera
+  if (!planBase){
+    var borr = R.rLeer(B._claveBorrador(), null);
+    if (borr && borr.plan && planTieneAlgo(borr.plan)){
+      B.plan = borr.plan; B.dia = borr.dia || B.dia;
+      setTimeout(function(){ if (confirm('Tenías un plan sin guardar. ¿Lo retomás donde lo dejaste?')){ B._borradorActivo = true; }
+        else { B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] }; try{ localStorage.removeItem(B._claveBorrador()); }catch(e){} bPintarMazo(); bPintarDias(); } }, 250);
+    }
+  }
   bPintarDias(); bPintarMazo(); bPintarGrilla();
   b$('bBusca').value='';
   Backend.obtenerProgreso(u.id).then(function(r){ B.cargas = r.cargas||{}; }).catch(function(){});
 };
+B._claveBorrador = function(){ return CONFIG.CLAVE_DATOS+'_borradorPlan_'+(sesion?sesion.id:'x')+'_'+B.userId; };
+B._guardarBorrador = function(){
+  try{
+    var soloDias={}; DIAS.forEach(function(d){ soloDias[d[0]] = Array.isArray(B.plan[d[0]])?B.plan[d[0]]:[]; });
+    if (!planTieneAlgo(soloDias)) return;
+    R.rGuardar(B._claveBorrador(), { plan:soloDias, dia:B.dia, ts:Date.now() });
+  }catch(e){}
+};
+B._borrarBorrador = function(){ try{ localStorage.removeItem(B._claveBorrador()); }catch(e){} };
 B.cerrar = function(){ $('rAppBuilder').classList.remove('ver'); B.abierta=false; };
 
 function crearEstructura(){
@@ -603,6 +677,7 @@ function bPintarDias(){
   b$('bDiaNom').textContent = nombre;
 }
 function bPintarMazo(){
+  B._guardarBorrador && B._guardarBorrador();
   var lista = B.plan[B.dia], mazo = b$('bMazo');
   mazo.innerHTML='';
   if (!lista.length){
@@ -735,7 +810,13 @@ function conectar(){
     var propios=R.rPropios();
     var nuevo={ n:nombre, cat:'mios', propio:true, emoji:emojiElegido, img:'' };
     propios.push(nuevo);
-    try{ localStorage.setItem(CONFIG.CLAVE_DATOS+'_ejpropios_'+sesion.id, JSON.stringify(propios)); }catch(e){}
+    R.rGuardar(CONFIG.CLAVE_DATOS+'_ejpropios_'+sesion.id, propios);
+    if (window.Backend && Backend.guardarEjpropioNube){
+      Backend.guardarEjpropioNube(nombre, emojiElegido, 'mios').then(function(rr){
+        if (rr && rr.ok){ var ps=R.rPropios().map(function(x){ return x.n===nombre?Object.assign({},x,{_nube:true}):x; });
+          R.rGuardar(CONFIG.CLAVE_DATOS+'_ejpropios_'+sesion.id, ps); }
+      }).catch(function(){});
+    }
     b$('bVeloPropio').classList.remove('abierto');
     B.cat='mios'; bPintarGrilla();
     bAbrirHoja('biblio', nombre);
@@ -788,6 +869,7 @@ function conectar(){
         } else if (vivo.__anterior){ final.__anterior=vivo.__anterior; final.__fecha=vivo.__fecha; }
       }
       R.rGuardar(R.rDemoPlanKey(B.userId), final);
+      B._borrarBorrador();
       B.cerrar(); avisar('Plan guardado (prueba)');
       R.entrenador.usuario.plan = final;
       R.rIrPantalla('ficha');
@@ -802,6 +884,7 @@ function conectar(){
     }
     var r = await Backend.guardarPlan(B.userId, final);
     if (r && r.error){ bToast(r.error); return; }
+    B._borrarBorrador();
     B.cerrar();
     avisar('Plan guardado');
     var uid=B.userId;
