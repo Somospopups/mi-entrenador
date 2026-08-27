@@ -776,7 +776,11 @@ R.rToastProfe = function(msg){ rToast(msg, $('rAppProfe')); };
 R.rCategoria = rCategoria;
 R.rManchas = rManchas;
 R.renderEntrenador = rRenderEntrenador;
-R.ocultarEntrenador = function(){ var a=$('rAppProfe'); if(a) a.classList.remove('ver'); };
+R.ocultarEntrenador = function(){
+  var a=$('rAppProfe'); if(a) a.classList.remove('ver');
+  var b=$('rAppBuilder'); if(b) b.classList.remove('ver');   // cerrar el constructor si estaba abierto
+  var v=$('bVelo'); if(v) v.classList.remove('abierto');
+};
 })();
 
 /* ════════════════════════════════════════════════════════════
