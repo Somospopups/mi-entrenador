@@ -367,6 +367,27 @@ function rHojaAlta(){
     if (!dni || String(dni).replace(/\D/g,'').length<7){ rToast('Falta el DNI', $('rAppProfe')); return; }
     $('rAltaCrear').textContent = 'Creando…';
     var r = await Backend.crearUsuario({ nombre:nombre, dni:dni, telefono:tel, membresia:'1' });
+    // ¿DNI repetido? si es un alumno propio, se sobrescribe (reactiva + datos nuevos + clave nueva)
+    if (r.error && /ya existe|duplicate/i.test(r.error)){
+      var todos = await Backend.listarUsuarios();
+      var dniSolo = String(dni).replace(/\D/g,'');
+      var existe = todos.find(function(u){ return String(u.dni).replace(/\D/g,'')===dniSolo; });
+      if (existe){
+        var ok = confirm('Ya hay una cuenta con ese DNI: '+existe.nombre+'.\n\n¿Querés sobreescribirla? Se actualizan los datos y se genera una clave nueva para mandarle.');
+        if (!ok){ $('rAltaCrear').textContent='Crear cuenta'; return; }
+        var ra = await Backend.actualizarPerfil(existe.id, { nombre:nombre, telefono:tel });
+        $('rAltaCrear').textContent='Crear cuenta';
+        if (ra.error){ rToast(ra.error, $('rAppProfe')); return; }
+        rCerrarVelo(v); v.remove();
+        rHojaCredencial({ nombre:nombre, telefono:tel }, ra.password);
+        rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
+        return;
+      }
+      // existe pero no es tuyo (alumno de otro profe o gestor): no se puede tocar
+      rToast('Ese DNI ya pertenece a otra cuenta. Hablá con soporte.', $('rAppProfe'));
+      $('rAltaCrear').textContent='Crear cuenta';
+      return;
+    }
     if (r.error){ rToast(r.error, $('rAppProfe')); $('rAltaCrear').textContent='Crear cuenta'; return; }
     rCerrarVelo(v); v.remove();
     rHojaCredencial({ nombre:r.usuario.nombre||nombre, telefono:tel }, r.password);

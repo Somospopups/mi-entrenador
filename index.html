@@ -1070,6 +1070,17 @@ var BackendLocal = {
     u.passHash = await hashear(passNueva); u.debeCambiar = false; this._guardar();
     return { ok:true };
   },
+  /* reactivar/actualizar un alumno propio que ya existía (modo demo local) */
+  async actualizarPerfil(userId, datos){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { error:'No existe esa cuenta.' };
+    if (datos.nombre) u.nombre = datos.nombre;
+    if (datos.telefono!==undefined) u.telefono = datos.telefono;
+    u.activo = true;
+    this._guardar();
+    return { ok:true };
+  },
   async blanquearPassword(userId){
     var db = await this._cargar();
     var u = db.usuarios.find(function(x){ return x.id===userId; });
@@ -1256,6 +1267,21 @@ var BackendSupabase = {
     var r = await nubeApi('/functions/v1/' + NUBE.fnAlta, { method: 'POST', body: { accion: 'blanquear', user_id: userId } });
     if (!r.ok || (r.data && r.data.error)) return { error: (r.data && r.data.error) || 'No se pudo blanquear.' };
     return { password: r.data.password };
+  },
+  /* reactivar/actualizar un alumno propio que ya existía en Supabase */
+  async actualizarPerfil(userId, datos){
+    var parches = { activo: true };
+    if (datos.nombre) parches.nombre = datos.nombre;
+    if (datos.telefono !== undefined) parches.telefono = datos.telefono;
+    var r = await nubeApi('/rest/v1/fit_perfiles?user_id=eq.' + userId, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: parches
+    });
+    if (!r.ok) return { error: (r.data && r.data.message) || 'No se pudo actualizar la cuenta.' };
+    var rb = await this.blanquearPassword(userId);
+    if (rb.error) return { error: rb.error };
+    return { ok: true, password: rb.password };
   },
   async registrarPago(userId, meses, monto){
     var r = await nubeApi('/rest/v1/rpc/fit_registrar_pago', { method: 'POST',
