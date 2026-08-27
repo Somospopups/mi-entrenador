@@ -1172,6 +1172,20 @@ var NUBE = {
   fnAlta: 'super-responder'   // el nombre con el que quedó desplegada la Edge Function
 };
 var nubeSesion = { token: null, uid: null };
+/* ── Sesión persistente: si Android mata la app al minimizar, al volver
+   la reanudamos con el refresh token sin pedir login de nuevo ── */
+function claveNubeSesion(){ return CONFIG.CLAVE_DATOS + '_nube_sesion'; }
+function guardarNubeSesion(data){
+  try{ localStorage.setItem(claveNubeSesion(), JSON.stringify({
+    access_token: data.access_token, refresh_token: data.refresh_token, uid: (data.user && data.user.id) || nubeSesion.uid
+  })); }catch(e){}
+}
+function leerNubeSesion(){
+  try{ var v = JSON.parse(localStorage.getItem(claveNubeSesion())); return v || null; }catch(e){ return null; }
+}
+function limpiarNubeSesion(){
+  try{ localStorage.removeItem(claveNubeSesion()); }catch(e){}
+}
 async function nubeApi(ruta, opciones){
   opciones = opciones || {};
   var headers = { 'apikey': NUBE.anon, 'Content-Type': 'application/json' };
@@ -1206,6 +1220,7 @@ var BackendSupabase = {
       return { error: 'No se pudo entrar: ' + (m || ('HTTP ' + r.status)) };
     }
     nubeSesion.token = r.data.access_token; nubeSesion.uid = r.data.user.id;
+    guardarNubeSesion(r.data);
     var est = await nubeApi('/rest/v1/rpc/fit_estado_acceso', { method: 'POST', body: {} });
     var MENSAJES = {
       inactivo: 'Tu cuenta está desactivada. Hablá con quien te la creó.',
@@ -1225,6 +1240,33 @@ var BackendSupabase = {
       var rpl = await nubeApi('/rest/v1/fit_planes?select=plan&alumno_id=eq.' + p.user_id);
       extra.plan = rpl.data && rpl.data[0] ? rpl.data[0].plan : null;
       var desde = fechaClave(Date.now() - 29 * 86400000);  // un mes: alcanza para la racha
+      var rm = await nubeApi('/rest/v1/fit_marcas?select=fecha,marcas&alumno_id=eq.' + p.user_id + '&fecha=gte.' + desde);
+      extra.hechos = {}; (rm.data || []).forEach(function(m){ extra.hechos[m.fecha] = m.marcas || {}; });
+      var rpr = await nubeApi('/rest/v1/fit_progreso?select=fecha,datos&alumno_id=eq.' + p.user_id + '&order=fecha.asc');
+      extra.progreso = {}; (rpr.ok ? (rpr.data || []) : []).forEach(function(x){ extra.progreso[x.fecha] = x.datos || {}; });
+    }
+    return { usuario: nubeMapear(p, extra) };
+  },
+  /* Reanuda la sesión con el refresh token guardado (tras que Android matara la app) */
+  async restaurarSesion(){
+    var g = leerNubeSesion();
+    if (!g || !g.refresh_token) return { error: 'no hay sesión guardada' };
+    var r = await nubeApi('/auth/v1/token?grant_type=refresh_token', { method: 'POST', sinAuth: true,
+      body: { refresh_token: g.refresh_token } });
+    if (!r.ok || !r.data || !r.data.access_token){ limpiarNubeSesion(); return { error: 'expiró' }; }
+    nubeSesion.token = r.data.access_token; nubeSesion.uid = r.data.user.id;
+    guardarNubeSesion(r.data);
+    var est = await nubeApi('/rest/v1/rpc/fit_estado_acceso', { method: 'POST', body: {} });
+    if (est.data !== 'ok'){ nubeSesion = { token:null, uid:null }; limpiarNubeSesion(); return { error: est.data || 'acceso' }; }
+    var rp = await nubeApi('/rest/v1/fit_perfiles?select=*&user_id=eq.' + nubeSesion.uid);
+    var p = rp.data && rp.data[0];
+    if (!p){ nubeSesion = { token:null, uid:null }; limpiarNubeSesion(); return { error: 'sin perfil' }; }
+    if (p.debe_cambiar_password){ /* debería cambiar la clave; por seguridad pedimos login */ limpiarNubeSesion(); nubeSesion={token:null,uid:null}; return { error: 'debe cambiar clave' }; }
+    var extra = {};
+    if (p.rol === 'alumno'){
+      var rpl = await nubeApi('/rest/v1/fit_planes?select=plan&alumno_id=eq.' + p.user_id);
+      extra.plan = rpl.data && rpl.data[0] ? rpl.data[0].plan : null;
+      var desde = fechaClave(Date.now() - 29 * 86400000);
       var rm = await nubeApi('/rest/v1/fit_marcas?select=fecha,marcas&alumno_id=eq.' + p.user_id + '&fecha=gte.' + desde);
       extra.hechos = {}; (rm.data || []).forEach(function(m){ extra.hechos[m.fecha] = m.marcas || {}; });
       var rpr = await nubeApi('/rest/v1/fit_progreso?select=fecha,datos&alumno_id=eq.' + p.user_id + '&order=fecha.asc');
@@ -1505,7 +1547,21 @@ function aLaApp(){
 }
 function abrirAyuda(){ armarLista('ayudaLista', guiaDeMiRol()); $('veloAyuda').classList.add('abierto'); }
 
-function salir(){ sesion=null; nubeSesion = { token:null, uid:null }; mostrar('login'); }
+function salir(){
+  sesion=null; nubeSesion = { token:null, uid:null };
+  limpiarNubeSesion();
+  mostrar('login');
+}
+/* Reanudación automática al abrir la app (Android la mata al minimizar;
+   así el usuario vuelve justo donde estaba, sin volver a loguearse). */
+async function reanudarSiHabiaSesion(){
+  if (sesion) return;
+  if (!Backend.restaurarSesion) return;            // modo local demo: no se reanuda
+  try{
+    var r = await Backend.restaurarSesion();
+    if (r && r.usuario){ sesion = r.usuario; aLaApp(); }
+  }catch(e){ /* silencioso: se queda en el login */ }
+}
 $('btnSalir1').onclick = salir; $('btnSalir2').onclick = salir;
 $('btnAyuda1').onclick = abrirAyuda; $('btnAyuda2').onclick = abrirAyuda;
 
@@ -2190,10 +2246,46 @@ $('timerCancelar').onclick = function(){ clearInterval(timerInt); timerInt = nul
   }
   window.addEventListener('pointerdown', ponerCandado, { passive:true });
   window.addEventListener('keydown', ponerCandado, { passive:true });
+  var __saliendoApp = false, __ultimoAtras = 0;
+  function avisarAtras(){
+    try{
+      if (window.avisar){ avisar('Tocá Atrás otra vez para salir'); }
+      else { var t=document.createElement('div'); t.textContent='Tocá Atrás otra vez para salir';
+        t.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:rgba(35,35,63,.94);color:#fff;padding:11px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;';
+        document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 1800); }
+    }catch(e){}
+  }
   window.addEventListener('popstate', function(){
-    try { atras(); } catch(e){}
-    candadoPuesto = false;          // el atrás consumió la entrada…
-    ponerCandado();                 // …la reponemos al instante (ya hubo gesto)
+    if (__saliendoApp) return;      // el segundo atrás que cierra la app
+    try {
+      // Primero las pantallas NUEVAS (alumno / entrenador / mazo)
+      if (window.Rediseno && typeof window.Rediseno.atras === 'function'){
+        var rr = window.Rediseno.atras();
+        if (rr === 'capa'){ candadoPuesto=false; ponerCandado(); return; }
+        if (rr === 'raiz'){
+          if (Date.now() - __ultimoAtras < 2000){
+            __saliendoApp = true;            // cerrar la app
+            setTimeout(function(){ try { history.back(); } catch(e){} }, 30);
+            return;
+          }
+          __ultimoAtras = Date.now(); avisarAtras();
+          candadoPuesto=false; ponerCandado();
+          return;
+        }
+        // 'fuera': seguimos con la lógica de la app vieja
+      }
+      var manejado = atras();
+      if (manejado){ candadoPuesto=false; ponerCandado(); return; }
+      // raíz de la app vieja (home/admin): doble toque para salir
+      if (Date.now() - __ultimoAtras < 2000){
+        __saliendoApp = true;
+        setTimeout(function(){ try { history.back(); } catch(e){} }, 30);
+        return;
+      }
+      __ultimoAtras = Date.now(); avisarAtras();
+      candadoPuesto = false;      // el atrás consumió la entrada…
+      ponerCandado();             // …la reponemos al instante (ya hubo gesto)
+    } catch(e){ candadoPuesto=false; ponerCandado(); }
   });
 })();
 
@@ -2675,13 +2767,15 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   function pintarTema(){ var d = document.body.classList.contains('dark');
     ['btnTema1','btnTema2'].forEach(function(id){ if ($(id)) $(id).innerHTML = icono(d ? 'sol' : 'luna', 16); }); }
   window.__pintarTema = pintarTema; pintarTema();
-  if (Backend === BackendSupabase){
-    document.querySelector('.login-pie').textContent = 'Conectado a Popups Fitness';
+  var _pie = document.querySelector('.login-pie');
+  if (Backend === BackendSupabase && _pie){
+    _pie.textContent = 'Conectado a Popups Fitness';
   }
   aplicarMarca();
   $('cfgNombre').value = CONFIG.APP_NOMBRE; $('cfgPrecio').value = CONFIG.PRECIO_MES;
   pintarPaletas();
   mostrar('login');
+  reanudarSiHabiaSesion();   // si Android cerró la app al minimizar, vuelve logueado
 })();
 </script>
 <script src="nuevo/rediseno.js"></script>

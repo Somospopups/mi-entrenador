@@ -1175,6 +1175,47 @@ window.aLaApp = function(){
   _aLaApp && _aLaApp();
   setTimeout(montar, 60);
 };
+/* ════════ GESTO "ATRÁS" DE ANDROID ════════
+   Devuelve:
+   · 'capa'        → cerró una hoja/menú/builder/capítulo (consumimos el toque)
+   · 'raiz'        → estamos en la pantalla inicial del rol (el doble-toque decide)
+   El doble-toque para salir lo maneja index.html. */
+R.atras = function(){
+  function visible(el){ return el && el.classList.contains('ver'); }
+  function capasAbiertas(raiz){
+    return Array.prototype.slice.call(raiz.querySelectorAll('.r-velo.ver, .r-hoja.ver'))
+      .concat(Array.prototype.slice.call(document.querySelectorAll('.velo.abierto')));
+  }
+  // 0 · cualquier hoja/menú abierto (tanto del rediseño como de la app base) se cierra
+  var profe = $('rAppProfe'), alum = $('rAppAlumno'), build = $('rAppBuilder');
+  var velos = Array.prototype.slice.call(document.querySelectorAll('.r-velo.abierto, .velo.abierto'))
+    .filter(function(v){ return v.id !== 'veloForzada'; });
+  if (velos.length){
+    var v = velos[velos.length-1];
+    v.classList.remove('ver'); v.classList.remove('abierto');
+    return 'capa';
+  }
+  // 1 · el constructor de planes (mazo del profe) → vuelve a la ficha/lista
+  if (visible(build)){ R.builder.cerrar(); return 'capa'; }
+  // 2 · espacio del ENTRENADOR
+  if (visible(profe)){
+    if (R.entrenador && R.entrenador.pantalla === 'ficha'){
+      var ab = $('rFichaAtras'); if (ab){ ab.click(); return 'capa'; }
+      R.rIrPantalla('lista'); return 'capa';
+    }
+    if (R.entrenador && R.entrenador.pantalla === 'finanzas'){
+      var af = $('rFinAtras'); if (af){ af.click(); return 'capa'; }
+      R.rIrPantalla('lista'); return 'capa';
+    }
+    return 'raiz';  // lista de alumnos = inicio del profe
+  }
+  // 3 · espacio del ALUMNO
+  if (visible(alum)){
+    return 'raiz';  // el mazo es el inicio; salir a la app base lo decide el doble-toque
+  }
+  return 'fuera';   // no hay pantalla nueva visible: lo maneja la app vieja
+};
+
 // al salir
 var _salir = window.salir;
 window.salir = function(){
