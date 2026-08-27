@@ -1338,6 +1338,21 @@ function conectar(){
    ENGANCHE CON index.html
    ════════════════════════════════════════════════════════════ */
 (function(){
+/* En PC, al seleccionar texto de una hoja el mouse puede soltarse sobre el
+   fondo oscuro: en ese caso NO se cierra el popup. Solo cierra si el gesto
+   (presionar Y soltar) empezó en el fondo. En celular es un toque puntual. */
+document.addEventListener('pointerdown', function(ev){
+  var velo = ev.target.closest && ev.target.closest('.r-velo');
+  if (!velo) return;
+  velo._pressEnFondo = (ev.target === velo);
+}, true);
+document.addEventListener('click', function(ev){
+  var velo = ev.target.closest && ev.target.closest('.r-velo');
+  if (!velo) return;
+  var sueltaEnFondo = (ev.target === velo);
+  if (sueltaEnFondo && !velo._pressEnFondo){ ev.stopPropagation(); ev.preventDefault(); }
+}, true);
+
 function montar(){
   if(!window.sesion) return;
   if(sesion.rol==='entrenador'){

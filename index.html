@@ -1232,11 +1232,12 @@ async function nubeApi(ruta, opciones){
   if (opciones.headers) Object.keys(opciones.headers).forEach(function(k){ headers[k] = opciones.headers[k]; });
   var method = (opciones.method || 'GET');
   // Las lecturas (GET) nunca se sirven desde caché del navegador: así la PC
-  // ve al instante lo que se creó en el celu. Agregamos un sello temporal.
+  // ve al instante lo que se creó en el celu. (NO se agrega parámetro a la URL:
+  // PostgREST lo tomaría como filtro y daría error.)
   var url = NUBE.url + ruta;
   if (method === 'GET'){
     headers['Cache-Control'] = 'no-store, no-cache, max-age=0';
-    url += (ruta.indexOf('?') >= 0 ? '&' : '?') + '_nc=' + Date.now();
+    headers['Pragma'] = 'no-cache';
   }
   var r = await fetch(url, {
     method: method, headers: headers, cache: method === 'GET' ? 'no-store' : 'default',
