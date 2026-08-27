@@ -1268,7 +1268,7 @@ function bOfrecerWhatsapp(nombre, plan){
 
 /* ── gestos: toque=editar · deslizar=scroll · mantener y arrastrar=tomar ── */
 var drag=null, ultimoGesto=0, ESPERA=400, UMBRAL=11;
-document.addEventListener('touchmove', function(ev){ if(drag && drag.arrastrando) ev.preventDefault(); }, { passive:false });
+document.addEventListener('touchmove', function(ev){ if(window.__bGestoActivo) ev.preventDefault(); }, { passive:false });
 function bFantasma(el){
   var f=document.createElement('div'); f.className='r-fantasma';
   var img=el.querySelector('.r-pc-img img, .r-ec-img img');
@@ -1285,90 +1285,97 @@ function bSobreMazo(x,y){
   return x>=r.left-20 && x<=r.right+20 && y>=r.top-26 && y<=r.bottom+26;
 }
 function bGesto(el, tipo, idx){
+  var st = null;   // estado del gesto, LOCAL a esta carta (no se cuelga entre elementos)
+
+  function empezar(ev){
+    if(!st || st.arrastrando) return;
+    st.arrastrando = true;
+    window.__bGestoActivo = true;
+    ultimoGesto = Date.now();
+    try{ el.setPointerCapture(st.pid); }catch(e){}
+    if(navigator.vibrate) navigator.vibrate(15);
+    st.fantasma = bFantasma(el);
+    st.fantasma.style.left=(st.lx-48)+'px';
+    st.fantasma.style.top=(st.ly-50)+'px';
+    el.style.opacity='.25';
+  }
+
+  function limpiar(){
+    if(!st) return;
+    clearTimeout(st.timer);
+    if(st.fantasma) st.fantasma.remove();
+    el.style.opacity='';
+    var mz=b$('bMazo'); if(mz){ mz.classList.remove('sobre'); mz.classList.remove('fuera'); }
+    window.__bGestoActivo=false;
+    st=null;
+  }
+
   el.addEventListener('pointerdown', function(ev){
     if(!b$('rAppBuilder')||!b$('rAppBuilder').classList.contains('ver')) return;
     if(ev.target.closest('.r-pc-x')) return;
     if(ev.pointerType==='mouse' && ev.button!==0) return;
-    var data={ tipo:tipo, el:el, arrastrando:false, timer:null, seMovio:false, pid:ev.pointerId,
-               sx:ev.clientX, sy:ev.clientY, lx:ev.clientX, ly:ev.clientY };
+    var base=null, ref=Number(idx);
     if(tipo==='nuevo'){
-      var nom=el.getAttribute('data-nom');
-      if(B.plan[B.dia].some(function(e){ return e.nombre===nom; })) return;
-      data.base=nom;
-    } else data.idx=Number(idx);
-    drag=data;
-    // En mouse NO se captura el pointer ni se crea el fantasma al bajar:
-    // solo al moverse más del umbral (así el clic simple abre la edición).
-    if(ev.pointerType!=='mouse'){ drag.timer=setTimeout(empezar, ESPERA); }
-    function empezar(){
-      if(!drag) return;
-      drag.arrastrando=true;
-      ultimoGesto=Date.now();
-      try{ el.setPointerCapture(drag.pid); }catch(e){}
-      if(navigator.vibrate) navigator.vibrate(15);
-      drag.fantasma=bFantasma(el);
-      drag.fantasma.style.left=(drag.lx-48)+'px';
-      drag.fantasma.style.top=(drag.ly-50)+'px';
-      el.style.opacity='.25';
+      base=el.getAttribute('data-nom');
+      if(B.plan[B.dia].some(function(e){ return e.nombre===base; })) return;
     }
-    drag._empezar=empezar;
+    st={ tipo:tipo, el:el, arrastrando:false, timer:null, seMovio:false, pid:ev.pointerId,
+         base:base, idx:ref, sx:ev.clientX, sy:ev.clientY, lx:ev.clientX, ly:ev.clientY, fantasma:null };
+    if(ev.pointerType!=='mouse'){ st.timer=setTimeout(function(){ empezar(ev); }, ESPERA); }
   });
+
   el.addEventListener('pointermove', function(ev){
-    if(!drag || drag.el!==el) return;
-    drag.lx=ev.clientX; drag.ly=ev.clientY;
-    var dist=Math.hypot(ev.clientX-drag.sx, ev.clientY-drag.sy);
-    if(!drag.arrastrando){
+    if(!st) return;
+    st.lx=ev.clientX; st.ly=ev.clientY;
+    var dist=Math.hypot(ev.clientX-st.sx, ev.clientY-st.sy);
+    if(!st.arrastrando){
       if(ev.pointerType==='mouse'){
-        if(dist>UMBRAL && drag.timer===null && drag._empezar){ drag._empezar(); }  // mouse: arranca al mover
+        if(dist>UMBRAL) empezar(ev);
         else return;
       } else {
-        if(dist>UMBRAL){ clearTimeout(drag.timer); drag=null; }  // touch: se movió antes de la espera → scroll
+        if(dist>UMBRAL){ clearTimeout(st.timer); limpiar(); }  // touch: se movió antes de la espera → scroll
         return;
       }
     }
-    if(dist>6) drag.seMovio=true;
-    drag.fantasma.style.left=(ev.clientX-48)+'px';
-    drag.fantasma.style.top=(ev.clientY-50)+'px';
-    if(drag.tipo==='nuevo'){
+    if(dist>6) st.seMovio=true;
+    st.fantasma.style.left=(ev.clientX-48)+'px';
+    st.fantasma.style.top=(ev.clientY-50)+'px';
+    if(st.tipo==='nuevo'){
       b$('bMazo').classList.toggle('sobre', bSobreMazo(ev.clientX,ev.clientY));
     } else {
-      // carta del plan: dentro de la sesión = reordenar; afuera = soltar para quitar
-      var sobre=bSobreMazo(ev.clientX,ev.clientY);
-      var mz=b$('bMazo');
+      var sobre=bSobreMazo(ev.clientX,ev.clientY), mz=b$('bMazo');
       mz.classList.toggle('sobre', sobre);
       mz.classList.toggle('fuera', !sobre);
-      drag.fantasma.classList.toggle('r-fuera', !sobre);
+      st.fantasma.classList.toggle('r-fuera', !sobre);
     }
   });
+
   function fin(ev){
-    if(!drag || drag.el!==el) return;
-    clearTimeout(drag.timer);
-    var arrastraba=drag.arrastrando, movio=drag.seMovio;
+    if(!st) return;
+    var arrastraba=st.arrastrando, movio=st.seMovio, t=st.tipo, base=st.base, indx=st.idx;
+    clearTimeout(st.timer);
     if(arrastraba && movio){
-      if(drag.tipo==='nuevo'){ if(bSobreMazo(ev.clientX,ev.clientY)) bAbrirHoja('biblio', drag.base); }
-      else if(!bSobreMazo(ev.clientX,ev.clientY)){
-        // se soltó fuera de la sesión → quitar la carta del plan
-        B.plan[B.dia].splice(drag.idx,1);
+      if(t==='nuevo'){
+        if(bSobreMazo(ev.clientX,ev.clientY)) bAbrirHoja('biblio', base);
+      } else if(!bSobreMazo(ev.clientX,ev.clientY)){
+        B.plan[B.dia].splice(indx,1);
         if(navigator.vibrate) navigator.vibrate([12,40,12]);
         bPintarMazo(); bPintarGrilla(); bPintarDias();
       } else {
         var cards=[].slice.call(b$('bMazo').querySelectorAll('.r-pc'));
         var destino=cards.length;
         for(var i=0;i<cards.length;i++){ var r=cards[i].getBoundingClientRect(); if(ev.clientX<r.left+r.width/2){ destino=i; break; } }
-        var lista=B.plan[B.dia], item=lista.splice(drag.idx,1)[0];
-        if(destino>drag.idx) destino--;
+        var lista=B.plan[B.dia], item=lista.splice(indx,1)[0];
+        if(destino>indx) destino--;
         lista.splice(Math.max(0,destino),0,item);
         bPintarMazo(); bPintarGrilla();
       }
       ultimoGesto=Date.now();
     }
-    if(drag&&drag.fantasma) drag.fantasma.remove();
-    el.style.opacity='';
-    var _m=b$('bMazo'); _m.classList.remove('sobre'); _m.classList.remove('fuera');
-    drag=null;
+    limpiar();
   }
   el.addEventListener('pointerup', fin);
-  el.addEventListener('pointercancel', fin);
+  el.addEventListener('pointercancel', limpiar);
 }
 })();
 
