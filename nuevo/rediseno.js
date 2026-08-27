@@ -962,9 +962,10 @@ function bFantasma(el){
   var img=el.querySelector('.r-pc-img img, .r-ec-img img');
   var em=el.querySelector('.r-pc-emoji, .r-ec-emoji');
   var nom=el.querySelector('.r-ec-nom, .r-pc-nom');
-  f.innerHTML = img ? '<img src="'+img.src+'">' : '<div class="r-f-emoji">'+(em?em.textContent:'🏋️')+'</div>'+
-    '<div class="r-f-info"><div class="r-f-nom">'+(nom?nom.textContent:'')+'</div></div>';
-  if(img) f.innerHTML += '<div class="r-f-info"><div class="r-f-nom">'+(nom?nom.textContent:'')+'</div></div>';
+  var cabeza = img
+    ? '<img src="'+img.src+'">'
+    : '<div class="r-f-emoji">'+(em?em.textContent:'🏋️')+'</div>';
+  f.innerHTML = cabeza + '<div class="r-f-info"><div class="r-f-nom">'+(nom?nom.textContent:'')+'</div></div>';
   document.body.appendChild(f); return f;
 }
 function bSobreMazo(x,y){
@@ -976,7 +977,7 @@ function bGesto(el, tipo, idx){
     if(!b$('rAppBuilder')||!b$('rAppBuilder').classList.contains('ver')) return;
     if(ev.target.closest('.r-pc-x')) return;
     if(ev.pointerType==='mouse' && ev.button!==0) return;
-    var data={ tipo:tipo, el:el, arrastrando:false, timer:null, sx:ev.clientX, sy:ev.clientY };
+    var data={ tipo:tipo, el:el, arrastrando:false, timer:null, sx:ev.clientX, sy:ev.clientY, lx:ev.clientX, ly:ev.clientY };
     if(tipo==='nuevo'){
       var nom=el.getAttribute('data-nom');
       if(B.plan[B.dia].some(function(e){ return e.nombre===nom; })) return;
@@ -987,15 +988,20 @@ function bGesto(el, tipo, idx){
     if(ev.pointerType==='mouse'){ empezar(); return; }
     drag.timer=setTimeout(empezar, ESPERA);
     function empezar(){
+      if(!drag) return;
       drag.arrastrando=true;
       if(navigator.vibrate) navigator.vibrate(15);
       drag.fantasma=bFantasma(el);
+      // posicionar el fantasma justo donde está el dedo/cursor desde el arranque
+      drag.fantasma.style.left=(drag.lx-48)+'px';
+      drag.fantasma.style.top=(drag.ly-50)+'px';
       el.style.opacity='.25';
     }
     drag._empezar=empezar;
   });
   el.addEventListener('pointermove', function(ev){
     if(!drag || drag.el!==el) return;
+    drag.lx=ev.clientX; drag.ly=ev.clientY;
     if(!drag.arrastrando){
       if(Math.hypot(ev.clientX-drag.sx, ev.clientY-drag.sy)>UMBRAL){ clearTimeout(drag.timer); drag=null; }
       return;
