@@ -1451,6 +1451,7 @@ async function entrarAdmin(){
   }
   sesion = r.usuario;
   $('veloAdminLogin').classList.remove('abierto');
+  if (sesion.debeCambiar){ $('veloForzada').classList.add('abierto'); $('fzPass1').focus(); return; }
   aLaApp();
 }
 $('btnEntrarAdmin').onclick = entrarAdmin;
