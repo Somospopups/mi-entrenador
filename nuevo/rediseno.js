@@ -238,6 +238,7 @@ function rPintarLista(){
   wrap.innerHTML =
     '<div class="r-head"><h1>Mis alumnos<small class="r-sub">Hola, '+(sesion.nombre.split(' ')[0]||'Profe')+'</small></h1>'+
       '<button class="r-pill head" id="rBtnFin" style="margin-left:auto">💰 Finanzas · <b id="rTotalHead">$0</b></button>'+
+      '<button class="r-sync-btn" id="rBtnSync" title="Sincronizar con la nube">🔄</button>'+
       '<button class="r-salir-btn" id="rBtnSalir" title="Cerrar sesión">🚪</button>'+
     '</div>'+
     '<input class="r-busca" id="rBuscaAlu" placeholder="Buscar alumno…">'+
@@ -245,11 +246,33 @@ function rPintarLista(){
     '<div class="r-barra"><button class="r-btn-prin" id="rBtnAgregar"><span style="font-size:19px">+</span> Agregar alumno</button></div>';
   $('rBtnFin').onclick = function(){ rIrPantalla('finanzas'); };
   $('rBtnSalir').onclick = function(){ if (confirm('¿Cerrar tu sesión?')) salir(); };
+  $('rBtnSync').onclick = function(){ rSincronizarAhora(this); };
   $('rBtnAgregar').onclick = function(){ rHojaAlta(); };
   $('rBuscaAlu').addEventListener('input', function(){ rPintarAlumnos(this.value); });
   rPintarAlumnos('');
   rHeadCobros();
 }
+/* botón manual: force-fetch de alumnos + cobros + propios, con feedback */
+async function rSincronizarAhora(btn){
+  if (btn){ btn.disabled = true; var viejo = btn.textContent; btn.textContent = '⏳'; btn.classList.add('girando'); }
+  try{
+    if (typeof rSyncCobros === 'function') await rSyncCobros();
+    if (typeof rSyncPropios === 'function') await rSyncPropios();
+    var lista = await rListarAlumnos();
+    T.alumnos = lista;
+    if (T.pantalla === 'lista'){
+      var busca = $('rBuscaAlu');
+      await rPintarAlumnos(busca ? busca.value : '');
+    }
+    try{ rHeadCobros(); if(T.pantalla==='finanzas') rPintarFinanzas(); }catch(e){}
+    rToast('✓ Sincronizado con la nube', $('rAppProfe'));
+  }catch(e){
+    rToast('No se pudo sincronizar. Revisá tu conexión.', $('rAppProfe'));
+  }finally{
+    if (btn){ btn.disabled = false; btn.textContent = viejo; btn.classList.remove('girando'); }
+  }
+}
+R.rSincronizarAhora = rSincronizarAhora;
 async function rListarAlumnos(){
   var reales = await Backend.listarUsuarios();
   var demo = rDemoAlumnos().filter(function(d){

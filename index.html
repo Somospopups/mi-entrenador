@@ -1230,8 +1230,16 @@ async function nubeApi(ruta, opciones){
   var headers = { 'apikey': NUBE.anon, 'Content-Type': 'application/json' };
   if (!opciones.sinAuth) headers['Authorization'] = 'Bearer ' + (nubeSesion.token || NUBE.anon);
   if (opciones.headers) Object.keys(opciones.headers).forEach(function(k){ headers[k] = opciones.headers[k]; });
-  var r = await fetch(NUBE.url + ruta, {
-    method: opciones.method || 'GET', headers: headers,
+  var method = (opciones.method || 'GET');
+  // Las lecturas (GET) nunca se sirven desde caché del navegador: así la PC
+  // ve al instante lo que se creó en el celu. Agregamos un sello temporal.
+  var url = NUBE.url + ruta;
+  if (method === 'GET'){
+    headers['Cache-Control'] = 'no-store, no-cache, max-age=0';
+    url += (ruta.indexOf('?') >= 0 ? '&' : '?') + '_nc=' + Date.now();
+  }
+  var r = await fetch(url, {
+    method: method, headers: headers, cache: method === 'GET' ? 'no-store' : 'default',
     body: opciones.body !== undefined ? JSON.stringify(opciones.body) : undefined
   });
   var texto = await r.text(), data = null;
