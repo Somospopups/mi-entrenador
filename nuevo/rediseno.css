@@ -70,7 +70,7 @@
 .st-gris{ color:var(--gris);} .st-gris .r-puntito{ background:var(--gris);}
 .r-alumno .r-flecha{ color:var(--gris); font-size:20px; flex:0 0 auto; }
 .r-barra{ position:absolute; left:0; right:0; bottom:0; z-index:20; padding:12px 16px calc(14px + env(safe-area-inset-bottom));
-  background:rgba(255,255,255,.85); backdrop-filter:blur(16px); border-top:1.5px solid rgba(255,255,255,.9); }
+  background:none; border:none; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
 .r-btn-prin{ width:100%; border:none; border-radius:15px; padding:15px; font-size:15px; font-weight:800;
   color:#fff; background:linear-gradient(135deg,var(--c1),var(--c2)); box-shadow:0 10px 24px rgba(124,58,237,.4);
   display:flex; align-items:center; justify-content:center; gap:8px; }
@@ -467,8 +467,10 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
   #rAppProfe .r-alumno.r-sel .r-flecha{ color:var(--c1); }
 
   /* la barra "Agregar alumno" dentro de la columna izquierda (no flotante) */
-  #rAppProfe .r-col-izq .r-barra{ position:static; padding:12px 4px 16px; }
-  #rAppProfe .r-col-izq .r-barra .r-btn-prin{ width:100%; }
+  /* la barra "Agregar alumno": sin marco ni fondo para que el botón se vea flotante */
+  #rAppProfe .r-col-izq .r-barra{ position:static; padding:14px 4px 18px;
+    background:none; border:none; backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; }
+  #rAppProfe .r-col-izq .r-barra .r-btn-prin{ width:100%; box-shadow:0 14px 30px rgba(124,58,237,.42); }
 
   /* panel derecho (ficha) */
   #rAppProfe .r-der-vacio{ margin:auto; text-align:center; color:var(--gris); font-size:14.5px; line-height:1.7; }
