@@ -151,8 +151,19 @@ var LIBRERIA = [
   button{ font:inherit; cursor:pointer; }
   input,select{ font:inherit; color:var(--tinta); }
 
+  /* ---------- splash de carga (mientras se reanuda la sesión) ---------- */
+  #vSplash{ position:fixed; inset:0; z-index:5; display:flex; align-items:center; justify-content:center;
+            background:linear-gradient(150deg,var(--c1),var(--c2)); transition:opacity .3s ease; }
+  #vSplash[hidden], #vSplash.oculta{ display:none; }
+  .splash-cargando{ text-align:center; color:#fff; }
+  .splash-aro{ width:46px; height:46px; margin:0 auto 16px; border-radius:50%;
+               border:4px solid rgba(255,255,255,.3); border-top-color:#fff; animation:sp1 0.9s linear infinite; }
+  @keyframes sp1{ to{ transform:rotate(360deg); } }
+  .splash-nombre{ font-size:15px; font-weight:800; margin-top:12px; opacity:.92; letter-spacing:.3px; }
+  .splash-cargando [data-marca-emoji]{ font-size:34px; line-height:1; }
+
   /* ---------- pantalla de ingreso ---------- */
-  #vLogin{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  #vLogin{ min-height:100vh; display:none; align-items:center; justify-content:center; padding:20px;
            background:linear-gradient(150deg,var(--c1),var(--c2)); position:relative; }
   .candado{ position:absolute; top:16px; right:16px; width:42px; height:42px; border:1px solid rgba(255,255,255,.35);
             border-radius:50%; background:rgba(255,255,255,.15); color:#fff; font-size:17px; line-height:1;
@@ -601,6 +612,15 @@ var LIBRERIA = [
 </style>
 </head>
 <body>
+
+<!-- ════════════ SPLASH DE CARGA (evita el parpadeo del login al reanudar) ════════════ -->
+<div id="vSplash">
+  <div class="splash-cargando">
+    <div class="splash-aro"></div>
+    <div data-marca-emoji></div>
+    <div class="splash-nombre" data-marca-nombre>Cargando</div>
+  </div>
+</div>
 
 <!-- ════════════ INGRESO ════════════ -->
 <div id="vLogin">
@@ -1529,6 +1549,9 @@ function mostrar(vista){
   $('vLogin').style.display = vista==='login' ? 'flex' : 'none';
   $('vHome').classList.toggle('activa', vista==='home');
   $('vAdmin').classList.toggle('activa', vista==='admin');
+  if (vista==='login' || vista==='home' || vista==='admin'){
+    var sp = $('vSplash'); if (sp) sp.style.display = 'none';
+  }
 }
 function fecha(ms){ var d=new Date(ms); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
 function plata(n){ return CONFIG.MONEDA + ' ' + Number(n||0).toLocaleString('es-AR'); }
@@ -1668,13 +1691,17 @@ function salir(){
 /* Reanudación automática al abrir la app (Android la mata al minimizar;
    así el usuario vuelve justo donde estaba, sin volver a loguearse). */
 async function reanudarSiHabiaSesion(){
-  if (sesion) return;
-  if (!Backend.restaurarSesion) return;            // modo local demo: no se reanuda
-  try{
-    var r = await Backend.restaurarSesion();
-    if (r && r.usuario){ sesion = r.usuario; aLaApp(); }
-  }catch(e){ /* silencioso: se queda en el login */ }
+  if (sesion){ ocultarSplash(); return; }
+  if (Backend.restaurarSesion){
+    try{
+      var r = await Backend.restaurarSesion();
+      if (r && r.usuario){ sesion = r.usuario; ocultarSplash(); aLaApp(); return; }
+    }catch(e){ /* silencioso: cae al login */ }
+  }
+  ocultarSplash();
+  mostrar('login');
 }
+function ocultarSplash(){ var sp = $('vSplash'); if (sp){ sp.style.opacity='0'; setTimeout(function(){ sp.style.display='none'; }, 300); } }
 $('btnSalir1').onclick = salir; $('btnSalir2').onclick = salir;
 $('btnAyuda1').onclick = abrirAyuda; $('btnAyuda2').onclick = abrirAyuda;
 
@@ -2887,8 +2914,9 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   aplicarMarca();
   $('cfgNombre').value = CONFIG.APP_NOMBRE; $('cfgPrecio').value = CONFIG.PRECIO_MES;
   pintarPaletas();
-  mostrar('login');
-  reanudarSiHabiaSesion();   // si Android cerró la app al minimizar, vuelve logueado
+  // Al cargar NO mostramos el login de una: queda el splash hasta saber si
+  // hay sesión para reanudar (evita el parpadeo del login al recargar).
+  reanudarSiHabiaSesion();
 })();
 </script>
 <script src="nuevo/rediseno.js"></script>

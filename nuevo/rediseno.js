@@ -477,21 +477,30 @@ function rPintarPlanesFicha(u){
     var ndias = DIAS.reduce(function(s,d){ return s + ((b.plan[d[0]]||[]).length?1:0); },0);
     return '<div class="r-semana'+(b.abierto?' abierta':'')+'" data-cual="'+b.cual+'">'+
       '<button class="r-semana-cab"><span class="r-ico">📅</span><span class="r-d"><b>'+b.tit+'</b>'+
-      '<small>'+ndias+' días con entrenamiento</small></span><span class="r-chev">›</span></button>'+
+      '<small>'+ndias+' días con entrenamiento</small></span>'+
+      '<span class="r-borrar-plan" data-borrar="'+b.cual+'" title="Borrar plan" role="button">🗑️</span>'+
+      '<span class="r-chev">›</span></button>'+
       '<div class="r-semana-dias">'+dias+'</div></div>';
   }).join('');
   wrap.querySelectorAll('.r-semana-cab').forEach(function(b){
     var semana = b.parentElement;
     var lp;
+    var btnBorrar = b.querySelector('[data-borrar]');
+    function pedirBorrado(){
+      var cual = semana.getAttribute('data-cual');
+      rConfirmar({ icono:'🗑️', titulo:'¿Borrar el '+(cual==='anterior'?'plan anterior':'plan actual')+'?',
+        mensaje: cual==='anterior'
+          ? 'Se elimina el plan guardado como anterior. El plan actual no se toca.'
+          : 'Se vacía el plan que el alumno tiene ahora. El plan anterior (si existe) se conserva.',
+        okTexto:'Sí, borrar', peligro:true }, function(){ rBorrarPlan(u, cual); });
+    }
+    if (btnBorrar){
+      btnBorrar.addEventListener('click', function(ev){ ev.stopPropagation(); ev.preventDefault(); pedirBorrado(); });
+    }
     b.addEventListener('pointerdown', function(){
       lp = setTimeout(function(){
         if (navigator.vibrate) navigator.vibrate(15);
-        var cual = semana.getAttribute('data-cual');
-        rConfirmar({ icono:'🗑️', titulo:'¿Borrar el '+(cual==='anterior'?'plan anterior':'plan actual')+'?',
-          mensaje: cual==='anterior'
-            ? 'Se elimina el plan guardado como anterior. El plan actual no se toca.'
-            : 'Se vacía el plan que el alumno tiene ahora. El plan anterior (si existe) se conserva.',
-          okTexto:'Sí, borrar', peligro:true }, function(){ rBorrarPlan(u, cual); });
+        pedirBorrado();
       }, 600);
     });
     function cancelar(){ clearTimeout(lp); }
@@ -499,6 +508,7 @@ function rPintarPlanesFicha(u){
     b.addEventListener('pointermove', cancelar);
     b.addEventListener('pointercancel', cancelar);
     b.addEventListener('click', function(ev){
+      if (ev.target && ev.target.closest && ev.target.closest('[data-borrar]')) return;
       if (lp) clearTimeout(lp);
       semana.classList.toggle('abierta');
     });
