@@ -444,3 +444,24 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
     margin:0; box-shadow:0 40px 90px rgba(40,30,90,.4); }
   #rAppProfe .r-agarre, #rAppBuilder .r-agarre{ display:none; }
 }
+
+/* ════════ MODAL DE CONFIRMACIÓN PROPIO (reemplaza confirm del navegador) ════════ */
+.r-confirm-velo{ position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
+  background:rgba(30,28,60,.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  opacity:0; transition:opacity .2s ease; padding:20px; }
+.r-confirm-velo.ver{ opacity:1; }
+.r-confirm{ width:100%; max-width:380px; background:#fff; border-radius:22px; padding:26px 22px 20px;
+  text-align:center; box-shadow:0 30px 80px rgba(30,25,70,.45); border:1.5px solid rgba(255,255,255,.9);
+  transform:translateY(16px) scale(.96); transition:transform .26s cubic-bezier(.2,.9,.3,1.2); }
+.r-confirm-velo.ver .r-confirm{ transform:translateY(0) scale(1); }
+.r-confirm-icon{ width:62px; height:62px; margin:0 auto 14px; border-radius:50%; display:grid; place-items:center;
+  font-size:30px; background:linear-gradient(135deg,rgba(124,58,237,.14),rgba(59,130,246,.14)); }
+.r-confirm-icon.peligro{ background:linear-gradient(135deg,rgba(239,68,68,.16),rgba(220,38,38,.16)); }
+.r-confirm-tit{ display:block; font-size:17.5px; font-weight:900; color:var(--tinta); margin-bottom:7px; letter-spacing:-.2px; }
+.r-confirm-msg{ font-size:13.5px; color:var(--gris); line-height:1.5; margin:0 4px 18px; }
+.r-confirm-bot{ display:flex; gap:10px; }
+.r-confirm-bot .r-chato{ flex:1; justify-content:center; padding:13px; border-radius:14px; font-weight:800; font-size:14.5px;
+  background:#f1f1f8; color:var(--gris); border:0; }
+.r-confirm-bot .r-listo{ flex:1.2; border:0; border-radius:14px; padding:13px; font-size:14.5px; font-weight:800; color:#fff;
+  background:linear-gradient(135deg,var(--c1),var(--c2)); box-shadow:0 9px 20px rgba(124,58,237,.35); }
+.r-confirm-bot .r-listo.peligro{ background:linear-gradient(135deg,#ef4444,#dc2626); box-shadow:0 9px 20px rgba(220,38,38,.35); }

@@ -30,6 +30,37 @@ function rToast(msg, root){
 }
 function rAbrirVelo(velo){ velo.classList.add('abierto'); }
 function rCerrarVelo(velo){ velo.classList.remove('abierto'); }
+
+/* ── Confirmación PROPIA de la app (reemplaza el confirm() del navegador) ──
+   rConfirmar(opts, onOk, onCancel)  · onCancel se dispara al cancelar/tocar fondo. */
+function rConfirmar(opts, onOk, onCancel){
+  if (typeof opts === 'string') opts = { titulo: opts };
+  opts = opts || {};
+  var cerrada = false;
+  var v = rEl(
+    '<div class="r-confirm-velo">'+
+      '<div class="r-confirm">'+
+        '<div class="r-confirm-icon'+(opts.peligro ? ' peligro':'')+'">'+(opts.icono || (opts.peligro ? '🚪' : '❓'))+'</div>'+
+        '<b class="r-confirm-tit">'+esc(opts.titulo || '¿Confirmás?')+'</b>'+
+        (opts.mensaje ? '<p class="r-confirm-msg">'+esc(opts.mensaje)+'</p>' : '')+
+        '<div class="r-confirm-bot">'+
+          '<button class="r-chato" id="rConfNo">'+esc(opts.cancelTexto || 'Cancelar')+'</button>'+
+          '<button class="r-listo'+(opts.peligro ? ' peligro':'')+'" id="rConfSi">'+esc(opts.okTexto || 'Aceptar')+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>');
+  document.body.appendChild(v);
+  requestAnimationFrame(function(){ v.classList.add('ver'); });
+  function cerrar(cb){ if (cerrada) return; cerrada = true; v.classList.remove('ver');
+    setTimeout(function(){ v.remove(); }, 200); if (cb) cb(); }
+  v.addEventListener('click', function(ev){ if (ev.target===v) cerrar(onCancel); });
+  v.querySelector('#rConfNo').onclick = function(){ cerrar(onCancel); };
+  v.querySelector('#rConfSi').onclick = function(){ cerrar(onOk); };
+  setTimeout(function(){ var b=v.querySelector('#rConfNo'); if(b) b.focus(); }, 120);
+  return v;
+}
+R.rConfirmar = rConfirmar;
+
 function rWaLink(tel, texto){
   var d = String(tel||'').replace(/\D/g,'').replace(/^0+/,'');
   if (d.length===10) d='549'+d; else if (d.length===12 && d.indexOf('54')===0) d='549'+d.slice(2);
@@ -263,7 +294,7 @@ function rPintarLista(){
       '<div class="r-col-der" id="rColDer"></div>'+
     '</div>';
   $('rBtnFin').onclick = function(){ rIrPantalla('finanzas'); };
-  $('rBtnSalir').onclick = function(){ if (confirm('¿Cerrar tu sesión?')) salir(); };
+  $('rBtnSalir').onclick = function(){ rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); }); };
   $('rBtnSync').onclick = function(){ rSincronizarAhora(this); };
   $('rBtnAgregar').onclick = function(){ rHojaAlta(); };
   $('rBuscaAlu').addEventListener('input', function(){ rPintarAlumnos(this.value); });
@@ -385,10 +416,11 @@ function rConectarFicha(wrap, u){
   };
   var btnClave = wrap.querySelector('#rFClave');
   if (btnClave) btnClave.onclick = function(){
-    if (!confirm('¿Blanquear la contraseña?\n\n'+u.nombre+' tendrá que elegir una nueva en su próximo ingreso.')) return;
-    Backend.blanquearPassword(u.id).then(function(r){
-      if (r.error){ rToast(r.error, $('rAppProfe')); return; }
-      rHojaCredencial(u, r.password);
+    rConfirmar({ icono:'🔑', titulo:'¿Blanquear la contraseña?', mensaje:u.nombre+' tendrá que elegir una nueva en su próximo ingreso.', okTexto:'Blanquear' }, function(){
+      Backend.blanquearPassword(u.id).then(function(r){
+        if (r.error){ rToast(r.error, $('rAppProfe')); return; }
+        rHojaCredencial(u, r.password);
+      });
     });
   };
   wrap.querySelectorAll('[data-tab]').forEach(function(b){
@@ -595,14 +627,14 @@ function rHojaAlta(){
       var dniSolo = String(dni).replace(/\D/g,'');
       var existe = todos.find(function(u){ return String(u.dni).replace(/\D/g,'')===dniSolo; });
       if (existe){
-        var ok = confirm('Ya hay una cuenta con ese DNI: '+existe.nombre+'.\n\n¿Querés sobreescribirla? Se actualizan los datos y se genera una clave nueva para mandarle.');
-        if (!ok){ $('rAltaCrear').textContent='Crear cuenta'; return; }
-        var ra = await Backend.actualizarPerfil(existe.id, { nombre:nombre, telefono:tel });
         $('rAltaCrear').textContent='Crear cuenta';
-        if (ra.error){ rToast(ra.error, $('rAppProfe')); return; }
-        rCerrarVelo(v); v.remove();
-        rHojaCredencial({ nombre:nombre, telefono:tel }, ra.password);
-        rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
+        rConfirmar({ icono:'♻️', titulo:'¿Sobreescribir a '+existe.nombre+'?', mensaje:'Ese DNI ya tiene una cuenta tuya. Se actualizan los datos y se genera una clave nueva para mandarle por WhatsApp.', okTexto:'Sobreescribir' }, async function(){
+          var ra = await Backend.actualizarPerfil(existe.id, { nombre:nombre, telefono:tel });
+          if (ra.error){ rToast(ra.error, $('rAppProfe')); return; }
+          rCerrarVelo(v); v.remove();
+          rHojaCredencial({ nombre:nombre, telefono:tel }, ra.password);
+          rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
+        });
         return;
       }
       // existe pero no es tuyo (alumno de otro profe o un entrenador): el dueño puede liberarlo
@@ -710,8 +742,9 @@ B.abrir = function(u){
     var borr = R.rLeer(B._claveBorrador(), null);
     if (borr && borr.plan && planTieneAlgo(borr.plan)){
       B.plan = borr.plan; B.dia = borr.dia || B.dia;
-      setTimeout(function(){ if (confirm('Tenías un plan sin guardar. ¿Lo retomás donde lo dejaste?')){ B._borradorActivo = true; }
-        else { B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] }; try{ localStorage.removeItem(B._claveBorrador()); }catch(e){} bPintarMazo(); bPintarDias(); } }, 250);
+      setTimeout(function(){ R.rConfirmar({ icono:'↺', titulo:'Retomar tu plan sin guardar', mensaje:'Tenías un plan que no llegaste a guardar. ¿Lo retomás donde lo dejaste?', okTexto:'Sí, retomarlo', cancelTexto:'Empezar de cero' },
+        function(){ B._borradorActivo = true; },
+        function(){ B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] }; try{ localStorage.removeItem(B._claveBorrador()); }catch(e){} bPintarMazo(); bPintarDias(); }); }, 250);
     }
   }
   bPintarDias(); bPintarMazo(); bPintarGrilla();
@@ -1325,7 +1358,7 @@ function conectar(){
   d$('dFinRevisar').onclick=function(){ d$('dFin').classList.remove('ver'); D.idx=0; dRender(); };
   d$('dFinSalir').onclick=function(){ d$('dFin').classList.remove('ver'); R.ocultarAlumno(); mostrar('home'); };
   d$('dMenu').onclick=function(){ d$('dVeloMenu').classList.add('abierto'); };
-  d$('dSalir').onclick=function(){ if (confirm('¿Cerrar tu sesión?')) salir(); };
+  d$('dSalir').onclick=function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); }); };
   d$('dVeloMenu').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   d$('dMenuSalir').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); salir(); };
   d$('dMenuAyuda').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); abrirAyuda(); };
@@ -1520,7 +1553,7 @@ function crearEstructura(){
 R.renderOwner = function(){
   if (!o$('rAppOwner')) document.body.appendChild(crearEstructura());
   o$('rAppOwner').classList.add('ver');
-  o$('oSalir').onclick = function(){ if(confirm('¿Cerrar tu sesión?')){ R.ocultarOwner(); salir(); } };
+  o$('oSalir').onclick = function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ R.ocultarOwner(); salir(); }); };
   o$('oSync').onclick = function(){ oToast('✓ Datos actualizados'); };
   var buscar = function(){ oBuscar(); };
   o$('oBuscar').onclick = buscar;
@@ -1561,10 +1594,12 @@ async function oBuscar(){
   if (btn) btn.onclick = oBorrar;
 }
 
-async function oBorrar(){
+function oBorrar(){
   if (!oActual) return;
   var u = oActual;
-  if (!confirm('¿BORRAR la cuenta de '+u.nombre+' (DNI '+u.dni+')?\n\nSe elimina el acceso y todos sus datos. El DNI queda libre para volver a crear. Esta acción NO se puede deshacer.')) return;
+  R.rConfirmar({ icono:'🗑️', titulo:'¿Borrar a '+u.nombre+'?', mensaje:'DNI '+u.dni+'. Se elimina el acceso y todos sus datos. El DNI queda libre para volver a crear. Esta acción NO se puede deshacer.', okTexto:'Sí, borrar cuenta', peligro:true }, function(){ oEjecutarBorrado(u); });
+}
+async function oEjecutarBorrado(u){
   var btn = o$('oBorrar'); if(btn){ btn.disabled=true; btn.textContent='Borrando…'; }
   var r;
   try{ r = await Backend.eliminarUsuario(u.id); }catch(e){ r = { error:'Sin conexión' }; }
