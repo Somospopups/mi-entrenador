@@ -447,19 +447,23 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
   #rAppBuilder .r-mazo{ min-height:150px; }
   #rAppBuilder .r-plan-titulo{ max-width:none; padding-left:14px; padding-right:14px; }
 
-  /* la barra de abajo pasa a ser un FAB redondo abajo a la derecha */
-  #rAppBuilder .r-barra{ max-width:none; background:none; backdrop-filter:none; border-top:none;
-    padding:0; pointer-events:none; }
-  #rAppBuilder .r-barra > div{ position:absolute; left:30px; bottom:26px; z-index:30; pointer-events:auto; }
-  #rAppBuilder .r-barra .r-btn-prin{ position:absolute; right:30px; bottom:24px; z-index:40;
-    width:74px; height:74px; border-radius:50%; padding:0; font-size:0; flex:0 0 auto;
-    display:grid; place-items:center; line-height:0;
-    box-shadow:0 16px 36px rgba(124,58,237,.45); pointer-events:auto; }
-  #rAppBuilder .r-barra .r-btn-prin::before{ content:'💾'; font-size:30px; line-height:1; display:block;
-    display:grid; place-items:center; width:100%; height:100%; }
+  /* la barra de abajo: tira limpia con vidrio; el "Guardar" es un FAB redondo a la derecha */
+  #rAppBuilder .r-barra{ max-width:none; background:rgba(255,255,255,.86); backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px); border-top:1.5px solid rgba(255,255,255,.9);
+    padding:12px 30px calc(12px + env(safe-area-inset-bottom)); pointer-events:auto;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  #rAppBuilder .r-barra > div{ position:static !important; flex:0 0 auto; }
+  #rAppBuilder .r-barra .r-btn-prin{ width:66px; height:66px; flex:0 0 66px; border-radius:50%;
+    padding:0; margin:0; font-size:0; display:grid; place-items:center; line-height:0; margin-left:auto;
+    box-shadow:0 14px 30px rgba(124,58,237,.45); }
+  #rAppBuilder .r-barra .r-btn-prin::before{ content:'💾'; font-size:30px; line-height:1; display:block; }
   #rAppBuilder .r-barra .r-btn-prin:hover{ transform:translateY(-2px); }
-  /* espacio al final de la grilla para que el FAB no tape la última fila */
-  #rAppBuilder .r-grilla{ padding-bottom:110px; }
+  /* espacio al final de la grilla para que la barra no tape la última fila */
+  #rAppBuilder .r-grilla{ padding-bottom:120px; }
+  #rAppBuilder .r-pc-x{ width:24px; height:24px; font-size:14px; top:6px; right:6px; cursor:pointer; }
+  #rAppBuilder .r-pc-x:hover{ transform:scale(1.12); }
+  #rAppBuilder .r-pc{ min-height:140px; flex-basis:108px; }
+  #rAppBuilder .r-pc .r-pc-img{ height:84px; }
 
   /* hojas (bottom sheets) pasan a ventanas centradas en PC */
   #rAppProfe .r-velo, #rAppBuilder .r-velo{ display:flex; align-items:center; justify-content:center; }

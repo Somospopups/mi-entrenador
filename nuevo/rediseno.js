@@ -909,7 +909,7 @@ function bPintarMazo(){
         '<div class="r-pc-info"><div class="r-pc-nom">'+escHtml(e.nombre)+'</div>'+
         '<div class="r-pc-det">'+[e.series&&e.reps?e.series+'×'+e.reps:(e.series||e.reps||''),e.carga].filter(Boolean).join(' · ')+'</div></div>';
       pc.querySelector('[data-x]').onclick=function(ev){ ev.stopPropagation(); lista.splice(i,1); bPintarMazo(); bPintarGrilla(); bPintarDias(); };
-      pc.onclick=function(){ bAbrirHoja('plan', i); };
+      pc.onclick=function(){ if(Date.now()-ultimoGesto<500) return; bAbrirHoja('plan', i); };
       bGesto(pc, 'plan', i);
       mazo.appendChild(pc);
     });
@@ -1196,22 +1196,24 @@ function bGesto(el, tipo, idx){
     if(!b$('rAppBuilder')||!b$('rAppBuilder').classList.contains('ver')) return;
     if(ev.target.closest('.r-pc-x')) return;
     if(ev.pointerType==='mouse' && ev.button!==0) return;
-    var data={ tipo:tipo, el:el, arrastrando:false, timer:null, sx:ev.clientX, sy:ev.clientY, lx:ev.clientX, ly:ev.clientY };
+    var data={ tipo:tipo, el:el, arrastrando:false, timer:null, seMovio:false, pid:ev.pointerId,
+               sx:ev.clientX, sy:ev.clientY, lx:ev.clientX, ly:ev.clientY };
     if(tipo==='nuevo'){
       var nom=el.getAttribute('data-nom');
       if(B.plan[B.dia].some(function(e){ return e.nombre===nom; })) return;
       data.base=nom;
     } else data.idx=Number(idx);
     drag=data;
-    try{ el.setPointerCapture(ev.pointerId); }catch(e){}
-    if(ev.pointerType==='mouse'){ empezar(); return; }
-    drag.timer=setTimeout(empezar, ESPERA);
+    // En mouse NO se captura el pointer ni se crea el fantasma al bajar:
+    // solo al moverse más del umbral (así el clic simple abre la edición).
+    if(ev.pointerType!=='mouse'){ drag.timer=setTimeout(empezar, ESPERA); }
     function empezar(){
       if(!drag) return;
       drag.arrastrando=true;
+      ultimoGesto=Date.now();
+      try{ el.setPointerCapture(drag.pid); }catch(e){}
       if(navigator.vibrate) navigator.vibrate(15);
       drag.fantasma=bFantasma(el);
-      // posicionar el fantasma justo donde está el dedo/cursor desde el arranque
       drag.fantasma.style.left=(drag.lx-48)+'px';
       drag.fantasma.style.top=(drag.ly-50)+'px';
       el.style.opacity='.25';
@@ -1221,10 +1223,17 @@ function bGesto(el, tipo, idx){
   el.addEventListener('pointermove', function(ev){
     if(!drag || drag.el!==el) return;
     drag.lx=ev.clientX; drag.ly=ev.clientY;
+    var dist=Math.hypot(ev.clientX-drag.sx, ev.clientY-drag.sy);
     if(!drag.arrastrando){
-      if(Math.hypot(ev.clientX-drag.sx, ev.clientY-drag.sy)>UMBRAL){ clearTimeout(drag.timer); drag=null; }
-      return;
+      if(ev.pointerType==='mouse'){
+        if(dist>UMBRAL && drag.timer===null && drag._empezar){ drag._empezar(); }  // mouse: arranca al mover
+        else return;
+      } else {
+        if(dist>UMBRAL){ clearTimeout(drag.timer); drag=null; }  // touch: se movió antes de la espera → scroll
+        return;
+      }
     }
+    if(dist>6) drag.seMovio=true;
     drag.fantasma.style.left=(ev.clientX-48)+'px';
     drag.fantasma.style.top=(ev.clientY-50)+'px';
     if(drag.tipo==='nuevo') b$('bMazo').classList.toggle('sobre', bSobreMazo(ev.clientX,ev.clientY));
@@ -1232,7 +1241,8 @@ function bGesto(el, tipo, idx){
   function fin(ev){
     if(!drag || drag.el!==el) return;
     clearTimeout(drag.timer);
-    if(drag.arrastrando){
+    var arrastraba=drag.arrastrando, movio=drag.seMovio;
+    if(arrastraba && movio){
       if(drag.tipo==='nuevo'){ if(bSobreMazo(ev.clientX,ev.clientY)) bAbrirHoja('biblio', drag.base); }
       else {
         var cards=[].slice.call(b$('bMazo').querySelectorAll('.r-pc'));
