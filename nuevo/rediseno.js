@@ -149,11 +149,13 @@ function rPintarLista(){
   wrap.innerHTML =
     '<div class="r-head"><h1>Mis alumnos<small class="r-sub">Hola, '+(sesion.nombre.split(' ')[0]||'Profe')+'</small></h1>'+
       '<button class="r-pill head" id="rBtnFin" style="margin-left:auto">💰 Finanzas · <b id="rTotalHead">$0</b></button>'+
+      '<button class="r-salir-btn" id="rBtnSalir" title="Cerrar sesión">🚪</button>'+
     '</div>'+
     '<input class="r-busca" id="rBuscaAlu" placeholder="Buscar alumno…">'+
     '<div class="r-lista" id="rListaAlu"></div>'+
     '<div class="r-barra"><button class="r-btn-prin" id="rBtnAgregar"><span style="font-size:19px">+</span> Agregar alumno</button></div>';
   $('rBtnFin').onclick = function(){ rIrPantalla('finanzas'); };
+  $('rBtnSalir').onclick = function(){ if (confirm('¿Cerrar tu sesión?')) salir(); };
   $('rBtnAgregar').onclick = function(){ rHojaAlta(); };
   $('rBuscaAlu').addEventListener('input', function(){ rPintarAlumnos(this.value); });
   rPintarAlumnos('');
@@ -910,6 +912,7 @@ function crearEstructura(){
     '<div class="r-deck-top"><div class="r-deck-titulo"><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b></div>'+
       '<div class="r-deck-dias" id="dDias"></div>'+
       '<div class="r-anillo-wrap"><div class="r-anillo" id="dAnillo"></div><i id="dAnilloTxt">0%</i></div>'+
+      '<button class="r-salir-btn" id="dSalir" title="Cerrar sesión">🚪</button>'+
       '<button class="r-menu-btn" id="dMenu" title="Menú">☰</button></div>'+
     '<div class="r-deck-puntos" id="dPuntos"></div>'+
     '<div class="r-deck-zona" id="dZona"><button class="r-nav-dia izq" id="dIzq">‹</button><button class="r-nav-dia der" id="dDer">›</button></div>'+
@@ -1112,6 +1115,7 @@ function conectar(){
   d$('dFinRevisar').onclick=function(){ d$('dFin').classList.remove('ver'); D.idx=0; dRender(); };
   d$('dFinSalir').onclick=function(){ d$('dFin').classList.remove('ver'); R.ocultarAlumno(); mostrar('home'); };
   d$('dMenu').onclick=function(){ d$('dVeloMenu').classList.add('abierto'); };
+  d$('dSalir').onclick=function(){ if (confirm('¿Cerrar tu sesión?')) salir(); };
   d$('dVeloMenu').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   d$('dMenuSalir').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); salir(); };
   d$('dMenuAyuda').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); abrirAyuda(); };
