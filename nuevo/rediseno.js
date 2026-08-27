@@ -796,7 +796,7 @@ function b$(id){ return document.getElementById(id); }
 function nuevoId(){ return 'e'+Date.now()+Math.floor(Math.random()*99999); }
 
 B.abrir = function(u){
-  B.userId = u.id; B.nombre = u.nombre; B.demo = !!u.demo;
+  B.userId = u.id; B.nombre = u.nombre; B.demo = !!u.demo; B.prevDia = null;
   var planBase = u.demo ? R.rLeer(R.rDemoPlanKey(u.id), null) : u.plan;
   B.vivos = planBase ? JSON.parse(JSON.stringify(planBase)) : null;
   B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] };  // plan nuevo: arranca vacío
@@ -835,22 +835,28 @@ function crearEstructura(){
   var d = document.createElement('div');
   d.className = 'r-app'; d.id = 'rAppBuilder';
   d.innerHTML = R && R.rManchas ? '' : '';
+  var guardarSVG = '<svg class="r-floppy" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
   d.innerHTML = '<div class="r-manchas"><i></i><i></i><i></i></div>'+
     '<div class="r-head"><button class="r-atras" id="bAtras">‹</button>'+
       '<h1>Armar plan<small>Plan de <span id="bNombre"></span></small></h1>'+
       '<button class="r-salir-btn" id="bSalir" title="Cerrar sesión">🚪</button></div>'+
-    '<div class="r-pildoras"><div class="r-pcentro" id="bDias"></div></div>'+
-    '<div class="r-plan-zona"><div class="r-plan-titulo"><b>Sesión</b><span id="bAyuda"></span></div>'+
-      '<div class="r-mazo" id="bMazo"></div></div>'+
-    '<div class="r-pildoras"><div class="r-pcentro">'+
-      '<button class="r-pill acc" id="bRepetir">↺ Repetir día anterior</button>'+
-      '<button class="r-pill acc" id="bPlantillas">Plantillas</button>'+
-    '</div></div>'+
+    // PANEL IZQUIERDO (días, sesión, acciones y planes anteriores)
+    '<div class="r-bpanel">'+
+      '<div class="r-pildoras"><div class="r-pcentro" id="bDias"></div></div>'+
+      '<div class="r-plan-zona"><div class="r-plan-titulo"><b>Sesión</b><span id="bAyuda"></span></div>'+
+        '<div class="r-mazo" id="bMazo"></div></div>'+
+      '<div class="r-pildoras"><div class="r-pcentro">'+
+        '<button class="r-pill acc" id="bRepetir">↺ Repetir día anterior</button>'+
+        '<button class="r-pill acc" id="bPlantillas">Plantillas</button>'+
+      '</div></div>'+
+      '<div class="r-ant" id="bPrevZona"><div class="r-ant-cab">🕘 Plan anterior <span id="bPrevFecha"></span></div><div class="r-ant-dias" id="bPrev"></div></div>'+
+    '</div>'+
+    // PANEL DERECHO (biblioteca de ejercicios, a toda la columna)
     '<div class="r-biblio"><div class="r-biblio-cab"><h2>Ejercicios</h2><div class="r-cats" id="bCats"></div></div>'+
       '<input class="r-busca" id="bBusca" placeholder="Buscar: sentadilla, press, curl…" style="margin:8px 0 9px;width:100%">'+
       '<div class="r-grilla" id="bGrilla"></div></div>'+
     '<div class="r-barra"><div style="font-size:13px;font-weight:800;white-space:nowrap"><span id="bN">0</span> ejercicios<small style="display:block;font-size:10px;font-weight:500;color:var(--gris)" id="bDiaNom"></small></div>'+
-      '<button class="r-btn-prin" id="bGuardar" style="flex:1" title="Guardar plan">Guardar plan</button></div>'+
+      '<button class="r-btn-prin" id="bGuardar" style="flex:1" title="Guardar plan" aria-label="Guardar plan">'+guardarSVG+'</button></div>'+
     // hoja detalles
     '<div class="r-velo" id="bVelo"><div class="r-hoja"><div class="r-agarre"></div>'+
       '<div class="r-dh"><span id="bHImg"></span><div><b id="bHNom"></b><small id="bHSub"></small></div></div>'+
@@ -895,6 +901,59 @@ function bPintarDias(){
   });
   var nombre = DIAS.find(function(d){ return d[0]===B.dia; })[1];
   b$('bDiaNom').textContent = nombre;
+  bPintarPrev();
+}
+function bPrevPlan(){
+  if (B.demo){ var p = R.rLeer(R.rDemoPlanKey(B.userId), null); return p ? (p.__anterior||null) : null; }
+  return (B.vivos && B.vivos.__anterior) ? B.vivos.__anterior : null;
+}
+function bPintarPrev(){
+  var zona=b$('bPrevZona'), caja=b$('bPrev'), fecha=b$('bPrevFecha');
+  if(!zona) return;
+  var ant=bPrevPlan();
+  if(!ant || !DIAS.some(function(d){ return (ant[d[0]]||[]).length; })){
+    zona.style.display='none'; return;
+  }
+  zona.style.display='';
+  var fTxt='';
+  if(ant.__fecha){ var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(ant.__fecha);
+    if(m) fTxt='· '+m[3]+'/'+m[2]; }
+  if(fecha) fecha.textContent=fTxt;
+  var conDatos = DIAS.map(function(d){ return d[0]; }).filter(function(k){ return (ant[k]||[]).length; });
+  if (B.prevDia==null) B.prevDia = (ant[B.dia]&&ant[B.dia].length) ? B.dia : conDatos[0];
+  if (!(ant[B.prevDia]||[]).length) B.prevDia = conDatos[0];
+  var prevDia = B.prevDia;
+  caja.innerHTML='';
+  var chips=document.createElement('div'); chips.className='r-ant-chips';
+  chips.innerHTML = DIAS.map(function(d){
+    var n=(ant[d[0]]||[]).length;
+    return '<button class="r-ant-chip'+(prevDia===d[0]?' activo':'')+'" data-d="'+d[0]+'">'+DIA_CORTO[d[0]]+(n?'<i>'+n+'</i>':'')+'</button>';
+  }).join('');
+  caja.appendChild(chips);
+  chips.querySelectorAll('[data-d]').forEach(function(b){
+    b.onclick=function(){ B.prevDia=b.getAttribute('data-d'); bPintarPrev(); };
+  });
+  var lista=document.createElement('div'); lista.className='r-ant-lista';
+  var items=ant[prevDia]||[];
+  lista.innerHTML = items.length ? items.map(function(e,i){
+    return '<div class="r-ant-ej"><span class="r-ant-emoji">'+(e.emoji||'🏋️')+'</span>'+
+      '<div class="r-ant-tx"><b>'+escHtml(e.nombre)+'</b><small>'+[e.series&&e.reps?e.series+'×'+e.reps:(e.series||e.reps||''),e.carga].filter(Boolean).join(' · ')+'</small></div>'+
+      '<button class="r-ant-mas" data-nom="'+escHtml(e.nombre)+'" title="Agregar al plan nuevo">＋</button></div>';
+  }).join('') : '<p class="r-ant-vacio">Ese día no tenía ejercicios.</p>';
+  caja.appendChild(lista);
+  lista.querySelectorAll('.r-ant-mas').forEach(function(bt){
+    bt.onclick=function(){
+      var nom=bt.getAttribute('data-nom');
+      if(B.plan[B.dia].some(function(x){ return x.nombre===nom; })){ bToast('Ya está en la sesión'); return; }
+      var src=(ant[prevDia]||[]).find(function(x){ return x.nombre===nom; }) || bEjLibro(nom);
+      var lib=bEjLibro(nom);
+      B.plan[B.dia].push({
+        id:nuevoId(), nombre:nom, img: lib?lib.img:(src&&src.img), emoji: lib?lib.emoji:(src&&src.emoji||'🏋️'),
+        series: src&&src.series, reps: src&&src.reps, carga: src&&src.carga, nota: src&&src.nota
+      });
+      bPintarMazo(); bPintarGrilla(); bPintarDias(); bToast('Agregado a la sesión ✓');
+    };
+  });
 }
 function bPintarMazo(){
   B._guardarBorrador && B._guardarBorrador();
