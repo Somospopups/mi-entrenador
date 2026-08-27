@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Mockup v3 · Constructor de planes (mazo)</title>
+<style>
+  :root{
+    --c1:#7c3aed; --c2:#3b82f6;
+    --tinta:#23233f; --gris:#8d8bb0; --fondo:#f3f2fc; --carta:#ffffff;
+    --borde:#e4e7f3; --ok:#1e9e60; --rojo:#e02424;
+  }
+  *{ box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{ font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--fondo); color:var(--tinta);
+        overflow:hidden; overscroll-behavior:none; }
+  .app{ position:fixed; inset:0; max-width:520px; margin:0 auto; background:var(--fondo);
+        display:flex; flex-direction:column; box-shadow:0 0 60px rgba(60,50,120,.18); overflow:hidden; }
+
+  .manchas{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+  .manchas i{ position:absolute; border-radius:50%; filter:blur(60px); opacity:.28; animation:flota 14s ease-in-out infinite alternate; }
+  .manchas i:nth-child(1){ width:280px;height:280px; background:#7c3aed; top:-110px; left:-90px; }
+  .manchas i:nth-child(2){ width:240px;height:240px; background:#3b82f6; top:40px; right:-110px; animation-delay:-5s; }
+  .manchas i:nth-child(3){ width:220px;height:220px; background:#ec4899; bottom:-90px; left:30%; animation-delay:-9s; }
+  @keyframes flota{ from{ transform:translateY(0) scale(1);} to{ transform:translateY(-40px) scale(1.12);} }
+
+  /* ── header compacto ── */
+  header{ position:relative; z-index:2; display:flex; align-items:center; gap:9px; padding:10px 14px 4px; }
+  .atras{ width:34px;height:34px; flex:0 0 34px; border-radius:50%; border:1.5px solid rgba(255,255,255,.8);
+          background:rgba(255,255,255,.65); backdrop-filter:blur(10px);
+          font-size:17px; color:var(--tinta); cursor:pointer; display:grid; place-items:center; }
+  header h1{ font-size:17px; letter-spacing:-.3px; line-height:1.15; }
+  header h1 small{ font-size:12px; font-weight:500; color:var(--gris); margin-left:6px; }
+
+  /* ── pildoras (días y accesos comparten estilo) ── */
+  .pildoras{ position:relative; z-index:2; display:flex; overflow-x:auto;
+             scrollbar-width:none; padding:4px 14px; -webkit-overflow-scrolling:touch; }
+  .pildoras::-webkit-scrollbar{ display:none; }
+  .pildoras-centro{ display:flex; gap:6px; margin:auto; }   /* centra si entran; si no, desliza sin cortar */
+  .pill{ flex:0 0 auto; border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.65);
+      backdrop-filter:blur(10px); border-radius:99px; padding:6px 12px; font-size:12px; font-weight:700;
+      color:var(--tinta); cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:5px;
+      min-height:32px; transition:transform .12s; }
+  .pill:active{ transform:scale(.95); }
+  .pill .puntito{ width:6px; height:6px; border-radius:50%; background:var(--ok); }
+  .pill.dia.activo{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent;
+      box-shadow:0 6px 14px rgba(124,58,237,.35); }
+  .pill.dia.activo .puntito{ background:#fff; }
+  .pill.acc{ color:var(--c1); border-color:rgba(124,58,237,.25); background:rgba(124,58,237,.07); }
+
+  /* ── mazo del plan (tira compacta) ── */
+  .plan-zona{ position:relative; z-index:2; padding:6px 0 2px; }
+  .plan-titulo{ display:flex; align-items:baseline; justify-content:space-between; margin:0 16px 4px; }
+  .plan-titulo b{ font-size:12.5px; }
+  .plan-titulo span{ font-size:10.5px; color:var(--gris); }
+  .mazo{ display:flex; gap:9px; overflow-x:auto; padding:4px 14px 8px;
+         min-height:128px; align-items:stretch; scroll-behavior:smooth; scrollbar-width:none; }
+  .mazo::-webkit-scrollbar{ display:none; }
+  .mazo.sobre{ outline:2px dashed var(--c1); outline-offset:4px; border-radius:16px; background:rgba(124,58,237,.05); }
+
+  .mas-carta{ flex:0 0 auto; width:100%; border-radius:16px; cursor:pointer;
+      border:2px dashed rgba(124,58,237,.5); background:rgba(255,255,255,.5); backdrop-filter:blur(8px);
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      color:var(--c1); font-weight:700; font-size:13.5px; padding:10px; min-height:112px; }
+  .mas-carta .cir{ width:40px;height:40px;border-radius:50%; background:linear-gradient(135deg,var(--c1),var(--c2));
+      display:grid; place-items:center; color:#fff; font-size:23px; flex:0 0 40px;
+      box-shadow:0 8px 18px rgba(124,58,237,.4); }
+
+  .pc{ flex:0 0 96px; position:relative; border-radius:16px; overflow:hidden;
+      background:var(--carta); box-shadow:0 8px 20px rgba(60,50,120,.15);
+      border:1.5px solid rgba(255,255,255,.9); cursor:grab;
+      -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+      animation:entra .28s cubic-bezier(.22,.9,.35,1) backwards; min-height:118px;
+      display:flex; flex-direction:column; }
+  .pc:active{ cursor:grabbing; }
+  @keyframes entra{ from{ opacity:0; transform:translateY(12px) scale(.92);} }
+  .pc img{ width:100%; height:72px; object-fit:cover; pointer-events:none; }
+  .pc .pc-info{ padding:5px 6px 6px; display:flex; flex-direction:column; gap:1px; flex:1; }
+  .pc .pc-nom{ font-size:9.5px; font-weight:700; line-height:1.15;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:22px; }
+  .pc .pc-det{ font-size:9.5px; color:var(--c1); font-weight:800; margin-top:auto; }
+  .pc .pc-num{ position:absolute; top:5px; left:5px; width:19px;height:19px;border-radius:50%;
+      background:rgba(35,35,63,.72); color:#fff; font-size:10px; font-weight:800;
+      display:grid; place-items:center; backdrop-filter:blur(4px); }
+  .pc .pc-x{ position:absolute; top:5px; right:5px; width:19px;height:19px;border-radius:50%;
+      background:rgba(224,36,36,.92); color:#fff; border:none; font-size:12px; line-height:1;
+      display:grid; place-items:center; cursor:pointer; }
+  .pc .pc-nota{ position:absolute; bottom:44px; left:5px; font-size:8.5px; background:rgba(35,35,63,.72);
+      color:#fff; border-radius:6px; padding:1px 5px; backdrop-filter:blur(4px); max-width:84px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .fantasma{ position:fixed; z-index:99; width:96px; border-radius:16px; overflow:hidden;
+      box-shadow:0 18px 40px rgba(60,50,120,.4); transform:scale(1.08) rotate(3deg);
+      pointer-events:none; opacity:.96; }
+  .fantasma img{ width:100%; height:72px; object-fit:cover; }
+  .fantasma .f-info{ background:var(--carta); padding:5px 6px; }
+  .fantasma .f-nom{ font-size:9.5px; font-weight:700; }
+
+  /* ── biblioteca: ahora ocupa el gran resto ── */
+  .biblio{ position:relative; z-index:2; flex:1; display:flex; flex-direction:column; min-height:0;
+      background:rgba(255,255,255,.62); backdrop-filter:blur(14px);
+      border-radius:22px 22px 0 0; border-top:1.5px solid rgba(255,255,255,.9);
+      margin-top:4px; padding:10px 14px 0; }
+  .biblio-cab{ display:flex; align-items:center; gap:8px; }
+  .biblio-cab h2{ font-size:13.5px; flex:0 0 auto; }
+  .cats{ display:flex; gap:6px; overflow-x:auto; flex:1; min-width:0;
+         scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .cats::-webkit-scrollbar{ display:none; }
+  .cat{ flex:0 0 auto; border:1.5px solid var(--borde); background:#fff; border-radius:99px;
+      padding:5px 11px; font-size:11.5px; font-weight:700; color:var(--gris); cursor:pointer; font-family:inherit;
+      min-height:28px; display:flex; align-items:center; gap:4px; }
+  .cat.activa{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent;
+      box-shadow:0 5px 12px rgba(124,58,237,.3); }
+  .busca{ margin:8px 0 9px; width:100%; border:1.5px solid var(--borde); border-radius:13px;
+      padding:10px 14px; font-size:14px; background:#fff; outline:none; font-family:inherit; }
+  .busca:focus{ border-color:var(--c1); }
+  .grilla{ flex:1; overflow-y:auto; display:grid; grid-template-columns:repeat(4,1fr); gap:11px 8px;
+      padding-bottom:100px; align-content:start; }
+  .ec{ border:none; background:transparent; cursor:pointer; padding:0; border-radius:15px;
+      display:flex; flex-direction:column; align-items:center; gap:4px;
+      transition:transform .12s; position:relative;
+      -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .ec:active{ transform:scale(.92); }
+  .ec .ec-img{ width:100%; aspect-ratio:1; border-radius:15px; overflow:hidden; background:#fff;
+      box-shadow:0 6px 15px rgba(60,50,120,.14); border:1.5px solid rgba(255,255,255,.9); }
+  .ec img{ width:100%; height:100%; object-fit:cover; pointer-events:none; }
+  .ec .ec-emoji, .pc .pc-emoji{ width:100%; height:100%; display:grid; place-items:center; font-size:34px;
+      background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(59,130,246,.12)); }
+  .pc .pc-emoji{ font-size:30px; }
+  .ec .ec-propio{ position:absolute; top:-6px; left:-6px; width:20px; height:20px; border-radius:50%;
+      background:linear-gradient(135deg,#f59e0b,#f97316); color:#fff; font-size:10px; display:grid;
+      place-items:center; border:2px solid #fff; z-index:2; font-weight:800; }
+  .pc-img{ height:72px; position:relative; }
+  .pc-img img{ width:100%; height:100%; object-fit:cover; pointer-events:none; }
+  .ec .ec-nom{ font-size:9px; font-weight:600; line-height:1.2; color:var(--tinta); text-align:center;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .ec.en-plan .ec-img{ box-shadow:0 0 0 2.5px var(--ok), 0 6px 15px rgba(30,158,96,.25); }
+  .ec .ec-check{ position:absolute; top:-6px; right:-6px; width:21px; height:21px; border-radius:50%;
+      background:var(--ok); color:#fff; font-size:11px; display:none; place-items:center;
+      border:2px solid #fff; font-weight:800; z-index:2; }
+  .ec.en-plan .ec-check{ display:grid; }
+  /* tarjeta "crear ejercicio" dentro de la grilla */
+  .ec-crear{ border:2px dashed rgba(124,58,237,.5); border-radius:15px; background:rgba(124,58,237,.05);
+      width:100%; aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:4px; color:var(--c1); cursor:pointer; font-family:inherit; }
+  .ec-crear .mas{ width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--c1),var(--c2));
+      color:#fff; font-size:20px; display:grid; place-items:center; line-height:1;
+      box-shadow:0 6px 14px rgba(124,58,237,.35); }
+  .ec-crear small{ font-size:8.5px; font-weight:800; line-height:1.15; text-align:center; max-width:70px; }
+
+  /* ── barra inferior ── */
+  .barra{ position:absolute; left:0; right:0; bottom:0; z-index:20; padding:9px 14px calc(10px + env(safe-area-inset-bottom));
+      background:rgba(255,255,255,.88); backdrop-filter:blur(16px); border-top:1.5px solid rgba(255,255,255,.9);
+      display:flex; gap:10px; align-items:center; }
+  .barra .contador{ font-size:12.5px; font-weight:800; white-space:nowrap; }
+  .barra .contador small{ display:block; font-size:9.5px; font-weight:500; color:var(--gris); }
+  .btn-guardar{ flex:1; border:none; border-radius:14px; padding:13px; font-size:14.5px; font-weight:800;
+      color:#fff; background:linear-gradient(135deg,var(--c1),var(--c2)); cursor:pointer; font-family:inherit;
+      box-shadow:0 9px 20px rgba(124,58,237,.4); }
+  .btn-guardar:active{ transform:scale(.98); }
+
+  /* ── hoja de detalles ── */
+  .velo{ position:absolute; inset:0; z-index:50; background:rgba(30,28,60,.45); backdrop-filter:blur(3px);
+      opacity:0; pointer-events:none; transition:opacity .25s; }
+  .velo.abierto{ opacity:1; pointer-events:auto; }
+  .hoja{ position:absolute; left:0; right:0; bottom:0; background:#fff; border-radius:24px 24px 0 0;
+      padding:8px 20px calc(20px + env(safe-area-inset-bottom)); transform:translateY(105%);
+      transition:transform .32s cubic-bezier(.22,.9,.35,1); max-height:88%; overflow-y:auto; }
+  .velo.abierto .hoja{ transform:translateY(0); }
+  .agarre{ width:42px; height:5px; border-radius:3px; background:var(--borde); margin:2px auto 10px; }
+  .hoja .dh{ display:flex; gap:13px; align-items:center; margin-bottom:12px; }
+  .hoja .dh img{ width:72px; height:72px; border-radius:16px; object-fit:cover; box-shadow:0 8px 20px rgba(60,50,120,.2); }
+  .hoja .dh b{ font-size:16.5px; display:block; }
+  .hoja .dh small{ color:var(--gris); font-size:12.5px; }
+  .hoja .pista{ background:linear-gradient(135deg,rgba(124,58,237,.09),rgba(59,130,246,.09));
+      border:1px solid rgba(124,58,237,.18); border-radius:13px; padding:9px 12px; font-size:12.5px;
+      margin-bottom:12px; line-height:1.45; }
+  .campos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .campo{ display:flex; flex-direction:column; gap:4px; }
+  .campo.ancho{ grid-column:1/-1; }
+  .campo label{ font-size:11.5px; font-weight:700; color:var(--gris); }
+  .campo input{ border:1.5px solid var(--borde); border-radius:13px; padding:11px 13px; font-size:15px;
+      font-family:inherit; outline:none; background:#fafaff; }
+  .campo input:focus{ border-color:var(--c1); background:#fff; }
+  .sugiere{ margin-top:5px; display:flex; gap:5px; flex-wrap:wrap; }
+  .sugiere button{ border:1px solid rgba(124,58,237,.3); background:rgba(124,58,237,.07); color:var(--c1);
+      border-radius:99px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .hoja-botones{ display:flex; gap:10px; margin-top:15px; }
+  .hoja-botones button{ flex:1; border:none; border-radius:14px; padding:14px; font-size:14.5px;
+      font-weight:800; cursor:pointer; font-family:inherit; }
+  .hb-cancela{ background:#f1f1f8; color:var(--gris); }
+  .hb-listo{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff;
+      box-shadow:0 9px 20px rgba(124,58,237,.35); }
+
+  .velo2 .hoja2{ position:absolute; left:0; right:0; bottom:0; background:#fff; border-radius:24px 24px 0 0;
+      padding:8px 18px calc(18px + env(safe-area-inset-bottom)); transform:translateY(105%);
+      transition:transform .32s cubic-bezier(.22,.9,.35,1); }
+  .velo2.abierto .hoja2{ transform:translateY(0); }
+  .fila-opt{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none;
+      border:none; border-bottom:1px solid var(--borde); padding:13px 4px; font-size:14px;
+      font-family:inherit; font-weight:600; color:var(--tinta); cursor:pointer; }
+  .fila-opt:last-child{ border-bottom:none; }
+  .fila-opt .ic{ width:34px;height:34px;border-radius:10px; display:grid;place-items:center; font-size:16px;
+      background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(59,130,246,.12)); }
+
+  /* hoja crear ejercicio propio */
+  .emoji-opts{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px; }
+  .emoji-opts button{ width:46px; height:46px; border-radius:13px; border:1.5px solid var(--borde);
+      background:#fafaff; font-size:24px; cursor:pointer; }
+  .emoji-opts button.activo{ border-color:var(--c1); background:rgba(124,58,237,.1);
+      box-shadow:0 0 0 2px rgba(124,58,237,.25); }
+
+  .toast{ position:absolute; left:50%; bottom:86px; transform:translateX(-50%) translateY(18px); z-index:90;
+      background:rgba(35,35,63,.94); color:#fff; padding:10px 18px; border-radius:99px; font-size:12.5px;
+      font-weight:600; opacity:0; pointer-events:none; transition:all .25s; white-space:nowrap; }
+  .toast.ver{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .nota-mock{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:200;
+      background:rgba(35,35,63,.9); color:#fff; font-size:11px; padding:5px 12px; border-radius:99px;
+      opacity:.85; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="nota-mock">MOCKUP v3 · datos de ejemplo</div>
+<div class="app">
+  <div class="manchas"><i></i><i></i><i></i></div>
+
+  <header>
+    <button class="atras">‹</button>
+    <h1>Armar plan<small>Valentina López</small></h1>
+  </header>
+
+  <div class="pildoras"><div class="pildoras-centro" id="dias"></div></div>
+
+  <div class="plan-zona">
+    <div class="plan-titulo"><b>Sesión</b><span id="ayuda">Arrastrá una carta acá o tocalá</span></div>
+    <div class="mazo" id="mazo"></div>
+  </div>
+
+  <div class="pildoras">
+    <div class="pildoras-centro">
+      <button class="pill acc" id="accRepetir">↺ Repetir día anterior</button>
+      <button class="pill acc" id="accPlantillas">Plantillas</button>
+      <button class="pill acc" id="accCopiar">⧉ Copiar día a…</button>
+    </div>
+  </div>
+
+  <div class="biblio">
+    <div class="biblio-cab">
+      <h2>Ejercicios</h2>
+      <div class="cats" id="cats"></div>
+    </div>
+    <input class="busca" id="busca" placeholder="Buscar: sentadilla, press, curl…">
+    <div class="grilla" id="grilla"></div>
+  </div>
+
+  <div class="barra">
+    <div class="contador"><span id="nEj">0</span> ejercicios<small id="subDia">Lunes</small></div>
+    <button class="btn-guardar" id="btnGuardar">Guardar plan</button>
+  </div>
+
+  <div class="velo" id="velo">
+    <div class="hoja">
+      <div class="agarre"></div>
+      <div class="dh">
+        <span id="hEmoji" style="display:none;width:72px;height:72px;border-radius:16px;place-items:center;font-size:38px;background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(59,130,246,.12))"></span>
+        <img id="hImg" src="" alt="" style="width:72px;height:72px;border-radius:16px;object-fit:cover">
+        <div><b id="hNom"></b><small id="hSub"></small></div>
+      </div>
+      <div class="pista" id="hPista"></div>
+      <div class="campos">
+        <div class="campo"><label>Series</label><input id="cSeries" inputmode="numeric" placeholder="4">
+          <div class="sugiere" data-para="series"><button>3</button><button>4</button><button>5</button></div></div>
+        <div class="campo"><label>Repeticiones / tiempo</label><input id="cReps" placeholder="10-12 · 40 seg">
+          <div class="sugiere" data-para="reps"><button>8-10</button><button>10-12</button><button>40 seg</button></div></div>
+        <div class="campo"><label>Peso / carga</label><input id="cCarga" placeholder="40 kg · desc. 90 seg">
+          <div class="sugiere" data-para="carga"><button>sin peso</button><button>mancuernas</button></div></div>
+        <div class="campo"><label>Comentario para el alumno</label><input id="cNota" placeholder="Ej: bajá lento"></div>
+      </div>
+      <div class="hoja-botones">
+        <button class="hb-cancela" id="hCancela">Cancelar</button>
+        <button class="hb-listo" id="hListo">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="velo velo2" id="velo2">
+    <div class="hoja2">
+      <div class="agarre"></div>
+      <button class="fila-opt" data-opt="Guardar este plan como plantilla"><span class="ic">↓</span> Guardar este plan como plantilla</button>
+      <button class="fila-opt" data-opt="Usar una plantilla guardada"><span class="ic">☰</span> Usar una plantilla guardada</button>
+      <button class="fila-opt" data-opt="Copiar el plan de otro alumno"><span class="ic">⇄</span> Copiar el plan de otro alumno</button>
+      <button class="fila-opt" data-opt="Crear ejercicio propio"><span class="ic">+</span> Crear ejercicio propio</button>
+    </div>
+  </div>
+
+  <!-- hoja crear ejercicio propio -->
+  <div class="velo" id="veloPropio">
+    <div class="hoja">
+      <div class="agarre"></div>
+      <div style="margin-bottom:14px"><b style="font-size:17px">Ejercicio propio</b>
+        <small style="color:var(--gris);display:block;margin-top:2px">Ponele nombre y un emoji: ya queda en tu biblioteca.</small></div>
+      <div class="campo ancho" style="margin-bottom:14px"><label>Nombre del ejercicio</label>
+        <input id="propioNombre" placeholder="Ej: Sentadilla búlgara"></div>
+      <div class="campo ancho"><label>Elegí un emoji</label>
+        <div class="emoji-opts" id="propioEmojis"></div></div>
+      <div class="hoja-botones">
+        <button class="hb-cancela" id="propioCancela">Cancelar</button>
+        <button class="hb-listo" id="propioCrear">Crear ejercicio</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+var CATS = [
+  ['todo','Todos'],
+  ['piernas','Piernas'],
+  ['empuje','Pecho y hombros'],
+  ['traccion','Espalda y brazos'],
+  ['core','Abdomen'],
+  ['cardio','Cardio']
+];
+var LIBRERIA = [
+  { n:'Sentadilla con barra', img:'img/sentadilla-barra.jpg', cat:'piernas' },
+  { n:'Peso muerto', img:'img/peso-muerto.jpg', cat:'piernas' },
+  { n:'Press de banca', img:'img/press-banca.jpg', cat:'empuje' },
+  { n:'Press militar', img:'img/press-militar.jpg', cat:'empuje' },
+  { n:'Remo con barra', img:'img/remo-barra.jpg', cat:'traccion' },
+  { n:'Dominadas', img:'img/dominadas.jpg', cat:'traccion' },
+  { n:'Flexiones de brazos', img:'img/flexiones.jpg', cat:'empuje' },
+  { n:'Estocadas con mancuernas', img:'img/estocadas.jpg', cat:'piernas' },
+  { n:'Prensa de piernas', img:'img/prensa-piernas.jpg', cat:'piernas' },
+  { n:'Curl de bíceps', img:'img/curl-biceps.jpg', cat:'traccion' },
+  { n:'Tríceps en polea', img:'img/triceps-polea.jpg', cat:'empuje' },
+  { n:'Vuelos laterales', img:'img/vuelos-laterales.jpg', cat:'empuje' },
+  { n:'Plancha', img:'img/plancha.jpg', cat:'core' },
+  { n:'Abdominales', img:'img/abdominales.jpg', cat:'core' },
+  { n:'Puente de glúteos', img:'img/puente-gluteos.jpg', cat:'piernas' },
+  { n:'Jalón al pecho', img:'img/jalon-pecho.jpg', cat:'traccion' },
+  { n:'Remo en polea sentado', img:'img/remo-polea.jpg', cat:'traccion' },
+  { n:'Peso muerto rumano', img:'img/peso-muerto-rumano.jpg', cat:'piernas' },
+  { n:'Hip thrust con barra', img:'img/hip-thrust.jpg', cat:'piernas' },
+  { n:'Elevación de talones', img:'img/talones.jpg', cat:'piernas' },
+  { n:'Extensión de cuádriceps', img:'img/extension-cuadriceps.jpg', cat:'piernas' },
+  { n:'Curl femoral', img:'img/curl-femoral.jpg', cat:'piernas' },
+  { n:'Press inclinado', img:'img/press-inclinado.jpg', cat:'empuje' },
+  { n:'Aperturas con mancuernas', img:'img/aperturas.jpg', cat:'empuje' },
+  { n:'Vuelos frontales', img:'img/vuelos-frontales.jpg', cat:'empuje' },
+  { n:'Curl martillo', img:'img/curl-martillo.jpg', cat:'traccion' },
+  { n:'Fondos en banco', img:'img/fondos-banco.jpg', cat:'empuje' },
+  { n:'Escaladores', img:'img/escaladores.jpg', cat:'cardio' },
+  { n:'Giro ruso', img:'img/giro-ruso.jpg', cat:'core' },
+  { n:'Superman', img:'img/superman.jpg', cat:'core' },
+  { n:'Fondos en paralelas', img:'img/fondos-paralelas.jpg', cat:'empuje' },
+  { n:'Press francés', img:'img/press-frances.jpg', cat:'empuje' },
+  { n:'Elevación de piernas', img:'img/elevacion-piernas.jpg', cat:'core' },
+  { n:'Plancha lateral', img:'img/plancha-lateral.jpg', cat:'core' },
+  { n:'Abdominales cruzados', img:'img/abdominales-cruzados.jpg', cat:'core' },
+  { n:'Encogimientos de hombros', img:'img/encogimientos.jpg', cat:'empuje' },
+  { n:'Cinta: trote', img:'img/cinta.jpg', cat:'cardio' },
+  { n:'Cinta: caminata', img:'img/cinta.jpg', cat:'cardio' },
+  { n:'Bicicleta fija', img:'img/bicicleta-fija.jpg', cat:'cardio' },
+  { n:'Soga (saltos)', img:'img/soga.jpg', cat:'cardio' },
+  { n:'Estiramientos', img:'img/estiramientos.jpg', cat:'cardio' },
+  { n:'Sentadilla frontal', img:'img/sentadilla-frontal.jpg', cat:'piernas' },
+  { n:'Estocadas con barra', img:'img/estocadas-barra.jpg', cat:'piernas' },
+  { n:'Curl concentrado', img:'img/curl-concentrado.jpg', cat:'traccion' }
+];
+/* ejercicios propios del profe (en la app real van en Supabase; en el mock, localStorage) */
+var PROPIOS = [];
+try{ PROPIOS = JSON.parse(localStorage.getItem('demo_propios')||'[]'); }catch(e){ PROPIOS = []; }
+function libro(){ return LIBRERIA.concat(PROPIOS); }
+var EMOJIS = ['🏋️','🦵','💪','🔥','🏃','🧘','🤸','🚴','🤾','🪢','🥅','⭐'];
+var emojiElegido = '🏋️';
+
+function renderCats(){
+  catsEl.innerHTML = CATS.map(function(c){
+    return '<button class="cat'+(c[0]===catAct?' activa':'')+'" data-cat="'+c[0]+'">'+c[1]+'</button>';
+  }).join('') + (PROPIOS.length
+    ? '<button class="cat'+(catAct==='mios'?' activa':'')+'" data-cat="mios">Míos</button>' : '');
+  catsEl.querySelectorAll('[data-cat]').forEach(function(b){
+    b.onclick = function(){ catAct = b.getAttribute('data-cat'); renderCats();
+      renderGrilla(document.getElementById('busca').value); };
+  });
+}
+var DIAS = [['lun','Lun','Lunes'],['mar','Mar','Martes'],['mie','Mié','Miércoles'],
+            ['jue','Jue','Jueves'],['vie','Vie','Viernes'],['sab','Sáb','Sábado'],['dom','Dom','Domingo']];
+var RECETAS = { 'Sentadilla con barra':{series:'4',reps:'8-10',carga:''},
+                'Press de banca':{series:'4',reps:'10',carga:'40 kg'} };
+
+var plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] };
+var diaAct = 'lun', catAct = 'todo', editando = null;
+/* nombre del alumno que llega desde la ficha del entrenador: mockup-plan-mazo.html?alumno=... */
+(function(){
+  var nombre = new URLSearchParams(location.search).get('alumno');
+  if (nombre){
+    var sub = document.querySelector('header h1 small');
+    if (sub) sub.textContent = 'Plan de ' + nombre;
+    document.title = 'Plan de ' + nombre;
+    Object.keys(plan).forEach(function(k){ plan[k] = []; });  // plan nuevo: empieza vacío
+  }
+})();
+var planAnterior = { lun:[
+  { nombre:'Sentadilla con barra', img:'img/sentadilla-barra.jpg', series:'4', reps:'8', carga:'55 kg', nota:'' },
+  { nombre:'Peso muerto', img:'img/peso-muerto.jpg', series:'3', reps:'8', carga:'70 kg', nota:'' },
+  { nombre:'Plancha', img:'img/plancha.jpg', series:'3', reps:'45 seg', carga:'', nota:'' }
+]};
+
+/* ── días en pildoras ── */
+var diasEl = document.getElementById('dias');
+function renderDias(){
+  diasEl.innerHTML = DIAS.map(function(d){
+    var n = plan[d[0]].length;
+    return '<button class="pill dia'+(d[0]===diaAct?' activo':'')+'" data-dia="'+d[0]+'">'+
+      d[1] + (n ? '<span class="puntito"></span>' : '') + '</button>';
+  }).join('');
+  diasEl.querySelectorAll('[data-dia]').forEach(function(b){
+    b.onclick = function(){ diaAct = b.getAttribute('data-dia'); renderDias(); renderMazo(); renderGrilla(); };
+  });
+  document.getElementById('subDia').textContent = DIAS.find(function(d){return d[0]===diaAct;})[2];
+}
+
+/* ── categorías en pildoras ── */
+var catsEl = document.getElementById('cats');
+renderCats();
+
+/* ── mazo ── */
+var mazo = document.getElementById('mazo');
+function renderMazo(){
+  var lista = plan[diaAct];
+  mazo.innerHTML = '';
+  if (!lista.length){
+    mazo.innerHTML = '<button class="mas-carta" id="masCarta"><span class="cir">+</span>Empezar el plan · arrastrá una carta acá</button>';
+    document.getElementById('masCarta').onclick = function(){
+      document.getElementById('busca').focus();
+      document.querySelector('.biblio').scrollIntoView({ behavior:'smooth' });
+    };
+  } else {
+    lista.forEach(function(e, i){
+      var pc = document.createElement('div');
+      pc.className = 'pc'; pc.style.animationDelay = (i*50)+'ms';
+      pc.innerHTML = '<span class="pc-num">'+(i+1)+'</span>'+
+        '<button class="pc-x" data-x="'+i+'">×</button>'+
+        (e.nota ? '<span class="pc-nota">💬 '+e.nota.replace(/</g,'')+'</span>' : '')+
+        '<div class="pc-img">'+(e.img ? '<img src="'+e.img+'" alt="">' : '<span class="pc-emoji">'+(e.emoji||'🏋️')+'</span>')+'</div>'+
+        '<div class="pc-info"><div class="pc-nom">'+e.nombre+'</div>'+
+        '<div class="pc-det">'+[e.series&&e.reps?e.series+'×'+e.reps:(e.series||e.reps||''),e.carga].filter(Boolean).join(' · ')+'</div></div>';
+      pc.querySelector('[data-x]').onclick = function(ev){ ev.stopPropagation(); lista.splice(i,1); renderMazo(); renderGrilla(); renderDias(); toast(e.nombre+' quitado'); };
+      pc.onclick = function(){ if (Date.now() - ultimoGesto < 350) return; abrirHoja('plan', i); };
+      gestoTarjeta(pc, 'plan');
+      mazo.appendChild(pc);
+    });
+  }
+  document.getElementById('nEj').textContent = lista.length;
+  document.getElementById('ayuda').textContent = lista.length ? 'Tocá para editar · arrastrá para ordenar' : 'Tocá una carta de abajo o arrastrala';
+}
+
+/* ── grilla ── */
+var grilla = document.getElementById('grilla');
+function renderGrilla(filtro){
+  var f = (filtro||'').toLowerCase();
+  var enPlan = {};
+  plan[diaAct].forEach(function(e){ enPlan[e.nombre] = true; });
+  var tarjetaCrear = !f ? '<button type="button" class="ec" id="ecCrear"><span class="ec-crear">'+
+      '<span class="mas">+</span><small>Crear ejercicio</small></span></button>' : '';
+  grilla.innerHTML = tarjetaCrear + libro().filter(function(e){
+    var enCat = catAct==='todo' ? true : catAct==='mios' ? !!e.propio : e.cat===catAct;
+    return enCat && (!f || e.n.toLowerCase().indexOf(f)>=0);
+  }).map(function(e){
+      var dibujo = e.img ? '<img src="'+e.img+'" alt="">' : '<span class="ec-emoji">'+(e.emoji||'🏋️')+'</span>';
+      return '<button class="ec'+(enPlan[e.n]?' en-plan':'')+'" data-nom="'+e.n.replace(/"/g,'&quot;')+'">'+
+        (e.propio ? '<span class="ec-propio" title="Ejercicio propio">★</span>' : '')+
+        '<span class="ec-check">✓</span>'+
+        '<span class="ec-img">'+dibujo+'</span>'+
+        '<span class="ec-nom">'+e.n+'</span></button>';
+    }).join('') || '<p style="grid-column:1/-1;color:var(--gris);font-size:12.5px;text-align:center;padding:24px">No hay ejercicios en esta categoría con ese nombre.</p>';
+  grilla.querySelectorAll('.ec[data-nom]').forEach(function(b){
+    b.onclick = function(){
+      if (Date.now() - ultimoGesto < 350) return;   // venía de un arrastre largo: no abrir
+      var nom = b.getAttribute('data-nom');
+      if (enPlan[nom]){ toast('Ya está en el plan de hoy · tocala arriba para editar'); return; }
+      abrirHoja('biblio', nom);
+    };
+    gestoTarjeta(b, 'nuevo');
+  });
+  var btnCrear = document.getElementById('ecCrear');
+  if (btnCrear) btnCrear.onclick = function(){ abrirPropio(); };
+}
+document.getElementById('busca').addEventListener('input', function(){ renderGrilla(this.value); });
+
+/* ── hoja de detalles ── */
+var velo = document.getElementById('velo');
+function abrirHoja(tipo, ref){
+  editando = { tipo:tipo, ref:ref };
+  var e = tipo==='plan' ? plan[diaAct][ref] : libro().find(function(x){ return x.n===ref; });
+  var hImg = document.getElementById('hImg'), hEm = document.getElementById('hEmoji');
+  if (e.img){ hImg.style.display=''; hImg.src = e.img; hEm.style.display='none'; }
+  else { hImg.style.display='none'; hEm.style.display='grid'; hEm.textContent = e.emoji||'🏋️'; }
+  document.getElementById('hNom').textContent = e.nombre || e.n;
+  document.getElementById('hSub').textContent = tipo==='plan' ? 'Editar detalles' : 'Nuevo en la sesión';
+  var receta = RECETAS[e.nombre || e.n];
+  document.getElementById('hPista').innerHTML = tipo==='plan'
+    ? '💬 Ajustá series, peso o dejá una nota para el alumno.'
+    : ('💡 La última vez le pusiste <b>'+ (receta ? [receta.series+'×'+receta.reps, receta.carga].filter(Boolean).join(' · ') : '4 × 10 · 40 kg') +'</b> (dato de ejemplo).');
+  document.getElementById('cSeries').value = e.series || (receta ? receta.series : '');
+  document.getElementById('cReps').value   = e.reps   || (receta ? receta.reps   : '');
+  document.getElementById('cCarga').value  = e.carga  || (receta ? receta.carga  : '');
+  document.getElementById('cNota').value   = e.nota   || '';
+  velo.classList.add('abierto');
+}
+function cerrarHoja(){ velo.classList.remove('abierto'); editando=null; }
+document.getElementById('hCancela').onclick = cerrarHoja;
+velo.onclick = function(ev){ if (ev.target===velo) cerrarHoja(); };
+document.querySelectorAll('.sugiere button').forEach(function(b){
+  b.onclick = function(){
+    var map = { series:'cSeries', reps:'cReps', carga:'cCarga' };
+    document.getElementById(map[b.parentElement.getAttribute('data-para')]).value = b.textContent.trim();
+  };
+});
+document.getElementById('hListo').onclick = function(){
+  var v = function(id){ return document.getElementById(id).value.trim(); };
+  if (editando.tipo==='plan'){
+    var e = plan[diaAct][editando.ref];
+    e.series=v('cSeries'); e.reps=v('cReps'); e.carga=v('cCarga'); e.nota=v('cNota');
+    toast('Cambios guardados');
+  } else {
+    var base = libro().find(function(x){ return x.n===editando.ref; });
+    plan[diaAct].push({ id:'e'+Date.now(), nombre:base.n, img:base.img||'', emoji:base.emoji||'',
+      series:v('cSeries'), reps:v('cReps'), carga:v('cCarga'), nota:v('cNota') });
+    toast(base.n + ' agregado');
+  }
+  cerrarHoja(); renderMazo(); renderGrilla(document.getElementById('busca').value); renderDias();
+};
+
+/* ── accesos ── */
+document.getElementById('accRepetir').onclick = function(){
+  var prev = planAnterior[diaAct] || [];
+  if (!prev.length){ toast('No hay plan anterior de este día (ejemplo)'); return; }
+  prev.forEach(function(e){ plan[diaAct].push({ id:'e'+Date.now()+Math.random(), nombre:e.nombre, img:e.img, series:e.series, reps:e.reps, carga:e.carga, nota:e.nota }); });
+  renderMazo(); renderGrilla(); renderDias();
+  toast('Día anterior repetido: '+prev.length+' ejercicios');
+};
+document.getElementById('accCopiar').onclick = function(){ toast('Acá va el selector de día destino (ejemplo)'); };
+document.getElementById('accPlantillas').onclick = function(){ document.getElementById('velo2').classList.add('abierto'); };
+document.getElementById('velo2').onclick = function(ev){
+  if (ev.target===this){ this.classList.remove('abierto'); return; }
+  var opt = ev.target.closest('[data-opt]');
+  if (!opt) return;
+  this.classList.remove('abierto');
+  if (opt.getAttribute('data-opt')==='Crear ejercicio propio'){ abrirPropio(); return; }
+  toast('Acción: '+opt.getAttribute('data-opt')+' (ejemplo)');
+};
+
+/* ── crear ejercicio propio: nombre + emoji, nada más ── */
+var veloPropio = document.getElementById('veloPropio');
+function abrirPropio(){
+  document.getElementById('propioNombre').value = '';
+  emojiElegido = '🏋️';
+  var caja = document.getElementById('propioEmojis');
+  caja.innerHTML = EMOJIS.map(function(em, i){
+    return '<button data-em="'+em+'" class="'+(i===0?'activo':'')+'">'+em+'</button>';
+  }).join('');
+  caja.querySelectorAll('button').forEach(function(b){
+    b.onclick = function(){
+      emojiElegido = b.getAttribute('data-em');
+      caja.querySelectorAll('button').forEach(function(x){ x.classList.toggle('activo', x===b); });
+    };
+  });
+  veloPropio.classList.add('abierto');
+  setTimeout(function(){ document.getElementById('propioNombre').focus(); }, 350);
+}
+document.getElementById('propioCancela').onclick = function(){ veloPropio.classList.remove('abierto'); };
+veloPropio.onclick = function(ev){ if (ev.target===veloPropio) veloPropio.classList.remove('abierto'); };
+document.getElementById('propioCrear').onclick = function(){
+  var nombre = document.getElementById('propioNombre').value.trim();
+  if (!nombre){ toast('Ponele un nombre primero'); return; }
+  if (libro().some(function(e){ return e.n.toLowerCase()===nombre.toLowerCase(); })){
+    toast('Ya existe un ejercicio con ese nombre'); return;
+  }
+  var nuevo = { n:nombre, cat:'mios', propio:true, emoji:emojiElegido, img:'' };
+  PROPIOS.push(nuevo);
+  try{ localStorage.setItem('demo_propios', JSON.stringify(PROPIOS)); }catch(e){}
+  veloPropio.classList.remove('abierto');
+  catAct = 'mios'; renderCats(); renderGrilla('');
+  toast('★ "'+nombre+'" creado');
+  abrirHoja('biblio', nombre);   // de una: cargale series/peso y al plan
+};
+document.getElementById('btnGuardar').onclick = function(){
+  var total = Object.values(plan).reduce(function(s,d){ return s+d.length; },0);
+  toast('✓ Plan guardado · '+total+' ejercicios en la semana');
+};
+
+var tEl = document.getElementById('toast'), tTimer;
+function toast(msg){ tEl.textContent = msg; tEl.classList.add('ver'); clearTimeout(tTimer); tTimer=setTimeout(function(){ tEl.classList.remove('ver'); }, 2000); }
+
+/* ══════ gestos: toque = editar · deslizar = scroll · mantener y arrastrar = tomar carta ══════ */
+var drag = null, ultimoGesto = 0;
+var ESPERA_LARGA = 400;   // ms que hay que mantener para tomar la carta (en celu)
+var UMBRAL_MOV = 11;      // px que, al mover el dedo ANTES de la espera, cancelan el arrastre (es scroll)
+
+/* El scroll nativo manda hasta que se cumple la espera larga; recién ahí
+   bloqueamos el scroll con un touchmove no-pasivo y empezamos a arrastrar. */
+document.addEventListener('touchmove', function(ev){
+  if (drag && drag.arrastrando) ev.preventDefault();
+}, { passive:false });
+
+function crearFantasma(el){
+  var f = document.createElement('div');
+  f.className = 'fantasma';
+  var img = el.querySelector('.pc-img img, .ec-img img'), nom = el.querySelector('.ec-nom,.pc-nom');
+  var em = el.querySelector('.pc-emoji,.ec-emoji');
+  var dibujo = img ? '<img src="'+img.src+'">' : '<div style="height:72px;display:grid;place-items:center;font-size:32px;background:#fff">'+(em?em.textContent:'🏋️')+'</div>';
+  f.innerHTML = dibujo + '<div class="f-info"><div class="f-nom">'+(nom?nom.textContent:'')+'</div></div>';
+  document.body.appendChild(f);
+  return f;
+}
+function empezarArrastre(){
+  drag.arrastrando = true;
+  if (navigator.vibrate) navigator.vibrate(15);          // vibración de "tomada"
+  drag.fantasma = crearFantasma(drag.desde);
+  if (drag.tipo==='plan') drag.desde.style.opacity = '.25';
+  drag.desde.style.transform = 'scale(.94)';
+}
+function soltar(x, y){
+  if (drag.tipo==='nuevo'){
+    if (estaSobreMazo(x, y)) abrirHoja('biblio', drag.base.n);
+  } else if (drag.tipo==='plan'){
+    var cards = [].slice.call(mazo.querySelectorAll('.pc'));
+    var destino = cards.length;
+    for (var i=0;i<cards.length;i++){
+      var r = cards[i].getBoundingClientRect();
+      if (x < r.left + r.width/2){ destino = i; break; }
+    }
+    var lista = plan[diaAct];
+    var item = lista.splice(drag.idx,1)[0];
+    if (destino > drag.idx) destino--;
+    lista.splice(Math.max(0,destino),0,item);
+    renderMazo(); renderGrilla(); toast('Orden actualizado');
+  }
+}
+function finGesto(ev){
+  if (!drag) return;
+  if (drag.timer) clearTimeout(drag.timer);
+  if (drag.arrastrando){
+    soltar(ev.clientX, ev.clientY);
+    ultimoGesto = Date.now();           // evita que el "click" fantasma abra la hoja
+  }
+  if (drag.fantasma) drag.fantasma.remove();
+  drag.desde.style.opacity = ''; drag.desde.style.transform = '';
+  mazo.classList.remove('sobre');
+  drag = null;
+}
+function gestoTarjeta(el, tipo){
+  el.addEventListener('pointerdown', function(ev){
+    if (ev.pointerType==='mouse' && ev.button!==0) return;
+    if (ev.target.closest('.pc-x')) return;
+    if (tipo==='nuevo'){
+      var nom = el.getAttribute('data-nom');
+      if (plan[diaAct].some(function(e){ return e.nombre===nom; })) return;
+      var base = libro().find(function(x){ return x.n===nom; });
+      drag = { tipo:'nuevo', base:base, desde:el, arrastrando:false, timer:null, sx:ev.clientX, sy:ev.clientY };
+    } else {
+      drag = { tipo:'plan', idx:Number(el.dataset.planIdx)||0, desde:el, arrastrando:false, timer:null, sx:ev.clientX, sy:ev.clientY };
+    }
+    try{ el.setPointerCapture(ev.pointerId); }catch(e){}
+    if (ev.pointerType === 'mouse'){ empezarArrastre(); return; }   // en compu: inmediato
+    drag.timer = setTimeout(empezarArrastre, ESPERA_LARGA);          // en celu: mantener
+  });
+  el.addEventListener('pointermove', function(ev){
+    if (!drag || drag.desde!==el) return;
+    if (!drag.arrastrando){
+      // si movió el dedo antes de la espera: es scroll, largamos la carta
+      if (Math.hypot(ev.clientX-drag.sx, ev.clientY-drag.sy) > UMBRAL_MOV){
+        if (drag.timer) clearTimeout(drag.timer); drag = null;
+      }
+      return;
+    }
+    drag.fantasma.style.left = (ev.clientX-48)+'px';
+    drag.fantasma.style.top  = (ev.clientY-50)+'px';
+    if (drag.tipo==='nuevo') mazo.classList.toggle('sobre', estaSobreMazo(ev.clientX, ev.clientY));
+  });
+  el.addEventListener('pointerup', finGesto);
+  el.addEventListener('pointercancel', finGesto);
+}
+function estaSobreMazo(x, y){
+  var r = mazo.getBoundingClientRect();
+  return x>=r.left-20 && x<=r.right+20 && y>=r.top-26 && y<=r.bottom+26;
+}
+
+/* ── en PC las tiras horizontales se mueven con la rueda y arrastrando con el mouse ── */
+function habilitarTira(el, conArrastre){
+  el.style.userSelect = 'none';
+  // rueda vertical → scroll horizontal
+  el.addEventListener('wheel', function(ev){
+    if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)){ el.scrollLeft += ev.deltaY; ev.preventDefault(); }
+  }, { passive:false });
+  if (!conArrastre) return;
+  var arr=false, sx=0, sl=0, movio=false;
+  el.addEventListener('pointerdown', function(ev){
+    if (ev.pointerType !== 'mouse') return;
+    arr=true; movio=false; sx=ev.clientX; sl=el.scrollLeft;
+  });
+  window.addEventListener('pointermove', function(ev){
+    if (!arr) return;
+    var dx = ev.clientX - sx;
+    if (Math.abs(dx) > 6) movio = true;
+    el.scrollLeft = sl - dx;
+  });
+  window.addEventListener('pointerup', function(){
+    if (arr && movio){   // si venía arrastrando la tira, que no se "clickee" la pildora
+      var f = function(e){ e.stopPropagation(); e.preventDefault(); el.removeEventListener('click', f, true); };
+      el.addEventListener('click', f, true);
+      setTimeout(function(){ el.removeEventListener('click', f, true); }, 50);
+    }
+    arr = false;
+  });
+}
+document.querySelectorAll('.cats').forEach(function(el){ habilitarTira(el, true); });
+document.querySelectorAll('.pildoras').forEach(function(el){ habilitarTira(el, true); });
+habilitarTira(mazo, false);   // el mazo no: ahí el arrastre del mouse es para reordenar cartas
+
+/* la flecha de atrás vuelve a la ficha del alumno cuando llegamos desde ahí */
+(function(){
+  var vino = new URLSearchParams(location.search).get('alumno');
+  var btn = document.querySelector('header .atras');
+  if (btn && vino) btn.onclick = function(){ location.href = 'mockup-entrenador.html'; };
+})();
+
+renderDias(); renderMazo(); renderGrilla('');
+</script>
+</body>
+</html>

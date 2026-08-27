@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Mockup · Entrenamiento del alumno (mazo)</title>
+<style>
+  :root{
+    --c1:#7c3aed; --c2:#3b82f6;
+    --tinta:#23233f; --gris:#8d8bb0; --fondo:#f3f2fc; --carta:#ffffff;
+    --borde:#e4e7f3; --ok:#1e9e60; --rojo:#e02424;
+  }
+  *{ box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{ font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--fondo); color:var(--tinta);
+        overflow:hidden; overscroll-behavior:none;
+        -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .app{ position:fixed; inset:0; max-width:520px; margin:0 auto; overflow:hidden; background:var(--fondo);
+        box-shadow:0 0 60px rgba(60,50,120,.18); }
+
+  .manchas{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+  .manchas i{ position:absolute; border-radius:50%; filter:blur(70px); opacity:.32; animation:flota 16s ease-in-out infinite alternate; }
+  .manchas i:nth-child(1){ width:320px;height:320px; background:#7c3aed; top:-130px; left:-100px; }
+  .manchas i:nth-child(2){ width:280px;height:280px; background:#3b82f6; top:30%; right:-120px; animation-delay:-6s; }
+  .manchas i:nth-child(3){ width:260px;height:260px; background:#ec4899; bottom:-110px; left:25%; animation-delay:-10s; }
+  @keyframes flota{ from{ transform:translateY(0) scale(1);} to{ transform:translateY(-40px) scale(1.12);} }
+
+  .top{ position:relative; z-index:5; display:flex; align-items:center; gap:12px; padding:14px 18px 4px; }
+  .top .saludo small{ font-size:11.5px; color:var(--gris); font-weight:600; }
+  .top .saludo b{ font-size:15px; display:block; }
+  .anillo-wrap{ margin-left:auto; width:46px; height:46px; position:relative; display:grid; place-items:center; }
+  .anillo{ position:absolute; inset:0; border-radius:50%; }
+  .anillo-wrap i{ font-style:normal; font-size:11px; font-weight:900; }
+
+  /* tira de días mínima */
+  .dias{ position:relative; z-index:5; display:flex; gap:6px; justify-content:center; padding:8px 16px 0; }
+  .dp{ width:38px; padding:5px 0; border-radius:12px; border:1.5px solid rgba(255,255,255,.9);
+      background:rgba(255,255,255,.6); backdrop-filter:blur(10px); font-size:11px; font-weight:800;
+      color:var(--tinta); cursor:pointer; font-family:inherit; position:relative; }
+  .dp small{ display:block; font-size:7px; font-weight:700; color:var(--gris); }
+  .dp .pd{ position:absolute; top:3px; right:5px; width:6px; height:6px; border-radius:50%; }
+  .dp.ok .pd{ background:var(--ok); } .dp.no .pd{ background:var(--rojo); }
+  .dp.hoy{ border-color:var(--c1); }
+  .dp.activo{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent;
+      box-shadow:0 6px 14px rgba(124,58,237,.35); }
+  .dp.activo small{ color:rgba(255,255,255,.85); }
+
+  .puntos{ position:relative; z-index:5; display:flex; gap:6px; justify-content:center; padding:9px 0 2px; }
+  .puntos span{ width:7px; height:7px; border-radius:50%; background:rgba(124,58,237,.22); transition:all .25s; }
+  .puntos span.ok{ background:var(--ok); }
+  .puntos span.no{ background:var(--rojo); }
+  .puntos span.act{ background:var(--c1); transform:scale(1.5); }
+
+  .mazo-zona{ position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center;
+      padding:132px 20px 150px; }
+  .carta{ position:absolute; width:calc(100% - 40px); max-width:400px; height:100%; max-height:560px;
+      border-radius:30px; overflow:hidden; background:var(--carta);
+      box-shadow:0 24px 60px rgba(60,50,120,.28); border:1.5px solid rgba(255,255,255,.9);
+      display:flex; flex-direction:column; transition:transform .35s cubic-bezier(.22,.9,.35,1), opacity .35s;
+      will-change:transform; }
+  .carta.detras{ transform:scale(.93) translateY(18px); opacity:.55; z-index:1; }
+  .carta.detras2{ transform:scale(.86) translateY(34px); opacity:.28; z-index:0; }
+  .carta.fuera-ok{ transform:translateX(130%) rotate(10deg); opacity:0; }
+  .carta.fuera-no{ transform:translateX(-130%) rotate(-10deg); opacity:0; }
+  .carta.entra{ animation:cartaEntra .4s cubic-bezier(.22,.9,.35,1); }
+  @keyframes cartaEntra{ from{ transform:translateX(60px) scale(.96); opacity:0; } }
+
+  .dibujo{ position:relative; flex:1; display:grid; place-items:center; overflow:hidden;
+      background:linear-gradient(160deg,rgba(124,58,237,.06),rgba(59,130,246,.06)); }
+  .dibujo img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:6px;
+      opacity:0; transition:opacity .55s ease; }
+  .dibujo img.viendo{ opacity:1; }
+  .num-ej{ position:absolute; top:16px; left:16px; background:rgba(35,35,63,.78); color:#fff;
+      font-size:13px; font-weight:800; padding:7px 13px; border-radius:99px; backdrop-filter:blur(6px); z-index:3; }
+  .marca{ position:absolute; top:14px; right:14px; font-size:12px; font-weight:800; padding:6px 12px;
+      border-radius:99px; backdrop-filter:blur(6px); z-index:3; display:none; }
+  .marca.ok{ display:block; background:rgba(30,158,96,.92); color:#fff; }
+  .marca.no{ display:block; background:rgba(224,36,36,.92); color:#fff; }
+
+  /* carta especial (descanso / sin plan) */
+  .carta.especial{ justify-content:center; align-items:center; text-align:center; padding:30px; gap:10px; }
+  .carta.especial .gran{ font-size:72px; animation:flota2 3s ease-in-out infinite alternate; }
+  @keyframes flota2{ from{ transform:translateY(0);} to{ transform:translateY(-12px);} }
+  .carta.especial h2{ font-size:24px; }
+  .carta.especial p{ color:var(--gris); font-size:14px; line-height:1.5; max-width:260px; }
+
+  .datos{ padding:15px 20px 18px; background:#fff; }
+  .datos h2{ font-size:20px; letter-spacing:-.4px; text-align:center; }
+  .pastillas{ display:flex; gap:8px; justify-content:center; margin:10px 0 8px; flex-wrap:wrap; }
+  .pastillas i{ font-style:normal; background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(59,130,246,.12));
+      color:var(--c1); font-weight:800; font-size:13px; padding:7px 14px; border-radius:99px; }
+  .pastillas i.peso{ background:linear-gradient(135deg,#12804a,#0ea5e9); color:#fff; cursor:pointer; }
+  .pastillas i.peso.editado{ box-shadow:0 0 0 2.5px rgba(18,128,74,.35); }
+  .nota{ text-align:center; font-size:13px; color:var(--tinta); background:#fff8e6; border:1px solid #ffe2a8;
+      border-radius:12px; padding:9px 12px; margin-top:4px; line-height:1.35; }
+  .nota b{ color:#a06a00; }
+  .ult-peso{ text-align:center; font-size:11.5px; color:var(--gris); margin-top:8px; }
+  .ult-peso b{ color:var(--ok); }
+
+  /* flechitas para hojear otros días */
+  .nav-dia{ position:absolute; top:50%; z-index:6; width:44px; height:44px; margin-top:-22px;
+      border-radius:50%; border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.8);
+      backdrop-filter:blur(10px); font-size:20px; color:var(--tinta); cursor:pointer; display:none;
+      place-items:center; box-shadow:0 6px 16px rgba(60,50,120,.18); }
+  .nav-dia.vis{ display:grid; }
+  .nav-dia.izq{ left:14px; } .nav-dia.der{ right:14px; }
+
+  .botones{ position:absolute; bottom:34px; left:0; right:0; z-index:6; display:flex; gap:26px;
+      justify-content:center; align-items:center; }
+  .bbtn{ width:66px; height:66px; border-radius:50%; border:none; cursor:pointer; font-size:28px;
+      font-weight:900; color:#fff; display:grid; place-items:center; font-family:inherit;
+      box-shadow:0 12px 26px rgba(0,0,0,.22); transition:transform .12s; }
+  .bbtn:active{ transform:scale(.9); }
+  .bbtn.no{ background:linear-gradient(135deg,#ef4444,#dc2626); }
+  .bbtn.ok{ background:linear-gradient(135deg,#22c55e,#16a34a); }
+  .pista-gesto{ position:absolute; bottom:12px; left:0; right:0; text-align:center; z-index:6;
+      font-size:11px; color:var(--gris); font-weight:600; }
+
+  /* fin */
+  .fin{ position:absolute; inset:0; z-index:30; display:none; flex-direction:column; align-items:center;
+      justify-content:center; text-align:center; padding:30px;
+      background:rgba(243,242,252,.94); backdrop-filter:blur(8px); }
+  .fin.ver{ display:flex; animation:cartaEntra .5s; }
+  .fin .emoji{ font-size:66px; margin-bottom:14px; animation:salta .8s ease infinite alternate; }
+  @keyframes salta{ from{ transform:translateY(0);} to{ transform:translateY(-14px);} }
+  .fin h2{ font-size:26px; margin-bottom:6px; }
+  .fin p{ color:var(--gris); font-size:14px; margin-bottom:22px; line-height:1.5; }
+  .fin button{ border:none; background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff;
+      font-size:15px; font-weight:800; padding:14px 34px; border-radius:99px; cursor:pointer; font-family:inherit;
+      box-shadow:0 10px 24px rgba(124,58,237,.4); }
+  .confeti{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .confeti i{ position:absolute; top:-20px; width:9px; height:14px; border-radius:2px; animation:cae linear forwards; }
+  @keyframes cae{ to{ transform:translateY(110vh) rotate(720deg); } }
+
+  /* hojita peso usado */
+  .velo{ position:absolute; inset:0; z-index:50; background:rgba(30,28,60,.45); backdrop-filter:blur(3px);
+      opacity:0; pointer-events:none; transition:opacity .25s; }
+  .velo.abierto{ opacity:1; pointer-events:auto; }
+  .hoja{ position:absolute; left:0; right:0; bottom:0; background:#fff; border-radius:24px 24px 0 0;
+      padding:8px 22px calc(24px + env(safe-area-inset-bottom)); transform:translateY(105%);
+      transition:transform .32s cubic-bezier(.22,.9,.35,1); }
+  .velo.abierto .hoja{ transform:translateY(0); }
+  .agarre{ width:42px; height:5px; border-radius:3px; background:var(--borde); margin:2px auto 14px; }
+  .hoja h3{ font-size:17px; text-align:center; }
+  .hoja p{ font-size:12.5px; color:var(--gris); text-align:center; margin:4px 0 14px; }
+  .hoja input{ width:100%; border:1.5px solid var(--borde); border-radius:14px; padding:14px; font-size:18px;
+      font-weight:800; text-align:center; font-family:inherit; outline:none; background:#fafaff; }
+  .hoja input:focus{ border-color:var(--c1); }
+  .hoja-botones{ display:flex; gap:10px; margin-top:14px; }
+  .hoja-botones button{ flex:1; border:none; border-radius:14px; padding:14px; font-size:14.5px;
+      font-weight:800; cursor:pointer; font-family:inherit; }
+  .hb-cancela{ background:#f1f1f8; color:var(--gris); }
+  .hb-listo{ background:linear-gradient(135deg,#12804a,#0ea5e9); color:#fff; }
+
+  .nota-mock{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:200;
+      background:rgba(35,35,63,.9); color:#fff; font-size:11px; padding:5px 12px; border-radius:99px;
+      opacity:.85; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="nota-mock">MOCKUP · pantalla del alumno</div>
+<div class="app">
+  <div class="manchas"><i></i><i></i><i></i></div>
+
+  <div class="top">
+    <div class="saludo"><small>Hola, Valentina</small><b id="tituloDia">¡A entrenar! 💪</b></div>
+    <div class="anillo-wrap"><div class="anillo" id="anillo"></div><i id="anilloTxt">0%</i></div>
+  </div>
+  <div class="dias" id="dias"></div>
+  <div class="puntos" id="puntos"></div>
+
+  <div class="mazo-zona" id="mazoZona">
+    <button class="nav-dia izq" id="navIzq">‹</button>
+    <button class="nav-dia der" id="navDer">›</button>
+  </div>
+
+  <div class="botones" id="botones">
+    <button class="bbtn no" id="btnNo">✗</button>
+    <button class="bbtn ok" id="btnOk">✓</button>
+  </div>
+  <div class="pista-gesto" id="pistaGesto">Deslizá la carta · ✓ hecha · ✗ no salió</div>
+
+  <!-- peso usado -->
+  <div class="velo" id="veloPeso">
+    <div class="hoja">
+      <div class="agarre"></div>
+      <h3>¿Qué peso usaste?</h3>
+      <p id="pesoSub"></p>
+      <input id="pesoInput" inputmode="decimal" placeholder="60 kg">
+      <div class="hoja-botones">
+        <button class="hb-cancela" id="pesoCancela">Cancelar</button>
+        <button class="hb-listo" id="pesoListo">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fin" id="fin">
+    <div class="confeti" id="confeti"></div>
+    <div class="emoji">🎉</div>
+    <h2 id="finTitulo"></h2>
+    <p id="finTexto"></p>
+    <button id="finRevisar">Revisar el entrenamiento</button>
+  </div>
+</div>
+
+<script>
+var DIAS = [['lun','Lun','Lunes'],['mar','Mar','Martes'],['mie','Mié','Miércoles'],
+            ['jue','Jue','Jueves'],['vie','Vie','Viernes'],['sab','Sáb','Sábado'],['dom','Dom','Domingo']];
+var HOY = 'jue';
+function ej(nombre, img1, img2, series, reps, carga, nota, ult){
+  return { nombre:nombre, imgs: img2 ? [img1,img2] : [img1],
+           series:series, reps:reps, carga:carga, nota:nota||'', ult:ult||'' };
+}
+var SEMANA = {
+  lun:[ ej('Press de banca','img/press-banca.jpg','img/press-banca-2.jpg','4','10','40 kg','','40 kg'),
+        ej('Fondos en banco','img/fondos-banco.jpg','img/fondos-banco-2.jpg','3','12','','','') ],
+  mar:[],
+  mie:[ ej('Curl de bíceps','img/curl-biceps.jpg','img/curl-biceps-2.jpg','3','12','12 kg','','10 kg'),
+        ej('Abdominales','img/abdominales.jpg','img/abdominales-2.jpg','3','20','','',''),
+        ej('Plancha','img/plancha.jpg',null,'3','45 seg','','','') ],
+  jue:[ ej('Sentadilla con barra','img/sentadilla-barra.jpg','img/sentadilla-barra-2.jpg','4','8-10','60 kg','Bajá lento, rodillas afuera','55 kg'),
+        ej('Press de banca','img/press-banca.jpg','img/press-banca-2.jpg','4','10','45 kg','','45 kg'),
+        ej('Peso muerto','img/peso-muerto.jpg','img/peso-muerto-2.jpg','3','8','70 kg','Espalda bien derecha','65 kg'),
+        ej('Jalón al pecho','img/jalon-pecho.jpg','img/jalon-pecho-2.jpg','3','12','40 kg','','40 kg'),
+        ej('Cinta: trote','img/cinta.jpg','img/cinta-3.jpg','1','15 min','','Ritmo suave, vení charlando','12 min') ],
+  vie:[ ej('Peso muerto rumano','img/peso-muerto-rumano.jpg','img/peso-muerto-rumano-2.jpg','3','10','50 kg','',''),
+        ej('Estocadas con barra','img/estocadas-barra.jpg','img/estocadas-barra-2.jpg','3','10 c/lado','20 kg','',''),
+        ej('Plancha','img/plancha.jpg',null,'3','45 seg','','','') ],
+  sab:[],
+  dom:[]
+};
+/* marcas y pesos usados por día */
+var MARCAS = { lun:[true,true], mie:[true,true,true], jue:[null,null,null,null,null], vie:[null,null,null] };
+var PESOS = {};
+var diaAct = HOY, idx = 0;
+var timers = [];
+var zona = document.getElementById('mazoZona');
+var esHoy = function(){ return diaAct===HOY; };
+
+function lista(d){ return SEMANA[d]||[]; }
+function marcasDia(d){ var m = MARCAS[d]; if (!m){ m = lista(d).map(function(){ return null; }); MARCAS[d]=m; } return m; }
+
+/* ── tira de días ── */
+function pintarDias(){
+  document.getElementById('dias').innerHTML = DIAS.map(function(d){
+    var m = marcasDia(d[0]), n = lista(d[0]).length;
+    var respondidos = m.filter(function(x){ return x!==null; }).length;
+    var cls = d[0]===HOY ? 'hoy ' : '';
+    cls += d[0]===diaAct ? 'activo ' : '';
+    cls += n===0 ? '' : (respondidos===n ? 'ok' : (respondidos? 'ok':'') );
+    var punto = n ? '<span class="pd"></span>' : '';
+    return '<button class="dp '+cls+'" data-dia="'+d[0]+'">'+punto+d[1]+'<small>'+(d[0]===HOY?'hoy':'')+'</small></button>';
+  }).join('');
+  document.querySelectorAll('[data-dia]').forEach(function(b){
+    b.onclick = function(){ diaAct = b.getAttribute('data-dia'); idx = 0; render(); };
+  });
+}
+
+function pintarAnillo(){
+  var m = marcasDia(diaAct), n = lista(diaAct).length;
+  var hechos = m.filter(function(x){ return x!==null; }).length;
+  var pct = n ? Math.round(hechos/n*100) : 0;
+  document.getElementById('anillo').style.background =
+    'conic-gradient(var(--c1) 0 '+pct+'%, rgba(124,58,237,.15) '+pct+'% 100%)';
+  document.getElementById('anilloTxt').textContent = pct+'%';
+  var nombreDia = DIAS.find(function(d){ return d[0]===diaAct; })[2];
+  document.getElementById('tituloDia').textContent =
+    diaAct===HOY ? '¡A entrenar! 💪' : nombreDia + (diaAct>HOY?' (se viene)':'');
+  document.getElementById('puntos').innerHTML = m.map(function(x,i){
+    return '<span class="'+(x===true?'ok':x===false?'no':i===idx&&esHoy()?'act':'')+'"></span>';
+  }).join('');
+  document.getElementById('botones').style.display = esHoy() ? 'flex' : 'none';
+  document.getElementById('pistaGesto').textContent = esHoy()
+    ? 'Deslizá la carta · ✓ hecha · ✗ no salió'
+    : 'Estás mirando otro día · tocá "hoy" para volver';
+  document.getElementById('navIzq').classList.toggle('vis', !esHoy() && lista(diaAct).length>1);
+  document.getElementById('navDer').classList.toggle('vis', !esHoy() && lista(diaAct).length>1);
+}
+
+function detalle(e, i){
+  var usado = PESOS[diaAct] && PESOS[diaAct][i];
+  var pesoTxt = usado || e.carga || '';
+  var pesoPill = pesoTxt
+    ? '<i class="peso'+(usado?' editado':'')+'" data-peso="'+i+'" title="Tocá para anotar el peso que usaste">'+
+      (usado ? 'Usaste '+usado : pesoTxt) + ' ✎</i>' : '';
+  return '<div class="datos"><h2>'+e.nombre+'</h2>'+
+    '<div class="pastillas"><i>'+e.series+' × '+e.reps+'</i>'+pesoPill+'</div>'+
+    (e.nota?'<div class="nota"><b>Profe:</b> '+e.nota+'</div>':'')+
+    (e.ult && !usado?'<div class="ult-peso">La última vez usaste <b>'+e.ult+'</b></div>':'')+'</div>';
+}
+function dibujo(e){
+  return '<div class="dibujo"><span class="num-ej" id="numEj"></span><span class="marca" id="marcaTag"></span>'+
+    e.imgs.map(function(src){ return '<img src="'+src+'" alt="">'; }).join('')+'</div>';
+}
+function cartaEspecial(tipo){
+  if (tipo==='descanso')
+    return '<div class="carta entra especial"><div class="gran">🌙</div><h2>Día de descanso</h2>'+
+      '<p>El descanso también entrena. Recargá pilas: mañana se vuelve.</p></div>';
+  return '<div class="carta entra especial"><div class="gran">✨</div><h2>Tu plan está en camino</h2>'+
+    '<p>Tu entrenador lo está preparando. En cuanto lo tengas, lo vas a ver acá.</p></div>';
+}
+
+function render(){
+  timers.forEach(clearInterval); timers = [];
+  pintarDias(); pintarAnillo();
+  var l = lista(diaAct);
+  var hayPlan = DIAS.some(function(d){ return lista(d[0]).length>0; });
+  zona.querySelectorAll('.carta').forEach(function(c){ c.remove(); });
+  if (!l.length){
+    var div = document.createElement('div');
+    div.innerHTML = cartaEspecial(hayPlan ? 'descanso' : 'sinplan');
+    zona.appendChild(div.firstChild);
+    return;
+  }
+  function carta(i, clase){
+    if (i<0 || i>=l.length) return null;
+    var d = document.createElement('div');
+    d.className = 'carta ' + clase;
+    d.innerHTML = dibujo(l[i]) + detalle(l[i], i);
+    return d;
+  }
+  [carta(idx-2,'detras2'), carta(idx-1,'detras'), carta(idx,'entra')].forEach(function(c){ if (c) zona.appendChild(c); });
+  var tag = document.getElementById('marcaTag'), num = document.getElementById('numEj');
+  num.textContent = (idx+1)+' / '+l.length;
+  var miMarca = marcasDia(diaAct)[idx];
+  if (miMarca===true){ tag.className='marca ok'; tag.textContent='✓ Hecho'; }
+  else if (miMarca===false){ tag.className='marca no'; tag.textContent='✗ No salió'; }
+  else tag.className='marca';
+  var imgs = zona.querySelectorAll('.carta.entra .dibujo img');
+  if (imgs.length){
+    var f = 0; imgs[0].classList.add('viendo');
+    if (imgs.length>1) timers.push(setInterval(function(){
+      imgs[f].classList.remove('viendo'); f=(f+1)%imgs.length; imgs[f].classList.add('viendo');
+    }, 900));
+  }
+  var pill = zona.querySelector('[data-peso]');
+  if (pill && esHoy()) pill.onclick = function(){ abrirPeso(Number(pill.getAttribute('data-peso'))); };
+}
+
+/* ── responder (solo hoy) ── */
+function responder(ok){
+  if (!esHoy()) return;
+  var carta = zona.querySelector('.carta.entra');
+  if (!carta) return;
+  marcasDia(diaAct)[idx] = ok;
+  carta.classList.add(ok ? 'fuera-ok' : 'fuera-no');
+  if (navigator.vibrate) navigator.vibrate(ok ? 20 : [15,40,15]);
+  pintarAnillo(); pintarDias();
+  setTimeout(function(){
+    var sig = marcasDia(diaAct).findIndex(function(m){ return m===null; });
+    if (sig===-1){ mostrarFin(); return; }
+    idx = sig; render();
+  }, 320);
+}
+document.getElementById('btnOk').onclick = function(){ responder(true); };
+document.getElementById('btnNo').onclick = function(){ responder(false); };
+
+/* hojear otros días */
+document.getElementById('navIzq').onclick = function(){ if(idx>0){ idx--; render(); } };
+document.getElementById('navDer').onclick = function(){ if(idx<lista(diaAct).length-1){ idx++; render(); } };
+
+/* deslizar */
+(function(){
+  var arr=null;
+  zona.addEventListener('pointerdown', function(ev){
+    if (ev.target.closest('[data-peso]') || ev.target.closest('.nav-dia')) return;
+    var c = ev.target.closest('.carta.entra'); if (!c) return;
+    arr = { sx:ev.clientX, c:c }; c.setPointerCapture(ev.pointerId); c.style.transition='none';
+  });
+  zona.addEventListener('pointermove', function(ev){
+    if (!arr) return;
+    var dx = ev.clientX - arr.sx; arr.x = dx;
+    arr.c.style.transform = 'translateX('+dx+'px) rotate('+(dx/22)+'deg)';
+  });
+  function fin(){
+    if (!arr) return;
+    var dx = arr.x||0; arr.c.style.transition='';
+    if (esHoy()){
+      if (dx > 110) responder(true);
+      else if (dx < -110) responder(false);
+      else arr.c.style.transform='';
+    } else {
+      arr.c.style.transform='';   // otros días: no se vuela
+    }
+    arr=null;
+  }
+  zona.addEventListener('pointerup', fin);
+  zona.addEventListener('pointercancel', fin);
+})();
+
+/* ── peso usado (opcional) ── */
+var pesoIdx = 0;
+var veloPeso = document.getElementById('veloPeso');
+function abrirPeso(i){
+  pesoIdx = i;
+  var e = lista(diaAct)[i];
+  document.getElementById('pesoSub').textContent = 'Profe te indicó: ' + (e.carga||'sin peso') +
+    (e.ult ? ' · la última vez usaste ' + e.ult : '');
+  document.getElementById('pesoInput').value = (PESOS[diaAct]&&PESOS[diaAct][i]) || e.carga || '';
+  veloPeso.classList.add('abierto');
+  setTimeout(function(){ document.getElementById('pesoInput').focus(); }, 350);
+}
+document.getElementById('pesoCancela').onclick = function(){ veloPeso.classList.remove('abierto'); };
+veloPeso.onclick = function(ev){ if (ev.target===veloPeso) veloPeso.classList.remove('abierto'); };
+document.getElementById('pesoListo').onclick = function(){
+  var v = document.getElementById('pesoInput').value.trim();
+  PESOS[diaAct] = PESOS[diaAct] || {};
+  if (v) PESOS[diaAct][pesoIdx] = v; else delete PESOS[diaAct][pesoIdx];
+  veloPeso.classList.remove('abierto'); render();
+};
+
+/* ── fin ── */
+function mostrarFin(){
+  var m = marcasDia(diaAct), hechas = m.filter(function(x){ return x===true; }).length, total = m.length;
+  document.getElementById('finTitulo').textContent = hechas===total ? '¡Día completado! 🎉' : '¡Lista la sesión!';
+  document.getElementById('finTexto').textContent = hechas===total
+    ? 'Hiciste los '+total+' ejercicios. ¡Descansá, te lo ganaste!'
+    : 'Respondiste '+hechas+' de '+total+'. Mañana se vuelve.';
+  var caja = document.getElementById('confeti'); caja.innerHTML='';
+  if (hechas===total){
+    var cols=['#5b8def','#a06bff','#27c47a','#f2b63a','#e8619a','#ff8f6b'];
+    for (var i=0;i<40;i++){
+      var s=document.createElement('i');
+      s.style.left=Math.floor(Math.random()*100)+'%'; s.style.background=cols[i%cols.length];
+      s.style.animationDuration=(2.2+Math.random()*2).toFixed(1)+'s';
+      s.style.animationDelay=(Math.random()*1.2).toFixed(1)+'s';
+      caja.appendChild(s);
+    }
+  }
+  document.getElementById('fin').classList.add('ver');
+}
+document.getElementById('finRevisar').onclick = function(){
+  document.getElementById('fin').classList.remove('ver'); idx = 0; render();
+};
+
+render();
+</script>
+</body>
+</html>

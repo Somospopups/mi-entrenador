@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Mockup · Espacio del entrenador</title>
+<style>
+  :root{
+    --c1:#7c3aed; --c2:#3b82f6;
+    --tinta:#23233f; --gris:#8d8bb0; --fondo:#f3f2fc; --carta:#ffffff;
+    --borde:#e4e7f3; --ok:#1e9e60; --rojo:#e02424; --ambar:#d97706;
+  }
+  *{ box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{ font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--fondo); color:var(--tinta);
+        overflow:hidden; overscroll-behavior:none; }
+  .app{ position:fixed; inset:0; max-width:520px; margin:0 auto; background:var(--fondo);
+        box-shadow:0 0 60px rgba(60,50,120,.18); overflow:hidden; }
+
+  .manchas{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+  .manchas i{ position:absolute; border-radius:50%; filter:blur(60px); opacity:.28; animation:flota 14s ease-in-out infinite alternate; }
+  .manchas i:nth-child(1){ width:280px;height:280px; background:#7c3aed; top:-110px; left:-90px; }
+  .manchas i:nth-child(2){ width:240px;height:240px; background:#3b82f6; top:40px; right:-110px; animation-delay:-5s; }
+  .manchas i:nth-child(3){ width:220px;height:220px; background:#ec4899; bottom:-90px; left:30%; animation-delay:-9s; }
+  @keyframes flota{ from{ transform:translateY(0) scale(1);} to{ transform:translateY(-40px) scale(1.12);} }
+
+  .pantalla{ position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
+      transform:translateX(100%); transition:transform .3s cubic-bezier(.22,.9,.35,1); pointer-events:none; }
+  .pantalla.activa{ transform:translateX(0); pointer-events:auto; }
+  .pantalla.atras{ transform:translateX(-24%); opacity:.4; }
+
+  /* ── header ── */
+  header{ padding:14px 16px 8px; display:flex; align-items:center; gap:10px; }
+  .atras{ width:36px;height:36px; flex:0 0 36px; border-radius:50%; border:1.5px solid rgba(255,255,255,.8);
+          background:rgba(255,255,255,.65); backdrop-filter:blur(10px);
+          font-size:18px; color:var(--tinta); cursor:pointer; display:grid; place-items:center; }
+  header h1{ font-size:20px; letter-spacing:-.3px; }
+  header h1 small{ display:block; font-size:12.5px; font-weight:500; color:var(--gris); margin-top:2px; }
+
+  /* ── buscador ── */
+  .busca{ margin:6px 16px 10px; width:calc(100% - 32px); border:1.5px solid var(--borde); border-radius:14px;
+      padding:12px 14px; font-size:14px; background:rgba(255,255,255,.85); outline:none; font-family:inherit; }
+  .busca:focus{ border-color:var(--c1); }
+
+  /* ── lista de alumnos ── */
+  .lista{ flex:1; overflow-y:auto; padding:0 16px 110px; }
+  .alumno{ display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+      background:rgba(255,255,255,.72); backdrop-filter:blur(10px);
+      border:1.5px solid rgba(255,255,255,.9); border-radius:16px; padding:12px 14px; margin-bottom:9px;
+      cursor:pointer; font-family:inherit; color:var(--tinta);
+      animation:entra .3s cubic-bezier(.22,.9,.35,1) backwards; }
+  .alumno:active{ transform:scale(.98); }
+  @keyframes entra{ from{ opacity:0; transform:translateY(12px);} }
+  .avatar{ width:44px; height:44px; flex:0 0 44px; border-radius:50%;
+      background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff;
+      display:grid; place-items:center; font-size:17px; font-weight:800; }
+  .alumno .info{ flex:1; min-width:0; }
+  .alumno .info b{ font-size:15px; display:block; }
+  .alumno .info small{ font-size:12px; display:flex; align-items:center; gap:5px; margin-top:2px; }
+  .punto{ width:7px; height:7px; border-radius:50%; flex:0 0 7px; }
+  .st-ok{ color:var(--ok); } .st-ok .punto{ background:var(--ok); }
+  .st-ambar{ color:var(--ambar); } .st-ambar .punto{ background:var(--ambar); }
+  .st-rojo{ color:var(--rojo); } .st-rojo .punto{ background:var(--rojo); }
+  .st-gris{ color:var(--gris); } .st-gris .punto{ background:var(--gris); }
+  .alumno .flecha{ color:var(--gris); font-size:20px; flex:0 0 auto; }
+
+  /* ── botón principal ── */
+  .barra{ position:absolute; left:0; right:0; bottom:0; z-index:20; padding:12px 16px calc(14px + env(safe-area-inset-bottom));
+      background:rgba(255,255,255,.85); backdrop-filter:blur(16px); border-top:1.5px solid rgba(255,255,255,.9); }
+  .btn-principal{ width:100%; border:none; border-radius:15px; padding:15px; font-size:15px; font-weight:800;
+      color:#fff; background:linear-gradient(135deg,var(--c1),var(--c2)); cursor:pointer; font-family:inherit;
+      box-shadow:0 10px 24px rgba(124,58,237,.4); display:flex; align-items:center; justify-content:center; gap:8px; }
+  .btn-principal:active{ transform:scale(.98); }
+  .btn-wsp{ background:#25d366; box-shadow:0 10px 24px rgba(37,211,102,.35); }
+
+  /* ── ficha del alumno ── */
+  .ficha-top{ padding:2px 16px 12px; }
+  .credencial{ display:flex; align-items:center; gap:13px; margin-bottom:12px; }
+  .credencial .avatar{ width:56px; height:56px; flex-basis:56px; font-size:22px; }
+  .credencial b{ font-size:19px; display:block; }
+  .credencial small{ font-size:12.5px; color:var(--gris); display:block; margin-top:2px; }
+  .btn-chato{ border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.75); backdrop-filter:blur(10px);
+      border-radius:12px; padding:8px 12px; font-size:12.5px; font-weight:700; font-family:inherit;
+      color:var(--tinta); cursor:pointer; display:inline-flex; align-items:center; gap:6px; margin-top:6px; margin-right:6px; }
+  .btn-plan{ width:100%; border:none; border-radius:15px; padding:15px; font-size:15.5px; font-weight:800;
+      color:#fff; background:linear-gradient(135deg,var(--c1),var(--c2)); cursor:pointer; font-family:inherit;
+      box-shadow:0 10px 24px rgba(124,58,237,.4); display:flex; align-items:center; justify-content:center; gap:8px; }
+  .btn-plan:active{ transform:scale(.98); }
+  .btn-abono{ width:100%; margin-top:9px; border:1.5px solid rgba(37,211,102,.55);
+      background:rgba(37,211,102,.12); border-radius:15px; padding:13px; font-size:14.5px; font-weight:800;
+      color:#12804a; cursor:pointer; font-family:inherit;
+      display:flex; align-items:center; justify-content:center; gap:8px; }
+  .btn-abono:active{ transform:scale(.98); }
+  .pill-head{ border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.75); backdrop-filter:blur(10px);
+      border-radius:99px; padding:8px 13px; font-size:12.5px; font-weight:800; font-family:inherit;
+      color:var(--tinta); cursor:pointer; white-space:nowrap; }
+  .pill-head b{ color:#12804a; }
+
+  /* finanzas */
+  .fin-hero{ border-radius:18px; padding:18px; margin-bottom:10px; color:#fff;
+      background:linear-gradient(135deg,#12804a,#0ea5e9); box-shadow:0 12px 28px rgba(16,140,90,.35); }
+  .fin-hero small{ font-size:12px; opacity:.9; }
+  .fin-hero .num{ font-size:32px; font-weight:900; margin:3px 0 2px; letter-spacing:-.5px; }
+  .fin-hero .comp{ font-size:12px; opacity:.95; }
+  .fin-chips{ display:flex; gap:7px; margin-bottom:12px; }
+  .fin-chips span{ flex:1; text-align:center; background:rgba(255,255,255,.72); backdrop-filter:blur(10px);
+      border:1.5px solid rgba(255,255,255,.9); border-radius:13px; padding:9px 4px; font-size:11px; font-weight:700; }
+  .fin-chips b{ display:block; font-size:15px; margin-bottom:1px; }
+  .pago-fila{ display:flex; align-items:center; gap:11px; padding:10px 0; border-top:1px solid var(--borde); }
+  .pago-fila:first-of-type{ border-top:none; }
+  .pago-fila .avatar{ width:38px; height:38px; flex:0 0 38px; font-size:14px; }
+  .pago-fila .d{ flex:1; min-width:0; }
+  .pago-fila .d b{ font-size:13.5px; display:block; }
+  .pago-fila .d small{ font-size:11px; color:var(--gris); }
+  .pago-fila .m{ font-size:14px; font-weight:900; color:#12804a; text-align:right; }
+  .debe-fila{ display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--borde); font-size:13.5px; }
+  .debe-fila:first-of-type{ border-top:none; }
+  .debe-fila .d{ flex:1; }
+  .debe-fila small{ font-size:11px; color:var(--ambar); display:block; }
+  .debe-fila .cobrar{ border:1.5px solid rgba(37,211,102,.5); background:rgba(37,211,102,.1); color:#12804a;
+      border-radius:99px; padding:7px 13px; font-size:12px; font-weight:800; font-family:inherit; cursor:pointer; }
+
+  .tabs{ display:flex; gap:6px; padding:4px 16px 10px; }
+  .tab{ flex:1; border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.65); backdrop-filter:blur(10px);
+      border-radius:99px; padding:9px; font-size:13px; font-weight:700; color:var(--gris);
+      font-family:inherit; cursor:pointer; }
+  .tab.activa{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent;
+      box-shadow:0 6px 14px rgba(124,58,237,.35); }
+
+  .contenido{ flex:1; overflow-y:auto; padding:0 16px 120px; }
+
+  /* planes anteriores */
+  .semana{ background:rgba(255,255,255,.72); backdrop-filter:blur(10px);
+      border:1.5px solid rgba(255,255,255,.9); border-radius:16px; margin-bottom:9px; overflow:hidden; }
+  .semana-cab{ display:flex; align-items:center; gap:10px; padding:13px 14px; cursor:pointer; background:none;
+      border:none; width:100%; text-align:left; font-family:inherit; color:var(--tinta); }
+  .semana-cab .ico{ width:36px;height:36px; flex:0 0 36px; border-radius:11px;
+      background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(59,130,246,.12));
+      display:grid; place-items:center; font-size:17px; }
+  .semana-cab .d{ flex:1; }
+  .semana-cab b{ font-size:14px; display:block; }
+  .semana-cab small{ font-size:11.5px; color:var(--gris); }
+  .semana-cab .chev{ color:var(--gris); transition:transform .25s; font-size:16px; }
+  .semana.abierta .chev{ transform:rotate(90deg); }
+  .semana-dias{ display:none; padding:0 14px 12px; }
+  .semana.abierta .semana-dias{ display:block; }
+  .dia-linea{ display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--borde); font-size:13px; }
+  .dia-linea .dn{ font-weight:800; width:34px; flex:0 0 34px; color:var(--c1); font-size:11.5px; }
+  .dia-linea .de{ flex:1; color:var(--tinta); line-height:1.3; }
+  .dia-linea .dx{ font-size:11px; color:var(--gris); }
+
+  /* progreso */
+  .caja{ background:rgba(255,255,255,.72); backdrop-filter:blur(10px);
+      border:1.5px solid rgba(255,255,255,.9); border-radius:16px; padding:14px; margin-bottom:10px; }
+  .caja h3{ font-size:13px; margin-bottom:10px; }
+  .racha{ display:flex; align-items:center; gap:10px; }
+  .racha .num{ font-size:30px; font-weight:900; background:linear-gradient(135deg,var(--c1),var(--c2));
+      -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .racha small{ font-size:12px; color:var(--gris); line-height:1.4; }
+  .semanas{ display:flex; gap:7px; align-items:flex-end; height:70px; margin-top:4px; }
+  .semanas .bar{ flex:1; border-radius:7px 7px 4px 4px; background:linear-gradient(180deg,var(--c1),var(--c2));
+      min-height:8px; position:relative; }
+  .semanas .bar.empty{ background:rgba(124,58,237,.15); }
+  .semanas .bar i{ position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-style:normal;
+      font-size:9px; color:var(--gris); }
+  .ej-fila{ display:flex; align-items:center; gap:11px; padding:9px 0; border-top:1px solid var(--borde); }
+  .ej-fila:first-of-type{ border-top:none; }
+  .ej-fila .thumb{ width:40px; height:40px; flex:0 0 40px; border-radius:11px; overflow:hidden; }
+  .ej-fila .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .ej-fila .d{ flex:1; min-width:0; }
+  .ej-fila .d b{ font-size:13.5px; display:block; }
+  .ej-fila .d small{ font-size:11.5px; color:var(--gris); }
+  .ej-fila .ahora{ font-size:13px; font-weight:800; text-align:right; }
+  .ej-fila .ahora small{ display:block; font-size:10.5px; font-weight:600; }
+  .t-arriba{ color:var(--ok); } .t-igual{ color:var(--gris); }
+
+  /* ── hojas (modal inferior) ── */
+  .velo{ position:absolute; inset:0; z-index:50; background:rgba(30,28,60,.45); backdrop-filter:blur(3px);
+      opacity:0; pointer-events:none; transition:opacity .25s; }
+  .velo.abierto{ opacity:1; pointer-events:auto; }
+  .hoja{ position:absolute; left:0; right:0; bottom:0; background:#fff; border-radius:24px 24px 0 0;
+      padding:8px 20px calc(22px + env(safe-area-inset-bottom)); transform:translateY(105%);
+      transition:transform .32s cubic-bezier(.22,.9,.35,1); }
+  .velo.abierto .hoja{ transform:translateY(0); }
+  .agarre{ width:42px; height:5px; border-radius:3px; background:var(--borde); margin:2px auto 12px; }
+  .campo{ display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+  .campo label{ font-size:12px; font-weight:700; color:var(--gris); }
+  .campo input{ border:1.5px solid var(--borde); border-radius:13px; padding:13px 14px; font-size:15px;
+      font-family:inherit; outline:none; background:#fafaff; }
+  .campo input:focus{ border-color:var(--c1); background:#fff; }
+  .clave-caja{ background:linear-gradient(135deg,rgba(124,58,237,.09),rgba(59,130,246,.09));
+      border:1px solid rgba(124,58,237,.2); border-radius:14px; padding:14px; text-align:center; margin:6px 0 14px; }
+  .clave-caja .pw{ font-family:Consolas,monospace; font-size:26px; font-weight:900; letter-spacing:3px; color:var(--c1); }
+  .clave-caja small{ font-size:11.5px; color:var(--gris); }
+
+  .toast{ position:absolute; left:50%; bottom:90px; transform:translateX(-50%) translateY(18px); z-index:90;
+      background:rgba(35,35,63,.94); color:#fff; padding:11px 20px; border-radius:99px; font-size:13px;
+      font-weight:600; opacity:0; pointer-events:none; transition:all .25s; white-space:nowrap; }
+  .toast.ver{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .nota-mock{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:200;
+      background:rgba(35,35,63,.9); color:#fff; font-size:11px; padding:5px 12px; border-radius:99px;
+      opacity:.85; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="nota-mock">MOCKUP · espacio del entrenador</div>
+<div class="app">
+  <div class="manchas"><i></i><i></i><i></i></div>
+
+  <!-- ══════ PANTALLA 1 · LISTA DE ALUMNOS ══════ -->
+  <div class="pantalla activa" id="pLista">
+    <header style="justify-content:space-between">
+      <h1>Mis alumnos<small>Hola, Profe Popi · 6 alumnos</small></h1>
+      <button class="pill-head" id="btnFinanzas">💰 Finanzas · <b id="totalHead">$ 0</b></button>
+    </header>
+    <input class="busca" id="buscaAlumno" placeholder="Buscar alumno…">
+    <div class="lista" id="listaAlumnos"></div>
+    <div class="barra">
+      <button class="btn-principal" id="btnAgregar"><span style="font-size:19px">+</span> Agregar alumno</button>
+    </div>
+  </div>
+
+  <!-- ══════ PANTALLA 2 · FICHA DEL ALUMNO ══════ -->
+  <div class="pantalla" id="pFicha">
+    <header>
+      <button class="atras" id="btnVolverLista">‹</button>
+      <h1 style="font-size:17px">Ficha del alumno</h1>
+    </header>
+    <div class="ficha-top">
+      <div class="credencial">
+        <div class="avatar" id="fAvatar">V</div>
+        <div style="flex:1">
+          <b id="fNombre"></b>
+          <small id="fDni"></small>
+          <div>
+            <button class="btn-chato" id="fWsp">💬 WhatsApp</button>
+            <button class="btn-chato" id="fClave">🔑 Blanquear clave</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-plan" id="fCrearPlan"><span style="font-size:18px">+</span> Crear plan nuevo</button>
+      <button class="btn-abono" id="fAbono">💵 Registrar abono mensual</button>
+    </div>
+    <div class="tabs">
+      <button class="tab activa" data-tab="planes">Planes anteriores</button>
+      <button class="tab" data-tab="progreso">Progreso</button>
+    </div>
+    <div class="contenido" id="cPlanes"></div>
+    <div class="contenido" id="cProgreso" hidden></div>
+  </div>
+
+  <!-- ══════ PANTALLA 3 · FINANZAS ══════ -->
+  <div class="pantalla" id="pFinanzas">
+    <header>
+      <button class="atras" id="btnVolverFin">‹</button>
+      <h1>Finanzas<small id="finMes"></small></h1>
+    </header>
+    <div class="contenido" style="padding-top:4px">
+      <div class="fin-hero">
+        <small>Recaudado este mes</small>
+        <div class="num" id="finTotal">$ 0</div>
+        <div class="comp" id="finComp"></div>
+      </div>
+      <div class="fin-chips">
+        <span><b id="finN">0</b>pagos</span>
+        <span><b id="finProm">$0</b>promedio</span>
+        <span><b id="finFaltan">0</b>sin pagar</span>
+      </div>
+      <div class="caja">
+        <h3>💵 Pagos registrados</h3>
+        <div id="finPagos"></div>
+      </div>
+      <div class="caja">
+        <h3>🔔 Les falta pagar este mes</h3>
+        <div id="finDeudas"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ HOJA: REGISTRAR ABONO ══════ -->
+  <div class="velo" id="veloPago">
+    <div class="hoja">
+      <div class="agarre"></div>
+      <b style="font-size:17px" id="pagoTitulo">Registrar abono</b>
+      <small style="color:var(--gris);display:block;margin:3px 0 14px">Queda registrado en Finanzas para este mes.</small>
+      <div class="campo"><label>Monto</label>
+        <input id="pagoMonto" inputmode="decimal" placeholder="25000" style="font-size:20px;font-weight:800"></div>
+      <div style="display:flex;gap:7px;margin:-4px 0 14px">
+        <button class="btn-chato" data-monto="20000">$20.000</button>
+        <button class="btn-chato" data-monto="25000">$25.000</button>
+        <button class="btn-chato" data-monto="30000">$30.000</button>
+      </div>
+      <button class="btn-principal" id="pagoConfirmar" style="background:linear-gradient(135deg,#12804a,#0ea5e9);box-shadow:0 10px 24px rgba(16,140,90,.35)">✓ Confirmar pago</button>
+    </div>
+  </div>
+
+  <!-- ══════ HOJA: AGREGAR ALUMNO ══════ -->
+  <div class="velo" id="veloAlta">
+    <div class="hoja">
+      <div class="agarre"></div>
+      <div id="altaPaso1">
+        <b style="font-size:17px">Nuevo alumno</b>
+        <small style="color:var(--gris);display:block;margin:3px 0 14px">Con estos datos le creamos la cuenta; la clave se la mandás por WhatsApp.</small>
+        <div class="campo"><label>Nombre y apellido</label><input id="altaNombre" placeholder="Ej: Valentina López"></div>
+        <div class="campo"><label>DNI</label><input id="altaDni" inputmode="numeric" placeholder="Ej: 35123456"></div>
+        <div class="campo"><label>WhatsApp (opcional pero recomendado)</label><input id="altaTel" inputmode="tel" placeholder="351 000 0000"></div>
+        <button class="btn-principal" id="altaCrear">Crear cuenta</button>
+      </div>
+      <div id="altaPaso2" hidden>
+        <b style="font-size:17px">Cuenta creada 🎉</b>
+        <small style="color:var(--gris);display:block;margin:3px 0 10px">Pasale esta clave temporal: entra con su DNI y la cambia.</small>
+        <div class="clave-caja">
+          <div class="pw" id="altaClave">—</div>
+          <small>Entra con su DNI y esta clave</small>
+        </div>
+        <button class="btn-principal btn-wsp" id="altaWsp">Enviar por WhatsApp</button>
+        <button class="btn-chato" style="width:100%;justify-content:center;margin-top:10px" id="altaListo">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ── datos de ejemplo ── */
+var ALUMNOS = [
+  { id:'a1', nombre:'Valentina López', dni:'35.204.118', tel:'351 555 0101',
+    estado:'ok', estadoTxt:'Entrenó hoy · plan al día', ult:0,
+    semanas:[
+      { f:'Semana del 24/08', dias:[ ['Lun','Sentadilla, Press banca, Curl bíceps',3], ['Mié','Peso muerto, Jalón, Plancha',3], ['Vie','Sentadilla frontal, Vuelos, Abdominales',3] ] },
+      { f:'Semana del 17/08', dias:[ ['Lun','Sentadilla, Press militar',2], ['Mié','Hip thrust, Remo, Bici',3], ['Sáb','Cinta, Estiramientos',2] ] },
+      { f:'Semana del 10/08', dias:[ ['Mar','Prensa, Aperturas, Gemelos',3], ['Jue','Dominadas, Fondos, Core',3] ] }
+    ],
+    racha:6, barras:[100,75,100,50,100,100,75,100],
+    marcas:[
+      { n:'Sentadilla con barra', img:'img/sentadilla-barra.jpg', ahora:'60 kg', ant:'55 kg', t:'arriba' },
+      { n:'Press de banca', img:'img/press-banca.jpg', ahora:'45 kg', ant:'45 kg', t:'igual' },
+      { n:'Peso muerto', img:'img/peso-muerto.jpg', ahora:'70 kg', ant:'65 kg', t:'arriba' }
+    ] },
+  { id:'a2', nombre:'Brian Sosa', dni:'38.444.220', tel:'351 555 0123',
+    estado:'ambar', estadoTxt:'Plan al día · no entrena hace 3 días', ult:3,
+    semanas:[
+      { f:'Semana del 24/08', dias:[ ['Lun','Prensa, Press banca, Curl',3], ['Jue','Peso muerto, Remo',2] ] },
+      { f:'Semana del 17/08', dias:[ ['Lun','Sentadilla, Jalón, Plancha',3] ] }
+    ],
+    racha:0, barras:[100,0,100,75,0,0,100,0],
+    marcas:[
+      { n:'Prensa de piernas', img:'img/prensa-piernas.jpg', ahora:'140 kg', ant:'120 kg', t:'arriba' },
+      { n:'Press de banca', img:'img/press-banca.jpg', ahora:'50 kg', ant:'47.5 kg', t:'arriba' }
+    ] },
+  { id:'a3', nombre:'Carla Ruiz', dni:'40.118.902', tel:'',
+    estado:'rojo', estadoTxt:'Todavía no tiene plan', ult:null,
+    semanas:[], racha:0, barras:[0,0,0,0,0,0,0,0], marcas:[] },
+  { id:'a4', nombre:'Diego Ferreyra', dni:'33.775.441', tel:'351 555 0177',
+    estado:'ambar', estadoTxt:'Plan viejo · hace 9 días no le armas uno nuevo', ult:9,
+    semanas:[
+      { f:'Semana del 10/08', dias:[ ['Lun','Sentadilla, Press, Core',3], ['Mié','Bici, Estiramientos',2] ] },
+      { f:'Semana del 03/08', dias:[ ['Mar','Peso muerto, Dominadas',2] ] }
+    ],
+    racha:0, barras:[0,0,0,0,0,100,50,100],
+    marcas:[
+      { n:'Peso muerto', img:'img/peso-muerto.jpg', ahora:'90 kg', ant:'90 kg', t:'igual' }
+    ] },
+  { id:'a5', nombre:'Estela Mamaní', dni:'42.900.311', tel:'351 555 0190',
+    estado:'ok', estadoTxt:'Entrenó hoy · plan al día', ult:0,
+    semanas:[
+      { f:'Semana del 24/08', dias:[ ['Lun','Cinta, Movilidad',2], ['Mié','Sentadilla sin peso, Plancha',2], ['Vie','Bici, Estiramientos',2] ] }
+    ],
+    racha:3, barras:[0,100,75,100,100,0,100,100],
+    marcas:[
+      { n:'Cinta: caminata', img:'img/cinta.jpg', ahora:'20 min', ant:'15 min', t:'arriba' }
+    ] },
+  { id:'a6', nombre:'Franco Godoy', dni:'36.220.877', tel:'351 555 0155',
+    estado:'gris', estadoTxt:'Inactivo · último entrenamiento el 02/08', ult:25,
+    semanas:[ { f:'Semana del 27/07', dias:[ ['Lun','Press, Curl, Core',3] ] } ],
+    racha:0, barras:[0,0,0,0,0,0,0,0], marcas:[] }
+];
+
+/* ── navegación entre pantallas ── */
+var pLista = document.getElementById('pLista'), pFicha = document.getElementById('pFicha'),
+    pFin = document.getElementById('pFinanzas');
+function ir(pantalla){
+  pLista.classList.toggle('activa', pantalla==='lista');
+  pFicha.classList.toggle('activa', pantalla==='ficha');
+  pFin.classList.toggle('activa', pantalla==='finanzas');
+  pLista.classList.toggle('atras', pantalla==='ficha' || pantalla==='finanzas');
+}
+
+/* ── abonos / finanzas ── */
+function clavePagos(){ return 'demo_pagos_entrenador'; }
+function leerPagos(){
+  var p = [];
+  try{ p = JSON.parse(localStorage.getItem(clavePagos())||'null'); }catch(e){}
+  if (!p){   // datos de ejemplo la primera vez
+    var hoy = new Date();
+    p = [
+      { alumnoId:'a1', alumno:'Valentina López', monto:25000, fecha:new Date(hoy.getFullYear(),hoy.getMonth(),3).getTime() },
+      { alumnoId:'a2', alumno:'Brian Sosa',       monto:25000, fecha:new Date(hoy.getFullYear(),hoy.getMonth(),12).getTime() },
+      { alumnoId:'a5', alumno:'Estela Mamaní',    monto:20000, fecha:new Date(hoy.getFullYear(),hoy.getMonth(),20).getTime() },
+      { alumnoId:'a1', alumno:'Valentina López', monto:25000, fecha:new Date(hoy.getFullYear(),hoy.getMonth()-1,5).getTime() },
+      { alumnoId:'a4', alumno:'Diego Ferreyra',   monto:25000, fecha:new Date(hoy.getFullYear(),hoy.getMonth()-1,8).getTime() }
+    ];
+    try{ localStorage.setItem(clavePagos(), JSON.stringify(p)); }catch(e){}
+  }
+  return p;
+}
+function guardarPagos(p){ try{ localStorage.setItem(clavePagos(), JSON.stringify(p)); }catch(e){} }
+function ym(ms){ var d=new Date(ms); return d.getFullYear()+'-'+d.getMonth(); }
+function $plata(n){ return '$ ' + Number(n||0).toLocaleString('es-AR'); }
+function fdia(ms){ var d=new Date(ms); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); }
+var pagoPara = null;
+
+function abrirPago(alumno){
+  pagoPara = alumno;
+  document.getElementById('pagoTitulo').textContent = 'Abono de ' + alumno.nombre;
+  document.getElementById('pagoMonto').value = '';
+  document.getElementById('veloPago').classList.add('abierto');
+  setTimeout(function(){ document.getElementById('pagoMonto').focus(); }, 350);
+}
+document.querySelectorAll('[data-monto]').forEach(function(b){
+  b.onclick = function(){ document.getElementById('pagoMonto').value = b.getAttribute('data-monto'); };
+});
+document.getElementById('pagoConfirmar').onclick = function(){
+  var monto = parseInt(document.getElementById('pagoMonto').value.replace(/\D/g,''), 10);
+  if (!monto){ toast('Ponele el monto'); return; }
+  var pagos = leerPagos();
+  pagos.push({ alumnoId:pagoPara.id, alumno:pagoPara.nombre, monto:monto, fecha:Date.now() });
+  guardarPagos(pagos);
+  document.getElementById('veloPago').classList.remove('abierto');
+  toast('✓ Pago de ' + pagoPara.nombre.split(' ')[0] + ' registrado');
+  pintarFinanzas(); pintarHeadFinanzas();
+};
+document.getElementById('veloPago').onclick = function(ev){ if (ev.target===this) this.classList.remove('abierto'); };
+
+function pagosDelMes(ms){ var k = ym(ms||Date.now()); return leerPagos().filter(function(p){ return ym(p.fecha)===k; }); }
+function pintarHeadFinanzas(){
+  var total = pagosDelMes().reduce(function(s,p){ return s+p.monto; },0);
+  document.getElementById('totalHead').textContent = $plata(total);
+}
+function pintarFinanzas(){
+  var ahora = new Date();
+  var nombresMes = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('finMes').textContent = nombresMes[ahora.getMonth()] + ' ' + ahora.getFullYear();
+  var delMes = pagosDelMes().sort(function(a,b){ return b.fecha-a.fecha; });
+  var total = delMes.reduce(function(s,p){ return s+p.monto; },0);
+  var mesPas = new Date(ahora.getFullYear(), ahora.getMonth()-1, 1);
+  var totalAnt = leerPagos().filter(function(p){ return ym(p.fecha)===ym(mesPas.getTime()); })
+                            .reduce(function(s,p){ return s+p.monto; },0);
+  document.getElementById('finTotal').textContent = $plata(total);
+  document.getElementById('finComp').textContent = totalAnt
+    ? ((total>=totalAnt?'▲ ':'▼ ') + Math.abs(Math.round((total-totalAnt)/totalAnt*100)) + '% vs. ' + nombresMes[mesPas.getMonth()])
+    : 'Sin pagos registrados el mes pasado para comparar';
+  document.getElementById('finN').textContent = delMes.length;
+  document.getElementById('finProm').textContent = delMes.length ? $plata(Math.round(total/delMes.length)) : '$0';
+
+  var pagadores = {};
+  delMes.forEach(function(p){ pagadores[p.alumnoId] = true; });
+  var activos = ALUMNOS.filter(function(a){ return a.estado!=='gris'; });
+  var deben = activos.filter(function(a){ return !pagadores[a.id]; });
+  document.getElementById('finFaltan').textContent = deben.length;
+
+  document.getElementById('finPagos').innerHTML = delMes.length ? delMes.map(function(p){
+    return '<div class="pago-fila"><span class="avatar">'+inicial(p.alumno)+'</span>'+
+      '<span class="d"><b>'+p.alumno+'</b><small>'+fdia(p.fecha)+' · abono mensual</small></span>'+
+      '<span class="m">'+$plata(p.monto)+'</span></div>';
+  }).join('') : '<p style="font-size:12.5px;color:var(--gris)">Todavía no registraste pagos este mes.</p>';
+
+  document.getElementById('finDeudas').innerHTML = deben.length ? deben.map(function(a){
+    return '<div class="pago-fila"><span class="avatar">'+inicial(a.nombre)+'</span>'+
+      '<span class="d"><b>'+a.nombre+'</b><small style="color:var(--ambar)">Sin registrar este mes</small></span>'+
+      '<button class="cobrar" data-cobrar="'+a.id+'">Cobrar</button></div>';
+  }).join('') : '<p style="font-size:12.5px;color:var(--ok);font-weight:700">✓ Todos al día este mes.</p>';
+  document.querySelectorAll('[data-cobrar]').forEach(function(b){
+    b.onclick = function(){
+      var a = ALUMNOS.find(function(x){ return x.id===b.getAttribute('data-cobrar'); });
+      abrirPago(a);
+    };
+  });
+}
+document.getElementById('btnFinanzas').onclick = function(){ pintarFinanzas(); ir('finanzas'); };
+document.getElementById('btnVolverFin').onclick = function(){ ir('lista'); pintarHeadFinanzas(); };
+
+/* ── pantalla 1: lista ── */
+function inicial(n){ return n.trim().charAt(0).toUpperCase(); }
+function pintarLista(filtro){
+  var f = (filtro||'').toLowerCase();
+  var html = ALUMNOS.filter(function(a){ return !f || a.nombre.toLowerCase().indexOf(f)>=0; }).map(function(a, i){
+    return '<button class="alumno" data-id="'+a.id+'" style="animation-delay:'+(i*45)+'ms">'+
+      '<span class="avatar">'+inicial(a.nombre)+'</span>'+
+      '<span class="info"><b>'+a.nombre+'</b>'+
+      '<small class="st-'+a.estado+'"><span class="punto"></span>'+a.estadoTxt+'</small></span>'+
+      '<span class="flecha">›</span></button>';
+  }).join('') || '<p style="color:var(--gris);font-size:13px;text-align:center;padding:30px">Ningún alumno con ese nombre.</p>';
+  document.getElementById('listaAlumnos').innerHTML = html;
+  document.querySelectorAll('.alumno').forEach(function(b){
+    b.onclick = function(){ abrirFicha(b.getAttribute('data-id')); };
+  });
+}
+document.getElementById('buscaAlumno').addEventListener('input', function(){ pintarLista(this.value); });
+
+/* ── pantalla 2: ficha ── */
+var alumnoAct = null;
+function abrirFicha(id){
+  alumnoAct = ALUMNOS.find(function(a){ return a.id===id; });
+  document.getElementById('fAvatar').textContent = inicial(alumnoAct.nombre);
+  document.getElementById('fNombre').textContent = alumnoAct.nombre;
+  document.getElementById('fDni').textContent = 'DNI ' + alumnoAct.dni + (alumnoAct.tel ? ' · ' + alumnoAct.tel : '');
+  var yaPago = pagosDelMes().some(function(p){ return p.alumnoId===alumnoAct.id; });
+  var btnAb = document.getElementById('fAbono');
+  if (yaPago){
+    var ult = pagosDelMes().filter(function(p){ return p.alumnoId===alumnoAct.id; })
+                           .sort(function(a,b){ return b.fecha-a.fecha; })[0];
+    btnAb.textContent = '✓ Abono pagado · ' + $plata(ult.monto) + ' el ' + fdia(ult.fecha) + ' (registrar otro)';
+  } else btnAb.textContent = '💵 Registrar abono mensual';
+  pintarPlanes(); pintarProgreso();
+  document.querySelector('[data-tab="planes"]').classList.add('activa');
+  document.querySelector('[data-tab="progreso"]').classList.remove('activa');
+  document.getElementById('cPlanes').hidden = false;
+  document.getElementById('cProgreso').hidden = true;
+  ir('ficha');
+}
+document.getElementById('btnVolverLista').onclick = function(){ ir('lista'); };
+document.getElementById('fWsp').onclick = function(){
+  if (!alumnoAct.tel){ toast('Este alumno no tiene WhatsApp cargado'); return; }
+  window.open('https://wa.me/549'+alumnoAct.tel.replace(/\D/g,''), '_blank');
+};
+document.getElementById('fClave').onclick = function(){ toast('Acá va blanquear clave (como hoy)'); };
+document.getElementById('fCrearPlan').onclick = function(){
+  location.href = 'mockup-plan-mazo.html?alumno=' + encodeURIComponent(alumnoAct.nombre);
+};
+document.getElementById('fAbono').onclick = function(){ abrirPago(alumnoAct); };
+
+document.querySelectorAll('.tab').forEach(function(t){
+  t.onclick = function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('activa', x===t); });
+    var cual = t.getAttribute('data-tab');
+    document.getElementById('cPlanes').hidden = cual!=='planes';
+    document.getElementById('cProgreso').hidden = cual!=='progreso';
+  };
+});
+
+function pintarPlanes(){
+  var c = document.getElementById('cPlanes');
+  if (!alumnoAct.semanas.length){
+    c.innerHTML = '<div style="text-align:center;padding:34px 10px;color:var(--gris);font-size:13px;line-height:1.6">'+
+      '<div style="font-size:38px;margin-bottom:8px">📋</div>'+
+      '<b style="color:var(--tinta)">Todavía no hay planes anteriores.</b><br>Tocá “Crear plan nuevo” para armar el primero.</div>';
+    return;
+  }
+  c.innerHTML = alumnoAct.semanas.map(function(s, si){
+    return '<div class="semana'+(si===0?' abierta':'')+'">'+
+      '<button class="semana-cab"><span class="ico">📅</span><span class="d"><b>'+s.f+'</b>'+
+      '<small>'+s.dias.length+' días con entrenamiento</small></span><span class="chev">›</span></button>'+
+      '<div class="semana-dias">'+ s.dias.map(function(d){
+        return '<div class="dia-linea"><span class="dn">'+d[0]+'</span><span class="de">'+d[1]+'</span><span class="dx">'+d[2]+' ej.</span></div>';
+      }).join('') +'</div></div>';
+  }).join('');
+  c.querySelectorAll('.semana-cab').forEach(function(b){
+    b.onclick = function(){ b.parentElement.classList.toggle('abierta'); };
+  });
+}
+
+function pintarProgreso(){
+  var c = document.getElementById('cProgreso');
+  var a = alumnoAct;
+  var etiquetas = ['hace 7','hace 6','hace 5','hace 4','hace 3','hace 2','ant','hoy'];
+  var barras = a.barras.map(function(v, i){
+    return '<div class="bar'+(v?'':' empty')+'" style="height:'+Math.max(v*0.62,8)+'px"><i>'+etiquetas[i]+'</i></div>';
+  }).join('');
+  var marcas = a.marcas.length ? a.marcas.map(function(m){
+    var flecha = m.t==='arriba' ? '▲ <small class="t-arriba">subió de '+m.ant+'</small>' :
+                 '= <small class="t-igual">igual que '+m.ant+'</small>';
+    return '<div class="ej-fila"><span class="thumb"><img src="'+m.img+'" alt=""></span>'+
+      '<span class="d"><b>'+m.n+'</b><small>última marca registrada</small></span>'+
+      '<span class="ahora">'+m.ahora+'<small>'+flecha+'</small></span></div>';
+  }).join('') : '<p style="font-size:12.5px;color:var(--gris);padding:6px 0">Todavía no registró marcas.</p>';
+  c.innerHTML =
+    '<div class="caja"><h3>🔥 Racha actual</h3><div class="racha"><span class="num">'+a.racha+'</span>'+
+    '<small>'+(a.racha ? 'días seguidos entrenando<br>¡Viene con todo!' : 'Sin racha activa<br>Avisale que retome')+'</small></div></div>'+
+    '<div class="caja"><h3>Cumplimiento · últimas 8 sesiones</h3><div class="semanas">'+barras+'</div>'+
+    '<div style="height:18px"></div></div>'+
+    '<div class="caja"><h3>Pesos que viene usando</h3>'+marcas+'</div>';
+}
+
+/* ── alta de alumno ── */
+var veloAlta = document.getElementById('veloAlta');
+document.getElementById('btnAgregar').onclick = function(){
+  document.getElementById('altaPaso1').hidden = false;
+  document.getElementById('altaPaso2').hidden = true;
+  ['altaNombre','altaDni','altaTel'].forEach(function(id){ document.getElementById(id).value=''; });
+  veloAlta.classList.add('abierto');
+};
+veloAlta.onclick = function(ev){ if (ev.target===veloAlta) veloAlta.classList.remove('abierto'); };
+function claveTemp(){ return Math.random().toString(36).slice(2,8).toUpperCase(); }
+document.getElementById('altaCrear').onclick = function(){
+  var n = document.getElementById('altaNombre').value.trim();
+  var d = document.getElementById('altaDni').value.trim();
+  if (!n){ toast('Ponele el nombre'); return; }
+  if (!d){ toast('Falta el DNI'); return; }
+  document.getElementById('altaClave').textContent = claveTemp();
+  document.getElementById('altaPaso1').hidden = true;
+  document.getElementById('altaPaso2').hidden = false;
+};
+document.getElementById('altaWsp').onclick = function(){
+  toast('Abre WhatsApp con el mensaje listo (ejemplo)');
+};
+document.getElementById('altaListo').onclick = function(){ veloAlta.classList.remove('abierto'); };
+
+/* ── toast ── */
+var tEl = document.getElementById('toast'), tTimer;
+function toast(msg){ tEl.textContent = msg; tEl.classList.add('ver'); clearTimeout(tTimer); tTimer=setTimeout(function(){ tEl.classList.remove('ver'); }, 2200); }
+
+pintarLista('');
+pintarHeadFinanzas();
+</script>
+</body>
+</html>
