@@ -855,8 +855,10 @@ function crearEstructura(){
     '<div class="r-biblio"><div class="r-biblio-cab"><h2>Ejercicios</h2><div class="r-cats" id="bCats"></div></div>'+
       '<input class="r-busca" id="bBusca" placeholder="Buscar: sentadilla, press, curl…" style="margin:8px 0 9px;width:100%">'+
       '<div class="r-grilla" id="bGrilla"></div></div>'+
-    '<div class="r-barra"><div style="font-size:13px;font-weight:800;white-space:nowrap"><span id="bN">0</span> ejercicios<small style="display:block;font-size:10px;font-weight:500;color:var(--gris)" id="bDiaNom"></small></div>'+
-      '<button class="r-btn-prin" id="bGuardar" style="flex:1" title="Guardar plan" aria-label="Guardar plan">'+guardarSVG+'</button></div>'+
+    '<div class="r-fab-barra">'+
+      '<div class="r-contador"><b><span id="bN">0</span> ejercicios</b><small id="bDiaNom"></small></div>'+
+      '<button class="r-fab-guardar" id="bGuardar" title="Guardar plan" aria-label="Guardar plan">'+guardarSVG+'</button>'+
+    '</div>'+
     // hoja detalles
     '<div class="r-velo" id="bVelo"><div class="r-hoja"><div class="r-agarre"></div>'+
       '<div class="r-dh"><span id="bHImg"></span><div><b id="bHNom"></b><small id="bHSub"></small></div></div>'+
@@ -904,8 +906,14 @@ function bPintarDias(){
   bPintarPrev();
 }
 function bPrevPlan(){
-  if (B.demo){ var p = R.rLeer(R.rDemoPlanKey(B.userId), null); return p ? (p.__anterior||null) : null; }
-  return (B.vivos && B.vivos.__anterior) ? B.vivos.__anterior : null;
+  // Referencia para comparar mientras armás: el plan que la persona YA tiene hecho
+  // (plan vigente del alumno); si no tiene, el plan anterior guardado.
+  var base = B.vivos;
+  if (B.demo){ var p = R.rLeer(R.rDemoPlanKey(B.userId), null); base = p; }
+  if (!base) return null;
+  var dias={}; DIAS.forEach(function(d){ dias[d[0]]=Array.isArray(base[d[0]])?base[d[0]]:[]; });
+  if (DIAS.some(function(d){ return (base[d[0]]||[]).length; })) return dias;   // plan vigente con ejercicios
+  return base.__anterior || null;                                              // sino, el anterior
 }
 function bPintarPrev(){
   var zona=b$('bPrevZona'), caja=b$('bPrev'), fecha=b$('bPrevFecha');
