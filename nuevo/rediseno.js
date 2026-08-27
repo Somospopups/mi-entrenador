@@ -1208,7 +1208,7 @@ function bFantasma(el){
   var cabeza = img
     ? '<img src="'+img.src+'">'
     : '<div class="r-f-emoji">'+(em?em.textContent:'🏋️')+'</div>';
-  f.innerHTML = cabeza + '<div class="r-f-info"><div class="r-f-nom">'+(nom?nom.textContent:'')+'</div></div>';
+  f.innerHTML = cabeza + '<div class="r-f-info"><div class="r-f-nom">'+(nom?nom.textContent:'')+'</div></div><div class="r-f-borrar">🗑️</div>';
   document.body.appendChild(f); return f;
 }
 function bSobreMazo(x,y){
@@ -1260,7 +1260,16 @@ function bGesto(el, tipo, idx){
     if(dist>6) drag.seMovio=true;
     drag.fantasma.style.left=(ev.clientX-48)+'px';
     drag.fantasma.style.top=(ev.clientY-50)+'px';
-    if(drag.tipo==='nuevo') b$('bMazo').classList.toggle('sobre', bSobreMazo(ev.clientX,ev.clientY));
+    if(drag.tipo==='nuevo'){
+      b$('bMazo').classList.toggle('sobre', bSobreMazo(ev.clientX,ev.clientY));
+    } else {
+      // carta del plan: dentro de la sesión = reordenar; afuera = soltar para quitar
+      var sobre=bSobreMazo(ev.clientX,ev.clientY);
+      var mz=b$('bMazo');
+      mz.classList.toggle('sobre', sobre);
+      mz.classList.toggle('fuera', !sobre);
+      drag.fantasma.classList.toggle('r-fuera', !sobre);
+    }
   });
   function fin(ev){
     if(!drag || drag.el!==el) return;
@@ -1268,7 +1277,12 @@ function bGesto(el, tipo, idx){
     var arrastraba=drag.arrastrando, movio=drag.seMovio;
     if(arrastraba && movio){
       if(drag.tipo==='nuevo'){ if(bSobreMazo(ev.clientX,ev.clientY)) bAbrirHoja('biblio', drag.base); }
-      else {
+      else if(!bSobreMazo(ev.clientX,ev.clientY)){
+        // se soltó fuera de la sesión → quitar la carta del plan
+        B.plan[B.dia].splice(drag.idx,1);
+        if(navigator.vibrate) navigator.vibrate([12,40,12]);
+        bPintarMazo(); bPintarGrilla(); bPintarDias();
+      } else {
         var cards=[].slice.call(b$('bMazo').querySelectorAll('.r-pc'));
         var destino=cards.length;
         for(var i=0;i<cards.length;i++){ var r=cards[i].getBoundingClientRect(); if(ev.clientX<r.left+r.width/2){ destino=i; break; } }
@@ -1280,7 +1294,8 @@ function bGesto(el, tipo, idx){
       ultimoGesto=Date.now();
     }
     if(drag&&drag.fantasma) drag.fantasma.remove();
-    el.style.opacity=''; b$('bMazo').classList.remove('sobre');
+    el.style.opacity='';
+    var _m=b$('bMazo'); _m.classList.remove('sobre'); _m.classList.remove('fuera');
     drag=null;
   }
   el.addEventListener('pointerup', fin);
