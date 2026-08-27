@@ -1135,6 +1135,7 @@ function dHacerCarta(e, i, clase){
   c.className='r-dcarta '+clase;
   c.innerHTML='<div class="r-dibujo"><span class="r-num-ej">'+(i+1)+' / '+dLista(D.dia).length+'</span>'+
     '<span class="r-marca '+(m===true?'ok':m===false?'no':'')+'">'+(m===true?'✓ Hecho':m===false?'✗ No salió':'')+'</span>'+
+    '<span class="r-sello ok">¡HECHO!</span><span class="r-sello no">NO SALIÓ</span>'+
     dibujo+'</div>'+
     '<div class="r-datos"><h2>'+dEsc(e.nombre)+'</h2>'+
     '<div class="r-pastillas">'+(sxr?'<i>'+sxr+'</i>':'')+
@@ -1250,21 +1251,53 @@ function conectar(){
   };
   // gesto deslizar la carta
   var zona=d$('dZona'), arr=null;
+  var umbral=110;
+  function aplicarTirada(carta, dx, dy){
+    var ancho = carta.offsetWidth || 300;
+    var rot = dx/14 + Math.max(-6, Math.min(6, dy/34));
+    carta.style.transform='translate3d('+dx+'px,'+(dy||0)+'px,0) rotate('+rot+'deg)';
+    carta.classList.toggle('sw-ok', dx>40);
+    carta.classList.toggle('sw-no', dx<-40);
+    var sOk=carta.querySelector('.r-sello.ok'), sNo=carta.querySelector('.r-sello.no');
+    var fuerza=Math.min(1, Math.abs(dx)/umbral);
+    if(sOk) sOk.style.opacity = dx>20 ? String(fuerza) : '0';
+    if(sNo) sNo.style.opacity = dx<-20 ? String(fuerza) : '0';
+    // la pila de atrás avanza con el dedo
+    var prog=Math.min(1, Math.abs(dx)/ancho);
+    var d1=carta.parentElement.querySelector('.r-dcarta.detras');
+    var d2=carta.parentElement.querySelector('.r-dcarta.detras2');
+    if(d1) d1.style.transform='scale('+(0.93+0.07*prog)+') translateY('+(18-18*prog)+'px)';
+    if(d2) d2.style.transform='scale('+(0.86+0.07*prog)+') translateY('+(34-16*prog)+'px)';
+  }
+  function resetPila(carta){
+    var p=carta.parentElement;
+    carta.classList.remove('sw-ok','sw-no');
+    carta.style.transform='';
+    var sOk=carta.querySelector('.r-sello.ok'), sNo=carta.querySelector('.r-sello.no');
+    if(sOk) sOk.style.opacity='0'; if(sNo) sNo.style.opacity='0';
+    var d1=p.querySelector('.r-dcarta.detras'), d2=p.querySelector('.r-dcarta.detras2');
+    if(d1) d1.style.transform=''; if(d2) d2.style.transform='';
+  }
   zona.addEventListener('pointerdown', function(ev){
     if(ev.target.closest('[data-peso]')||ev.target.closest('.r-nav-dia')) return;
     var c=ev.target.closest('.r-dcarta.entra'); if(!c) return;
-    arr={sx:ev.clientX, c:c}; try{c.setPointerCapture(ev.pointerId);}catch(e){} c.style.transition='none';
+    arr={sx:ev.clientX, sy:ev.clientY, x:0, y:0, c:c};
+    try{c.setPointerCapture(ev.pointerId);}catch(e){}
+    c.style.transition='none';
   });
   zona.addEventListener('pointermove', function(ev){
     if(!arr) return;
-    var dx=ev.clientX-arr.sx; arr.x=dx;
-    arr.c.style.transform='translateX('+dx+'px) rotate('+(dx/22)+'deg)';
+    arr.x=ev.clientX-arr.sx; arr.y=ev.clientY-arr.sy;
+    aplicarTirada(arr.c, arr.x, arr.y);
   });
   function fin(){
     if(!arr) return;
-    var dx=arr.x||0; arr.c.style.transition='';
-    if(dEsHoy()){ if(dx>110) dResponder(true); else if(dx<-110) dResponder(false); else arr.c.style.transform=''; }
-    else arr.c.style.transform='';
+    var dx=arr.x||0, carta=arr.c;
+    carta.style.transition='';
+    var decide = dEsHoy();
+    if(decide && dx>umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-ok'); dResponder(true); }
+    else if(decide && dx<-umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-no'); dResponder(false); }
+    else { carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },520); }
     arr=null;
   }
   zona.addEventListener('pointerup', fin);
