@@ -224,26 +224,44 @@ function rRenderEntrenador(){
 }
 function rIrPantalla(cual){
   T.pantalla = cual;
-  $('rPantLista').style.display = cual==='lista' ? 'block' : 'none';
-  $('rPantFicha').style.display = cual==='ficha' ? 'block' : 'none';
-  $('rPantFin').style.display = cual==='finanzas' ? 'block' : 'none';
-  if (cual==='lista') rPintarLista();
-  if (cual==='ficha') rPintarFicha();
-  if (cual==='finanzas') rPintarFinanzas();
+  var pc = rEsDesktop();
+  if (pc){
+    // En PC la lista (con el panel derecho) siempre está; finanzas es pantalla aparte.
+    $('rPantLista').style.display = (cual==='finanzas') ? 'none' : 'block';
+    $('rPantFicha').style.display = 'none';               // en PC la ficha vive en rColDer
+    $('rPantFin').style.display = (cual==='finanzas') ? 'block' : 'none';
+    if (cual==='finanzas') rPintarFinanzas();
+    else { rPintarLista(); }   // pinta la lista y el panel derecho según T.pantalla/usuario
+  } else {
+    $('rPantLista').style.display = (cual==='lista') ? 'block' : 'none';
+    $('rPantFicha').style.display = (cual==='ficha') ? 'block' : 'none';
+    $('rPantFin').style.display = (cual==='finanzas') ? 'block' : 'none';
+    if (cual==='lista') rPintarLista();
+    if (cual==='ficha') rPintarFicha();
+    if (cual==='finanzas') rPintarFinanzas();
+  }
 }
+
+function rEsDesktop(){ try{ return window.matchMedia && window.matchMedia('(min-width:720px)').matches; }catch(e){ return false; } }
 
 /* ── pantalla: lista de alumnos ── */
 function rPintarLista(){
   var wrap = $('rPantLista');
+  var nombre = (sesion.nombre.split(' ')[0]||'Profe');
   wrap.innerHTML =
-    '<div class="r-head"><h1>Mis alumnos<small class="r-sub">Hola, '+(sesion.nombre.split(' ')[0]||'Profe')+'</small></h1>'+
+    '<div class="r-head"><h1>Hola, '+esc(nombre)+'<small class="r-sub">Mis alumnos</small></h1>'+
       '<button class="r-pill head" id="rBtnFin" style="margin-left:auto">💰 Finanzas · <b id="rTotalHead">$0</b></button>'+
       '<button class="r-sync-btn" id="rBtnSync" title="Sincronizar con la nube">🔄</button>'+
       '<button class="r-salir-btn" id="rBtnSalir" title="Cerrar sesión">🚪</button>'+
     '</div>'+
-    '<input class="r-busca" id="rBuscaAlu" placeholder="Buscar alumno…">'+
-    '<div class="r-lista" id="rListaAlu"></div>'+
-    '<div class="r-barra"><button class="r-btn-prin" id="rBtnAgregar"><span style="font-size:19px">+</span> Agregar alumno</button></div>';
+    '<div class="r-escritorio">'+
+      '<div class="r-col-izq">'+
+        '<input class="r-busca" id="rBuscaAlu" placeholder="Buscar alumno…">'+
+        '<div class="r-lista" id="rListaAlu"></div>'+
+        '<div class="r-barra"><button class="r-btn-prin" id="rBtnAgregar"><span style="font-size:19px">+</span> Agregar alumno</button></div>'+
+      '</div>'+
+      '<div class="r-col-der" id="rColDer"></div>'+
+    '</div>';
   $('rBtnFin').onclick = function(){ rIrPantalla('finanzas'); };
   $('rBtnSalir').onclick = function(){ if (confirm('¿Cerrar tu sesión?')) salir(); };
   $('rBtnSync').onclick = function(){ rSincronizarAhora(this); };
@@ -251,6 +269,24 @@ function rPintarLista(){
   $('rBuscaAlu').addEventListener('input', function(){ rPintarAlumnos(this.value); });
   rPintarAlumnos('');
   rHeadCobros();
+  if (rEsDesktop() && T.usuario && T.pantalla==='ficha'){ rRenderDetalleDer(); }
+  else if (rEsDesktop()){ var d=$('rColDer'); if(d) d.innerHTML = rDetalleVacio(); }
+}
+/* Tras guardar un plan: en PC refresca el panel derecho; en celu vuelve a la ficha. */
+function rVolverFicha(){
+  if (rEsDesktop()){ T.pantalla='ficha'; rRenderDetalleDer(); }
+  else rIrPantalla('ficha');
+}
+function rDetalleVacio(){
+  return '<div class="r-der-vacio"><div class="r-g">👈</div><b>Seleccioná un alumno</b><br>Elegí alguien de la lista para ver su ficha y crear su plan.</div>';
+}
+function rRenderDetalleDer(){
+  var der = $('rColDer');
+  if (!der){ rPintarLista(); return; }
+  var u = T.usuario;
+  if (!u){ der.innerHTML = rDetalleVacio(); return; }
+  der.innerHTML = rFichaHTML(u, false);
+  rConectarFicha(der, u);
 }
 /* botón manual: force-fetch de alumnos + cobros + propios, con feedback */
 async function rSincronizarAhora(btn){
@@ -288,14 +324,24 @@ async function rPintarAlumnos(filtro){
   }).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
   $('rListaAlu').innerHTML = lista.map(function(u,i){
     var e = u.demo ? ['ambar','🧪 Alumno de prueba'] : rEstadoAlumno(u);
-    return '<button class="r-alumno" data-id="'+u.id+'" style="animation-delay:'+(i*45)+'ms">'+
+    var sel = (T.usuario && T.usuario.id===u.id) ? ' r-sel' : '';
+    return '<button class="r-alumno'+sel+'" data-id="'+u.id+'" style="animation-delay:'+(i*45)+'ms">'+
       '<span class="r-avatar">'+inicial(u.nombre)+'</span>'+
       '<span class="r-info"><b>'+esc(u.nombre)+'</b>'+
       '<small class="st-'+e[0]+'"><span class="r-puntito"></span>'+e[1]+'</small></span>'+
       '<span class="r-flecha">›</span></button>';
   }).join('') || '<p class="r-vacio">Ningún alumno con ese nombre.</p>';
   $('rListaAlu').querySelectorAll('[data-id]').forEach(function(b){
-    b.onclick = function(){ T.usuario = T.alumnos.find(function(x){ return x.id===b.getAttribute('data-id'); }); rIrPantalla('ficha'); };
+    b.onclick = function(){
+      T.usuario = T.alumnos.find(function(x){ return x.id===b.getAttribute('data-id'); });
+      if (rEsDesktop()){
+        T.pantalla='ficha';
+        $('rListaAlu').querySelectorAll('.r-alumno').forEach(function(x){ x.classList.toggle('r-sel', x===b); });
+        rRenderDetalleDer();
+      } else {
+        rIrPantalla('ficha');
+      }
+    };
   });
   rHeadCobros();
 }
@@ -307,11 +353,10 @@ function rHeadCobros(){
 }
 
 /* ── pantalla: ficha del alumno ── */
-function rPintarFicha(){
-  var u = T.usuario; if (!u) return rIrPantalla('lista');
-  var wrap = $('rPantFicha');
-  wrap.innerHTML =
-    '<div class="r-head"><button class="r-atras" id="rFichaAtras">‹</button><h1 style="font-size:17px">Ficha del alumno</h1></div>'+
+function rFichaHTML(u, conAtras){
+  return (conAtras
+      ? '<div class="r-head"><button class="r-atras" id="rFichaAtras">‹</button><h1 style="font-size:17px">Ficha del alumno</h1></div>'
+      : '<div class="r-head"><h1 style="font-size:19px">'+esc(u.nombre)+'<small class="r-sub">Ficha del alumno</small></h1></div>')+
     '<div class="r-ficha-top">'+
       '<div class="r-cred"><span class="r-avatar">'+inicial(u.nombre)+'</span>'+
       '<div style="flex:1"><b>'+esc(u.nombre)+'</b><small>DNI '+esc(u.dni)+(u.telefono?' · '+esc(u.telefono):'')+'</small>'+
@@ -326,15 +371,20 @@ function rPintarFicha(){
       '<button class="r-tab" data-tab="progreso">Progreso</button></div>'+
     '<div class="r-contenido" id="rFPlanes"></div>'+
     '<div class="r-contenido" id="rFProg" style="display:none"></div>';
-  $('rFichaAtras').onclick = function(){ rIrPantalla('lista'); };
-  $('rFCrear').onclick = function(){ R.builder.abrir(u); };
-  $('rFAbono').onclick = function(){ rHojaCobro(u); };
-  $('rFWsp').onclick = function(){
+}
+function rConectarFicha(wrap, u){
+  var atras = wrap.querySelector('#rFichaAtras');
+  if (atras) atras.onclick = function(){ rIrPantalla('lista'); };
+  wrap.querySelector('#rFCrear').onclick = function(){ R.builder.abrir(u); };
+  wrap.querySelector('#rFAbono').onclick = function(){ rHojaCobro(u); };
+  var btnWsp = wrap.querySelector('#rFWsp');
+  if (btnWsp) btnWsp.onclick = function(){
     var link = rWaLink(u.telefono, '¡Hola '+(u.nombre.split(' ')[0]||'')+'! ');
     if (!link){ rToast('Este alumno no tiene WhatsApp cargado', $('rAppProfe')); return; }
     window.open(link, '_blank');
   };
-  $('rFClave').onclick = function(){
+  var btnClave = wrap.querySelector('#rFClave');
+  if (btnClave) btnClave.onclick = function(){
     if (!confirm('¿Blanquear la contraseña?\n\n'+u.nombre+' tendrá que elegir una nueva en su próximo ingreso.')) return;
     Backend.blanquearPassword(u.id).then(function(r){
       if (r.error){ rToast(r.error, $('rAppProfe')); return; }
@@ -345,13 +395,19 @@ function rPintarFicha(){
     b.onclick = function(){
       wrap.querySelectorAll('[data-tab]').forEach(function(x){ x.classList.toggle('activa', x===b); });
       var cual = b.getAttribute('data-tab');
-      $('rFPlanes').style.display = cual==='planes' ? 'block' : 'none';
-      $('rFProg').style.display = cual==='progreso' ? 'block' : 'none';
+      wrap.querySelector('#rFPlanes').style.display = cual==='planes' ? 'block' : 'none';
+      wrap.querySelector('#rFProg').style.display = cual==='progreso' ? 'block' : 'none';
       if (cual==='progreso') rPintarProgFicha(u);
     };
   });
   rPintarPlanesFicha(u);
   rActualizarBotonAbono(u);
+}
+function rPintarFicha(){
+  var u = T.usuario; if (!u) return rIrPantalla('lista');
+  var wrap = $('rPantFicha');
+  wrap.innerHTML = rFichaHTML(u, true);
+  rConectarFicha(wrap, u);
 }
 function rActualizarBotonAbono(u){
   var btn = $('rFAbono'); if (!btn) return;
@@ -613,6 +669,7 @@ function rHojaCobro(u, alGuardar){
 /* exponer para el builder */
 R.entrenador = T;
 R.rIrPantalla = rIrPantalla;
+R.rVolverFicha = rVolverFicha;
 R.rPintarAlumnos = rPintarAlumnos;
 R.rLeer = rLeer;
 R.rGuardar = rGuardar;
@@ -931,7 +988,7 @@ function conectar(){
       B._borrarBorrador();
       B.cerrar(); avisar('Plan guardado (prueba)');
       R.entrenador.usuario.plan = final;
-      R.rIrPantalla('ficha');
+      R.rVolverFicha();
       return;
     }
     var vivo = B.vivos;
@@ -950,7 +1007,7 @@ function conectar(){
     var alumnos=await Backend.listarUsuarios();
     R.entrenador.alumnos=alumnos;
     R.entrenador.usuario=alumnos.find(function(x){return x.id===uid;})||R.entrenador.usuario;
-    R.rIrPantalla('ficha');
+    R.rVolverFicha();
   };
 }
 
