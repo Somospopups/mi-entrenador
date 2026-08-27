@@ -47,6 +47,11 @@
   background:rgba(255,255,255,.85); outline:none; font-family:inherit; color:var(--tinta); }
 .r-busca:focus{ border-color:var(--c1); }
 .r-lista{ position:relative; z-index:2; flex:1; overflow-y:auto; padding:0 16px 110px; }
+/* escritorio: en el celu solo se usa la columna izquierda (la derecha vive en PC) */
+.r-escritorio{ display:flex; flex:1; min-height:0; flex-direction:column; }
+.r-col-izq{ display:flex; flex-direction:column; min-height:0; flex:1; }
+.r-col-der{ display:none; }
+.r-der-vacio{ color:var(--gris); text-align:center; }
 .r-alumno{ display:flex; align-items:center; gap:12px; width:100%; text-align:left;
   background:rgba(255,255,255,.72); backdrop-filter:blur(10px); border:1.5px solid rgba(255,255,255,.9);
   border-radius:16px; padding:12px 14px; margin-bottom:9px; color:var(--tinta);
@@ -478,3 +483,9 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
 .r-confirm-bot .r-listo{ flex:1.2; border:0; border-radius:14px; padding:13px; font-size:14.5px; font-weight:800; color:#fff;
   background:linear-gradient(135deg,var(--c1),var(--c2)); box-shadow:0 9px 20px rgba(124,58,237,.35); }
 .r-confirm-bot .r-listo.peligro{ background:linear-gradient(135deg,#ef4444,#dc2626); box-shadow:0 9px 20px rgba(220,38,38,.35); }
+
+/* hint de borrar plan con mantener presionado */
+.r-plan-hint{ font-size:11.5px; color:var(--gris); text-align:center; margin:2px 0 10px; -webkit-user-select:none; user-select:none; }
+.r-plan-hint b{ color:var(--rojo, #dc2626); font-weight:800; }
+.r-semana-cab{ -webkit-user-select:none; user-select:none; }
+.r-semana-cab:active{ transform:scale(.995); }

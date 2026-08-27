@@ -449,18 +449,24 @@ function rActualizarBotonAbono(u){
   }).sort(function(a,b){ return b.fecha-a.fecha; })[0];
   btn.textContent = pago ? ('✓ Abono pagado · '+rPlata(pago.monto)+' el '+rFecha(pago.fecha)+' (otro)') : '💵 Registrar abono mensual';
 }
+function rFichaActiva(){ return document.querySelector('#rPantFicha .r-ficha-top, #rColDer .r-ficha-top'); }
+function rContenedorFicha(){ var f = rFichaActiva(); return f ? f.closest('#rPantFicha, #rColDer') : document.querySelector('#rColDer, #rPantFicha'); }
 function rPintarPlanesFicha(u){
-  var c = $('rFPlanes');
+  var wrap = rContenedorFicha();
+  var c = wrap.querySelector('#rFPlanes');
+  if (!c) return;
   var bloques = [];
   var actual = soloDiasPlan(planDe(u));
-  if (planTieneAlgo(actual)) bloques.push({ tit:'Plan actual', plan:actual, abierto:true });
+  if (planTieneAlgo(actual)) bloques.push({ tit:'Plan actual', plan:actual, abierto:true, cual:'actual' });
   var ant = (u.plan && u.plan.__anterior) ? u.plan.__anterior : null;
-  if (ant && planTieneAlgo(ant)) bloques.push({ tit:'Plan anterior', plan:ant, abierto:false });
+  if (ant && planTieneAlgo(ant)) bloques.push({ tit:'Plan anterior', plan:ant, abierto:false, cual:'anterior' });
   if (!bloques.length){
     c.innerHTML = '<div class="r-vacio"><div class="r-g">📋</div><b>Todavía no hay planes.</b><br>Tocá “Crear plan nuevo” para armar el primero.</div>';
     return;
   }
-  c.innerHTML = bloques.map(function(b, bi){
+  c.innerHTML =
+    '<p class="r-plan-hint">Mantené presionado un plan para <b>borrarlo</b>.</p>'+
+    bloques.map(function(b, bi){
     var dias = DIAS.map(function(d){
       var lista = (b.plan[d[0]]||[]);
       if (!lista.length) return '';
@@ -469,14 +475,53 @@ function rPintarPlanesFicha(u){
         '<span class="r-dx">'+lista.length+' ej.</span></div>';
     }).join('');
     var ndias = DIAS.reduce(function(s,d){ return s + ((b.plan[d[0]]||[]).length?1:0); },0);
-    return '<div class="r-semana'+(b.abierto?' abierta':'')+'">'+
+    return '<div class="r-semana'+(b.abierto?' abierta':'')+'" data-cual="'+b.cual+'">'+
       '<button class="r-semana-cab"><span class="r-ico">📅</span><span class="r-d"><b>'+b.tit+'</b>'+
       '<small>'+ndias+' días con entrenamiento</small></span><span class="r-chev">›</span></button>'+
       '<div class="r-semana-dias">'+dias+'</div></div>';
   }).join('');
-  c.querySelectorAll('.r-semana-cab').forEach(function(b){
-    b.onclick = function(){ b.parentElement.classList.toggle('abierta'); };
+  wrap.querySelectorAll('.r-semana-cab').forEach(function(b){
+    var semana = b.parentElement;
+    var lp;
+    b.addEventListener('pointerdown', function(){
+      lp = setTimeout(function(){
+        if (navigator.vibrate) navigator.vibrate(15);
+        var cual = semana.getAttribute('data-cual');
+        rConfirmar({ icono:'🗑️', titulo:'¿Borrar el '+(cual==='anterior'?'plan anterior':'plan actual')+'?',
+          mensaje: cual==='anterior'
+            ? 'Se elimina el plan guardado como anterior. El plan actual no se toca.'
+            : 'Se vacía el plan que el alumno tiene ahora. El plan anterior (si existe) se conserva.',
+          okTexto:'Sí, borrar', peligro:true }, function(){ rBorrarPlan(u, cual); });
+      }, 600);
+    });
+    function cancelar(){ clearTimeout(lp); }
+    b.addEventListener('pointerup', cancelar);
+    b.addEventListener('pointermove', cancelar);
+    b.addEventListener('pointercancel', cancelar);
+    b.addEventListener('click', function(ev){
+      if (lp) clearTimeout(lp);
+      semana.classList.toggle('abierta');
+    });
   });
+}
+async function rBorrarPlan(u, cual){
+  var diasVacios = planVacio();
+  if (u.demo){
+    var p = R.rLeer(R.rDemoPlanKey(u.id), null) || {};
+    if (cual==='anterior') delete p.__anterior; else Object.assign(p, diasVacios);
+    R.rGuardar(R.rDemoPlanKey(u.id), p);
+    if (T.usuario && T.usuario.id===u.id) T.usuario.plan = p;
+  } else {
+    var p2 = u.plan ? JSON.parse(JSON.stringify(u.plan)) : {};
+    if (cual==='anterior') delete p2.__anterior; else { Object.assign(p2, diasVacios); }
+    var r;
+    try{ r = await Backend.guardarPlan(u.id, p2); }catch(e){ r={error:'Sin conexión'}; }
+    if (r && r.error){ rToast(r.error, $('rAppProfe')); return; }
+    if (T.usuario && T.usuario.id===u.id) T.usuario.plan = p2;
+  }
+  rToast('Plan borrado', $('rAppProfe'));
+  // refrescar la ficha donde esté (PC panel derecho o celu)
+  if (rEsDesktop()){ rRenderDetalleDer(); } else { rPintarFicha(); }
 }
 function soloDiasPlan(p){
   var v = planVacio();
@@ -484,7 +529,8 @@ function soloDiasPlan(p){
   return v;
 }
 async function rPintarProgFicha(u){
-  var c = $('rFProg');
+  var wrap = rContenedorFicha();
+  var c = wrap && wrap.querySelector('#rFProg'); if (!c) c=$('rFProg');
   if (u.demo){
     c.innerHTML = '<div class="r-vacio"><div class="r-g">🧪</div><b>Alumno de prueba.</b><br>Las marcas y el progreso no se guardan: es solo para que pruebes armar planes.</div>';
     return;
