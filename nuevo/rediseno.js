@@ -391,12 +391,12 @@ function rFichaHTML(u, conAtras){
     '<div class="r-ficha-top">'+
       '<div class="r-cred"><span class="r-avatar">'+inicial(u.nombre)+'</span>'+
       '<div style="flex:1"><b>'+esc(u.nombre)+'</b><small>DNI '+esc(u.dni)+(u.telefono?' · '+esc(u.telefono):'')+'</small>'+
-      '<div><button class="r-chato" id="rFWsp">WhatsApp</button>'+
-      (u.demo?'':'<button class="r-chato" id="rFClave">Blanquear clave</button>')+
+      '<div><button class="r-chato" id="rFWsp">💬 WhatsApp</button>'+
       (u.demo?'<span style="font-size:11px;font-weight:700;color:#d97706">🧪 Alumno de prueba · los datos quedan en este dispositivo</span>':'')+
       '</div></div></div>'+
       '<button class="r-btn-prin" id="rFCrear"><span style="font-size:18px">+</span> Crear plan nuevo</button>'+
       '<button class="r-btn-abono" id="rFAbono">💵 Registrar abono mensual</button>'+
+      (u.demo?'':'<button class="r-btn-clave" id="rFClave">🔑 Blanquear contraseña del alumno</button>')+
     '</div>'+
     '<div class="r-tabs"><button class="r-tab activa" data-tab="planes">Planes anteriores</button>'+
       '<button class="r-tab" data-tab="progreso">Progreso</button></div>'+
@@ -419,7 +419,12 @@ function rConectarFicha(wrap, u){
     rConfirmar({ icono:'🔑', titulo:'¿Blanquear la contraseña?', mensaje:u.nombre+' tendrá que elegir una nueva en su próximo ingreso.', okTexto:'Blanquear' }, function(){
       Backend.blanquearPassword(u.id).then(function(r){
         if (r.error){ rToast(r.error, $('rAppProfe')); return; }
-        rHojaCredencial(u, r.password);
+        var nombre = (u.nombre.split(' ')[0]||'');
+        rHojaCredencial(u, r.password, {
+          titulo:'Contraseña blanqueada 🔑',
+          subtitulo:'Pasale esta clave temporal a '+u.nombre+': entra con su DNI y la cambia.',
+          mensaje:'¡Hola '+nombre+'! Blanqueamos tu contraseña de Mi Entrenador. Entrá con tu DNI y esta clave temporal: '+r.password+' (te va a pedir cambiarla la primera vez).'
+        });
       });
     });
   };
@@ -704,12 +709,16 @@ function rHojaAlta(){
     rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
   };
 }
-function rHojaCredencial(u, password){
+function rHojaCredencial(u, password, opts){
+  opts = opts || {};
   var existente = $('rVeloCred'); if (existente) existente.remove();
-  var link = rWaLink(u.telefono, '¡Hola '+(u.nombre.split(' ')[0]||'')+'! Ya tenés tu acceso a Mi Entrenador. Entrá con tu DNI y esta clave temporal: '+password+' (te va a pedir cambiarla la primera vez).');
+  var titulo = opts.titulo || 'Cuenta creada 🎉';
+  var subtitulo = opts.subtitulo || 'Pasale esta clave temporal: entra con su DNI y la cambia.';
+  var msjWsp = opts.mensaje || ('¡Hola '+(u.nombre.split(' ')[0]||'')+'! Ya tenés tu acceso a Mi Entrenador. Entrá con tu DNI y esta clave temporal: '+password+' (te va a pedir cambiarla la primera vez).');
+  var link = rWaLink(u.telefono, msjWsp);
   var v = rEl(rVeloBase('rVeloCred',
-    '<b style="font-size:17px">Cuenta creada 🎉</b>'+
-    '<small style="color:var(--gris);display:block;margin:3px 0 10px">Pasale esta clave temporal: entra con su DNI y la cambia.</small>'+
+    '<b style="font-size:17px">'+esc(titulo)+'</b>'+
+    '<small style="color:var(--gris);display:block;margin:3px 0 10px">'+esc(subtitulo)+'</small>'+
     '<div class="r-clave"><div class="r-pw">'+esc(password)+'</div><small>Entra con su DNI y esta clave</small></div>'+
     (link ? '<button class="r-btn-prin verde" id="rCredWsp">Enviar por WhatsApp</button>' : '')+
     '<button class="r-chato" style="width:100%;justify-content:center;margin-top:10px" id="rCredListo">Listo</button>'+

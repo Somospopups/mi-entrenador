@@ -89,6 +89,10 @@
 .r-btn-abono{ width:100%; margin-top:9px; border:1.5px solid rgba(37,211,102,.55); background:rgba(37,211,102,.12);
   border-radius:15px; padding:13px; font-size:14.5px; font-weight:800; color:#12804a;
   display:flex; align-items:center; justify-content:center; gap:8px; }
+.r-btn-clave{ width:100%; margin-top:9px; border:1.5px solid rgba(245,158,11,.55); background:rgba(245,158,11,.12);
+  border-radius:15px; padding:13px; font-size:14.5px; font-weight:800; color:#b45309;
+  display:flex; align-items:center; justify-content:center; gap:8px; }
+.r-btn-clave:active{ transform:scale(.99); }
 .r-tabs{ position:relative; z-index:2; display:flex; gap:6px; padding:4px 16px 10px; }
 .r-tab{ flex:1; border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.65); backdrop-filter:blur(10px);
   border-radius:99px; padding:10px; font-size:13px; font-weight:700; color:var(--gris); }
