@@ -128,6 +128,41 @@ async function rSyncPropios(){
 }
 function rSyncNube(){ rSyncCobros().then(function(){ try{ rHeadCobros(); if(T.pantalla==='finanzas') rPintarFinanzas(); }catch(e){} }); rSyncPropios(); }
 
+/* ── Sincronización INMEDIATA de la lista de alumnos entre dispositivos ──
+   Si la PC tiene abierta la lista y crean un alumno desde el celu,
+   la lista se refresca sola (al volver a la pestaña, al recuperar foco
+   y con un chequeo corto mientras está abierta). No toca nada si estás
+   escribiendo, con una hoja abierta o en otra pantalla. */
+var rLiveInit = false, rLiveTimer = null;
+async function rRefrescoVivo(){
+  try{
+    var app = $('rAppProfe');
+    if (!app || !app.classList.contains('ver')) return;          // no está el entrenador en pantalla
+    if (T.pantalla !== 'lista') return;                          // solo en la lista de alumnos
+    if (app.querySelector('.r-velo.abierto')) return;            // hay una hoja (alta/cobro) abierta
+    var busca = $('rBuscaAlu');
+    if (busca && (document.activeElement === busca)) return;     // estás escribiendo en el buscador
+    var antes = (T.alumnos||[]).length;
+    var lista = await rListarAlumnos();
+    var despues = lista.length;
+    T.alumnos = lista;
+    if (despues !== antes || !rLivePintada){
+      var scrollY = app.scrollTop || 0;
+      await rPintarAlumnos(busca ? busca.value : '');
+      app.scrollTop = scrollY;
+      rLivePintada = true;
+    }
+  }catch(e){}
+}
+var rLivePintada = false;
+function rIniciarLive(){
+  if (rLiveInit) return; rLiveInit = true;
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState==='visible'){ rRefrescoVivo(); rSyncNube(); } });
+  window.addEventListener('focus', function(){ rRefrescoVivo(); rSyncNube(); });
+  window.addEventListener('pageshow', function(){ rRefrescoVivo(); rSyncNube(); });
+  rLiveTimer = setInterval(function(){ if (document.visibilityState==='visible') rRefrescoVivo(); }, 8000);
+}
+
 /* ── alumnos de PRUEBA (demo) ──
    El dueño/administrador puede ser "cargado como alumno" por los entrenadores
    para probar, SIN tocar su cuenta real: estos alumnos viven solo en el
@@ -183,6 +218,7 @@ function rRenderEntrenador(){
   }
   var app = $('rAppProfe');
   app.classList.add('ver');
+  rIniciarLive();
   rIrPantalla('lista');
   try{ rSyncNube(); }catch(e){}   // cobros y ejercicios propios: nube + local
 }
