@@ -1049,7 +1049,41 @@ function bAbrirHoja(tipo, ref){
   b$('bVelo').classList.add('abierto');
 }
 function conectar(){
-  b$('bAtras').onclick = function(){ B.cerrar(); };
+  // ¿Hay algo en el plan nuevo que todavía no se guardó?
+  B._hayCambios = function(){
+    if(!B.plan) return false;
+    return DIAS.some(function(d){ return (B.plan[d[0]]||[]).length>0; });
+  };
+  // popup de advertencia al volver sin guardar
+  B.pedirVolver = function(){
+    if(!B._hayCambios()){ B._salir(); return; }
+    var v=document.createElement('div');
+    v.className='r-confirm-velo salir-velo';
+    v.innerHTML='<div class="r-confirm salir-plan">'+
+      '<div class="r-confirm-icon">⚠️</div>'+
+      '<b class="r-confirm-tit">¿Volver sin guardar?</b>'+
+      '<p class="r-confirm-msg">Armaste ejercicios en este plan. Si salís ahora sin guardar, esos cambios se pierdan.</p>'+
+      '<div class="r-confirm-bot">'+
+        '<button class="r-salir-si">💾 Guardar y volver</button>'+
+        '<button class="r-salir-no">Salir sin guardar</button>'+
+        '<button class="r-salir-cancel">Seguir acá</button>'+
+      '</div></div>';
+    document.body.appendChild(v);
+    var fin=function(){ v.classList.remove('ver'); setTimeout(function(){ v.remove(); },200); };
+    requestAnimationFrame(function(){ v.classList.add('ver'); });
+    v.addEventListener('click',function(ev){ if(ev.target===v) fin(); });
+    v.querySelector('.r-salir-cancel').onclick=fin;
+    v.querySelector('.r-salir-no').onclick=function(){ fin(); B._borrarBorrador && B._borrarBorrador(); B._salir(); };
+    v.querySelector('.r-salir-si').onclick=function(){ var b=v.querySelector('.r-salir-si'); b.textContent='Guardando…'; b.disabled=true; B.guardar(); };
+  };
+  B._salir = function(){
+    var ap=b$('rAppBuilder'); if(ap) ap.classList.remove('ver');
+    B.abierta=false;
+    if(R.entrenador && R.entrenador.usuario && typeof R.rVolverFicha==='function'){
+      try{ R.rVolverFicha(); }catch(e){}
+    }
+  };
+  b$('bAtras').onclick = function(){ B.pedirVolver(); };
   var bSalir = b$('bSalir');
   if (bSalir) bSalir.onclick = function(ev){
     ev.preventDefault(); ev.stopPropagation();
@@ -1164,7 +1198,8 @@ function conectar(){
     prev.forEach(function(e){ B.plan[B.dia].push({ id:nuevoId(), nombre:e.nombre, img:e.img||imgDe(e.nombre), emoji:e.emoji||'', series:e.series, reps:e.reps, carga:e.carga, nota:e.nota }); });
     bPintarMazo(); bPintarGrilla(); bPintarDias(); bToast('Día anterior repetido: '+prev.length+' ejercicios');
   };
-  b$('bGuardar').onclick=async function(){
+  b$('bGuardar').onclick=function(){ B.guardar(); };
+  B.guardar = async function(){
     var final={};
     DIAS.forEach(function(d){ final[d[0]]=B.plan[d[0]]; });
     if (B.demo){   // alumno de prueba: el plan queda solo en este dispositivo
@@ -1177,9 +1212,8 @@ function conectar(){
       }
       R.rGuardar(R.rDemoPlanKey(B.userId), final);
       B._borrarBorrador();
-      B.cerrar(); avisar('Plan guardado (prueba)');
+      B._salir(); avisar('Plan guardado (prueba)');
       R.entrenador.usuario.plan = final;
-      R.rVolverFicha();
       bOfrecerWhatsapp(B.nombreAlumno || B.nombre, final);
       return;
     }
@@ -1193,13 +1227,12 @@ function conectar(){
     var r = await Backend.guardarPlan(B.userId, final);
     if (r && r.error){ bToast(r.error); return; }
     B._borrarBorrador();
-    B.cerrar();
     avisar('Plan guardado');
     var uid=B.userId;
     var alumnos=await Backend.listarUsuarios();
     R.entrenador.alumnos=alumnos;
     R.entrenador.usuario=alumnos.find(function(x){return x.id===uid;})||R.entrenador.usuario;
-    R.rVolverFicha();
+    B._salir();
     bOfrecerWhatsapp(B.nombre, final);
   };
 }
@@ -1736,8 +1769,8 @@ R.atras = function(){
     v.classList.remove('ver'); v.classList.remove('abierto');
     return 'capa';
   }
-  // 1 · el constructor de planes (mazo del profe) → vuelve a la ficha/lista
-  if (visible(build)){ R.builder.cerrar(); return 'capa'; }
+  // 1 · el constructor de planes (mazo del profe) → avisa si hay cambios y vuelve
+  if (visible(build)){ R.builder.pedirVolver ? R.builder.pedirVolver() : R.builder.cerrar(); return 'capa'; }
   // 1b · panel del dueño (superadmin)
   if (R.atrasOwner){ var oo = R.atrasOwner(); if (oo !== 'fuera') return oo; }
   // 2 · espacio del ENTRENADOR
