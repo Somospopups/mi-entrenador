@@ -1,7 +1,12 @@
 /* ════════ REDISEÑO Mi Entrenador · pantallas nuevas ════════ */
 .r-app{ position:fixed; inset:0; z-index:60; display:none; flex-direction:column;
   max-width:520px; margin:0 auto; background:var(--fondo); overflow:hidden;
-  box-shadow:0 0 60px rgba(60,50,120,.18); }
+  box-shadow:0 0 60px rgba(60,50,120,.18);
+  /* las pantallas nuevas son siempre claras, aunque la app esté en modo oscuro */
+  --tinta:#23233f; --gris:#8d8bb0; --fondo:#f3f2fc; --carta:#ffffff;
+  --borde:#e4e7f3; color:var(--tinta); }
+.r-app input{ color:var(--tinta); }
+.r-app input::placeholder{ color:#a9a7c6; }
 .r-app.ver{ display:flex; }
 .r-manchas{ position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
 .r-manchas i{ position:absolute; border-radius:50%; filter:blur(60px); opacity:.28; animation:rFlota 14s ease-in-out infinite alternate; }
