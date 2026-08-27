@@ -76,6 +76,32 @@ function rCobrosKey(){ return CONFIG.CLAVE_DATOS+'_cobros_'+(sesion?sesion.id:'x
 function rCobros(){ return rLeer(rCobrosKey(), []); }
 function rGuardarCobros(p){ rGuardar(rCobrosKey(), p); }
 
+/* ── alumnos de PRUEBA (demo) ──
+   El dueño/administrador puede ser "cargado como alumno" por los entrenadores
+   para probar, SIN tocar su cuenta real: estos alumnos viven solo en el
+   dispositivo del profe (localStorage), nunca se suben a Supabase. */
+var DNI_DEMO = ['33245911'];   // DNI del dueño · se puede ampliar
+function esDniDemo(dni){
+  var d = String(dni||'').replace(/\D/g,'');
+  return DNI_DEMO.some(function(x){ return x===d; });
+}
+function rDemoKey(){ return CONFIG.CLAVE_DATOS+'_demoAlumnos_'+(sesion?sesion.id:'x'); }
+function rDemoAlumnos(){
+  var arr = rLeer(rDemoKey(), []);
+  return arr.map(function(u){
+    u.demo = true; u.activo = true;
+    u.plan = rLeer(rDemoPlanKey(u.id), null);
+    u.hechos = {};
+    return u;
+  });
+}
+function rDemoPlanKey(id){ return CONFIG.CLAVE_DATOS+'_demoPlan_'+(sesion?sesion.id:'x')+'_'+id; }
+function rGuardarDemoAlumno(u){
+  var arr = rLeer(rDemoKey(), []).filter(function(x){ return x.id!==u.id; });
+  arr.push({ id:u.id, dni:u.dni, nombre:u.nombre, telefono:u.telefono||'', rol:'alumno' });
+  rGuardar(rDemoKey(), arr);
+}
+
 function rEstadoAlumno(u){
   if (!u.activo) return ['gris','Cuenta desactivada'];
   var plan = planDe(u);
@@ -133,14 +159,21 @@ function rPintarLista(){
   rPintarAlumnos('');
   rHeadCobros();
 }
+async function rListarAlumnos(){
+  var reales = await Backend.listarUsuarios();
+  var demo = rDemoAlumnos().filter(function(d){
+    return !reales.some(function(u){ return String(u.dni).replace(/\D/g,'')===String(d.dni).replace(/\D/g,''); });
+  });
+  return demo.concat(reales);
+}
 async function rPintarAlumnos(filtro){
-  T.alumnos = await Backend.listarUsuarios();
+  T.alumnos = await rListarAlumnos();
   var f = (filtro||'').toLowerCase();
   var lista = T.alumnos.filter(function(u){
     return !f || u.nombre.toLowerCase().indexOf(f)>=0 || String(u.dni).indexOf(f.replace(/\D/g,''))>=0;
   }).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
   $('rListaAlu').innerHTML = lista.map(function(u,i){
-    var e = rEstadoAlumno(u);
+    var e = u.demo ? ['ambar','🧪 Alumno de prueba'] : rEstadoAlumno(u);
     return '<button class="r-alumno" data-id="'+u.id+'" style="animation-delay:'+(i*45)+'ms">'+
       '<span class="r-avatar">'+inicial(u.nombre)+'</span>'+
       '<span class="r-info"><b>'+esc(u.nombre)+'</b>'+
@@ -169,7 +202,9 @@ function rPintarFicha(){
       '<div class="r-cred"><span class="r-avatar">'+inicial(u.nombre)+'</span>'+
       '<div style="flex:1"><b>'+esc(u.nombre)+'</b><small>DNI '+esc(u.dni)+(u.telefono?' · '+esc(u.telefono):'')+'</small>'+
       '<div><button class="r-chato" id="rFWsp">WhatsApp</button>'+
-      '<button class="r-chato" id="rFClave">Blanquear clave</button></div></div></div>'+
+      (u.demo?'':'<button class="r-chato" id="rFClave">Blanquear clave</button>')+
+      (u.demo?'<span style="font-size:11px;font-weight:700;color:#d97706">🧪 Alumno de prueba · los datos quedan en este dispositivo</span>':'')+
+      '</div></div></div>'+
       '<button class="r-btn-prin" id="rFCrear"><span style="font-size:18px">+</span> Crear plan nuevo</button>'+
       '<button class="r-btn-abono" id="rFAbono">💵 Registrar abono mensual</button>'+
     '</div>'+
@@ -248,6 +283,10 @@ function soloDiasPlan(p){
 }
 async function rPintarProgFicha(u){
   var c = $('rFProg');
+  if (u.demo){
+    c.innerHTML = '<div class="r-vacio"><div class="r-g">🧪</div><b>Alumno de prueba.</b><br>Las marcas y el progreso no se guardan: es solo para que pruebes armar planes.</div>';
+    return;
+  }
   c.innerHTML = '<div class="r-caja">Cargando…</div>';
   var prog;
   try{ prog = await Backend.obtenerProgreso(u.id); }catch(e){ prog = { cargas:{} }; }
@@ -330,7 +369,7 @@ function rPintarFinanzas(){
       '<span class="r-m">'+rPlata(p.monto)+'</span></div>';
   }).join('') : '<p style="font-size:12.5px;color:var(--gris)">Todavía no registraste pagos este mes.</p>';
   var pagadores = {}; delMes.forEach(function(p){ pagadores[p.alumnoId]=true; });
-  Backend.listarUsuarios().then(function(alumnos){
+  rListarAlumnos().then(function(alumnos){
     var deben = alumnos.filter(function(u){ return u.activo && !pagadores[u.id]; });
     $('rFinFaltan').textContent = deben.length;
     $('rFinDeudas').innerHTML = deben.length ? deben.map(function(u){
@@ -366,6 +405,19 @@ function rHojaAlta(){
     if (!nombre){ rToast('Ponele el nombre', $('rAppProfe')); return; }
     if (!dni || String(dni).replace(/\D/g,'').length<7){ rToast('Falta el DNI', $('rAppProfe')); return; }
     $('rAltaCrear').textContent = 'Creando…';
+    // DNI del dueño: se crea como alumno de PRUEBA en este dispositivo, sin tocar su cuenta real
+    if (esDniDemo(dni)){
+      var idDemo = 'demo_'+String(dni).replace(/\D/g,'');
+      var ya = rDemoAlumnos().find(function(x){ return x.id===idDemo; });
+      var demoU = { id:idDemo, dni:String(dni).replace(/\D/g,''), nombre:nombre, telefono:tel, rol:'alumno', demo:true };
+      rGuardarDemoAlumno(demoU);
+      $('rAltaCrear').textContent='Crear cuenta';
+      rCerrarVelo(v); v.remove();
+      rToast('🧪 Alumno de prueba: no toca la cuenta real', $('rAppProfe'));
+      rHojaCredencial({ nombre:nombre, telefono:tel }, ya ? 'la misma de siempre' : 'demo123');
+      rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
+      return;
+    }
     var r = await Backend.crearUsuario({ nombre:nombre, dni:dni, telefono:tel, membresia:'1' });
     // ¿DNI repetido? si es un alumno propio, se sobrescribe (reactiva + datos nuevos + clave nueva)
     if (r.error && /ya existe|duplicate/i.test(r.error)){
@@ -465,8 +517,9 @@ function b$(id){ return document.getElementById(id); }
 function nuevoId(){ return 'e'+Date.now()+Math.floor(Math.random()*99999); }
 
 B.abrir = function(u){
-  B.userId = u.id; B.nombre = u.nombre;
-  B.vivos = u.plan ? JSON.parse(JSON.stringify(u.plan)) : null;
+  B.userId = u.id; B.nombre = u.nombre; B.demo = !!u.demo;
+  var planBase = u.demo ? rLeer(rDemoPlanKey(u.id), null) : u.plan;
+  B.vivos = planBase ? JSON.parse(JSON.stringify(planBase)) : null;
   B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] };  // plan nuevo: arranca vacío
   B.dia = claveDia(Date.now()); B.cat = 'todo';
   if (!$('rAppBuilder')){
@@ -720,6 +773,20 @@ function conectar(){
   b$('bGuardar').onclick=async function(){
     var final={};
     DIAS.forEach(function(d){ final[d[0]]=B.plan[d[0]]; });
+    if (B.demo){   // alumno de prueba: el plan queda solo en este dispositivo
+      var vivo = B.vivos;
+      if (vivo){
+        var vivoDias={}; DIAS.forEach(function(d){ vivoDias[d[0]]=Array.isArray(vivo[d[0]])?vivo[d[0]]:[]; });
+        if (planTieneAlgo(vivoDias) && JSON.stringify(vivoDias)!==JSON.stringify(final)){
+          final.__anterior = vivoDias; final.__fecha = fechaClave(Date.now());
+        } else if (vivo.__anterior){ final.__anterior=vivo.__anterior; final.__fecha=vivo.__fecha; }
+      }
+      rGuardar(rDemoPlanKey(B.userId), final);
+      B.cerrar(); avisar('Plan guardado (prueba)');
+      R.entrenador.usuario.plan = final;
+      R.rIrPantalla('ficha');
+      return;
+    }
     var vivo = B.vivos;
     if (vivo){
       var vivoDias={}; DIAS.forEach(function(d){ vivoDias[d[0]]=Array.isArray(vivo[d[0]])?vivo[d[0]]:[]; });
