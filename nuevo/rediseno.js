@@ -1087,6 +1087,7 @@ function conectar(){
       B.cerrar(); avisar('Plan guardado (prueba)');
       R.entrenador.usuario.plan = final;
       R.rVolverFicha();
+      bOfrecerWhatsapp(B.nombreAlumno || B.nombre, final);
       return;
     }
     var vivo = B.vivos;
@@ -1106,7 +1107,70 @@ function conectar(){
     R.entrenador.alumnos=alumnos;
     R.entrenador.usuario=alumnos.find(function(x){return x.id===uid;})||R.entrenador.usuario;
     R.rVolverFicha();
+    bOfrecerWhatsapp(B.nombre, final);
   };
+}
+
+/* ── mensaje amigable del plan + ofrecer enviarlo por WhatsApp ── */
+function bResumenEjercicio(e){
+  var partes = [];
+  if (e.series && e.reps) partes.push(e.series+' × '+e.reps);
+  else if (e.series) partes.push(e.series+' series');
+  else if (e.reps) partes.push(e.reps);
+  if (e.carga) partes.push(e.carga);
+  return '• ' + e.nombre + (partes.length ? ' ('+partes.join(' · ')+')' : '');
+}
+function bArmarMensajePlan(nombre, plan){
+  var LARGOS = { lun:'Lunes', mar:'Martes', mie:'Miércoles', jue:'Jueves', vie:'Viernes', sab:'Sábado', dom:'Domingo' };
+  var nombreCorto = String(nombre||'').split(' ')[0] || '';
+  var lineas = [];
+  lineas.push('¡Hola '+nombreCorto+'! 💪 Ya te dejé tu nueva rutina en la app Mi Entrenador.');
+  lineas.push('');
+  var total = 0;
+  DIAS.forEach(function(d){
+    var lista = plan[d[0]] || [];
+    if (!lista.length) return;
+    total++;
+    lineas.push('*'+LARGOS[d[0]]+'* ('+lista.length+' ejercicios)');
+    lista.forEach(function(e){
+      lineas.push(bResumenEjercicio(e));
+      if (e.nota) lineas.push('   ↳ '+e.nota);
+    });
+    lineas.push('');
+  });
+  if (!total){ lineas.push('Todavía no hay ejercicios cargados.'); lineas.push(''); }
+  lineas.push('Recordá:');
+  lineas.push('✅ Marcá cada ejercicio con ✓ si lo hiciste o ✗ si no salió.');
+  lineas.push('⚖️ Anotá los pesos que usás para ver tu progreso.');
+  lineas.push('');
+  lineas.push('Cualquier cosa me escribís. ¡A darle con todo! 🔥');
+  return lineas.join('\n');
+}
+function bOfrecerWhatsapp(nombre, plan){
+  var u = (R.entrenador && R.entrenador.usuario) || null;
+  var tel = u && u.telefono;
+  var link = null;
+  if (tel){
+    var d = String(tel).replace(/\D/g,'').replace(/^0+/,'');
+    if (d.length===10) d='549'+d; else if (d.length===12 && d.indexOf('54')===0) d='549'+d.slice(2);
+    if (d.length>=11){
+      var msg = bArmarMensajePlan(nombre, plan);
+      link = 'https://wa.me/'+d+'?text='+encodeURIComponent(msg);
+    }
+  }
+  R.rConfirmar({
+    icono:'📲', titulo:'¿Se lo enviamos por WhatsApp?',
+    mensaje: link ? 'Le mando a '+(u?u.nombre:nombre)+' un mensaje con su nuevo plan listo para entrenar.'
+                  : 'Este alumno no tiene WhatsApp cargado en su ficha. Podés enviárselo copiando el mensaje.',
+    okTexto: link ? 'Sí, enviar 💬' : 'Copiar mensaje',
+    cancelTexto: 'No, después'
+  }, function(){
+    if (link){ window.open(link, '_blank'); }
+    else {
+      var msg = bArmarMensajePlan(nombre, plan);
+      if (navigator.clipboard) navigator.clipboard.writeText(msg).then(function(){ bToast('Mensaje copiado'); });
+    }
+  });
 }
 
 /* ── gestos: toque=editar · deslizar=scroll · mantener y arrastrar=tomar ── */

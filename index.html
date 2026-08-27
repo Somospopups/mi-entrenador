@@ -754,6 +754,7 @@ var LIBRERIA = [
       <div class="fila-paletas">
         <div class="paletas" id="paletas"></div>
         <button class="btn-chico" id="btnAzar" style="width:100%;margin-top:8px">Sorprendeme: colores al azar</button>
+        <button class="btn-chico" id="btnResetColor" style="width:100%;margin-top:8px">Restablecer colores de fábrica</button>
       </div>
       <div class="campo"><label>Nombre de la app</label><input id="cfgNombre"></div>
       <div class="campo"><label>Precio sugerido de 1 mes</label><input id="cfgPrecio" inputmode="numeric"></div>
@@ -2839,6 +2840,10 @@ $('btnAzar').onclick = function(){
   var h = Math.floor(Math.random()*360);
   setColores(hslHex(h,.62,.55), hslHex(h+40+Math.floor(Math.random()*50),.6,.5));
   avisar('¡Nuevos colores!');
+};
+$('btnResetColor').onclick = function(){
+  setColores(CONFIG.COLOR_1, CONFIG.COLOR_2);
+  avisar('Colores restablecidos');
 };
 
 /* — subir logo (galería/cámara), achicado a 256px para que pese poco — */
