@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tu Entrenador — demo real</title>
+<style>
+  :root{ --c1:#7c3aed; --c2:#3b82f6; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:radial-gradient(1100px 650px at 18% -10%,#4c1d95 0%,transparent 55%),
+               radial-gradient(1000px 650px at 110% 110%,#1e3a8a 0%,transparent 55%), #15122b;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:20px; padding:26px 14px; color:#fff;
+  }
+  .titulo{ text-align:center; }
+  .titulo h1{ font-size:clamp(20px,4.4vw,32px); font-weight:900;
+    background:linear-gradient(135deg,#c4b5fd,#93c5fd); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .titulo p{ color:#b9b5e0; font-size:13.5px; margin-top:5px; }
+  .phone{ position:relative; width:320px; height:658px; border-radius:46px; background:#0c0a1b;
+    padding:11px; box-shadow:0 40px 90px rgba(0,0,0,.6), 0 0 0 2px rgba(255,255,255,.07); flex:0 0 auto; }
+  .pantalla{ position:relative; width:100%; height:100%; border-radius:36px; overflow:hidden; background:#fff; }
+  .pantalla iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; background:#fff; }
+  .notch{ position:absolute; top:11px; left:50%; transform:translateX(-50%); width:130px; height:26px;
+    background:#0c0a1b; border-radius:0 0 17px 17px; z-index:5; pointer-events:none; }
+  .texto{ text-align:center; max-width:360px; min-height:52px; }
+  .texto b{ display:block; font-size:16.5px; font-weight:800; transition:opacity .3s; }
+  .texto small{ display:block; color:#b9b5e0; font-size:13px; margin-top:5px; line-height:1.45; transition:opacity .3s; }
+  .dots{ display:flex; gap:7px; }
+  .dots i{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.25); transition:.3s; font-style:normal; }
+  .dots i.activa{ background:#a78bfa; width:22px; border-radius:4px; }
+  .nota{ color:#8f8bb5; font-size:11.5px; text-align:center; max-width:340px; line-height:1.5; }
+  .live{ position:absolute; top:22px; left:22px; z-index:6; font-size:9.5px; font-weight:900; letter-spacing:.5px;
+    background:rgba(0,0,0,.55); color:#7fffb0; padding:3px 8px; border-radius:99px; pointer-events:none; }
+</style>
+</head>
+<body>
+  <div class="titulo">
+    <h1>🏋️ Tu Entrenador</h1>
+    <p>La app real, funcionando · demo automática</p>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="live">● APP REAL</div>
+    <div class="pantalla">
+      <iframe id="app" title="App" src="index.html?demo=1#local" allow="clipboard-write"></iframe>
+    </div>
+  </div>
+
+  <div class="texto">
+    <b id="et">Cargando la app…</b>
+    <small id="es"></small>
+  </div>
+  <div class="dots" id="dots"></div>
+  <p class="nota">Cada escena es la aplicación de verdad con datos de ejemplo. Se reproduce sola en loop. 🔒 Todo se guarda en la nube al instante.</p>
+
+<script>
+  var ESCENAS=[
+    ["Un toque y entrás","Login simple. El dueño del gimnasio, los profes y los alumnos entran a su propia vista."],
+    ["El alumno ve su día","Plan del día en tarjetas: ejercicio, series, peso y tiempo. Los cuadritos marcan la sesión."],
+    ["Se marca deslizando","Deslizar a la derecha = hecho ✅, a la izquierda = no salió. Con animación, como en Tinder."],
+    ["Anotá el peso real","Si usaste otra carga, la tocás y la editás. El profe la ve en tu progreso."],
+    ["Sobrecarga inteligente","Cuando venís firme con un peso, la app te propone subir la carga. 🔥"],
+    ["Cambiar ejercicio","¿No podés hacer uno? El profe dejó alternativas permitidas: las canjeás con un toque. 🔄"],
+    ["Tu resumen semanal","Racha 🔥, días entrenando, volumen levantado y tu récord de peso. 🎉🏆"],
+    ["El profe ve a todos","Lista de alumnos con su estado: quién entrenó hoy, quién hace falta."],
+    ["Progreso de cada alumno","Cumplimiento, racha, pesos y avisos de 'listo para subir' con un toque. 📈"],
+    ["Armar planes arrastrando","Biblioteca de ejercicios, arrastrás al día, ponés series/peso y marcás alternativas. 🧑‍🏫"]
+  ];
+  var dots=document.getElementById('dots');
+  ESCENAS.forEach(function(_,i){ var d=document.createElement('i'); dots.appendChild(d); });
+  var last=-1;
+  function mostrar(i){
+    if(i===last) return; last=i;
+    var t=document.getElementById('et'), s=document.getElementById('es');
+    t.style.opacity=0; s.style.opacity=0;
+    setTimeout(function(){ t.textContent=ESCENAS[i][0]; s.textContent=ESCENAS[i][1]; t.style.opacity=1; s.style.opacity=1; },180);
+    document.querySelectorAll('#dots i').forEach(function(d,j){ d.classList.toggle('activa', j===i); });
+  }
+  window.addEventListener('message', function(ev){
+    var d=ev.data; if(d && typeof d.demoEscena==='number'){
+      // escenas de la app: 0 login,1 deck,2 swipe,3 peso,4 canje,5 semana,6 profe,7 ficha,8 builder
+      var mapa=[0,1,2,3,5,6,7,8,9];
+      mostrar(mapa[d.demoEscena]);
+    }
+  });
+  // por si el mensaje tarda, empezamos en 0
+  mostrar(0);
+</script>
+</body>
+</html>
