@@ -6,6 +6,30 @@
    planDe, LIBRERIA, etc.) y se monta encima con z-index alto.
    ════════════════════════════════════════════════════════════ */
 'use strict';
+/* ── helpers de tiempo GLOBALES (los usan el constructor del entrenador
+   y el mazo del alumno). No van dentro de ningún IIFE para que ambos los vean. */
+function tiempoSegundosDe(x){
+  if(x==null) return 0;
+  if(typeof x==='number' && isFinite(x)) return x>1000?Math.round(x/1000):x;
+  var s=String(x).toLowerCase().replace(',','.');
+  var m=s.match(/(\d+(?:\.\d+)?)\s*(min|mn|m|hs|h)/);
+  if(m){ var v=parseFloat(m[1]); if(m[2]==='hs'||m[2]==='h') v*=60; return Math.round(v*60); }
+  m=s.match(/(\d+)\s*[:']\s*(\d{1,2})/);
+  if(m) return parseInt(m[1],10)*60+parseInt(m[2],10);
+  m=s.match(/(\d+(?:\.\d+)?)/);
+  return m ? Math.round(parseFloat(m[1])) : 0;
+}
+function dFmtTiempo(seg){
+  seg=Math.max(0,Math.round(seg));
+  var m=Math.floor(seg/60), s=seg%60;
+  return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+}
+function tiempoTextoDe(e){
+  var seg = e && e.tiempo ? tiempoSegundosDe(e.tiempo) : 0;
+  if(!seg) return '';
+  if(seg>=60){ var m=seg/60; return (m%1?m.toFixed(1):m)+' min'; }
+  return seg+' seg';
+}
 (function(){
 var R = {};
 window.Rediseno = R;
@@ -1665,25 +1689,27 @@ function bGesto(el, tipo, idx){
     if(!st) return;
     var arrastraba=st.arrastrando, movio=st.seMovio, t=st.tipo, base=st.base, indx=st.idx;
     clearTimeout(st.timer);
-    if(arrastraba && movio){
-      if(t==='nuevo'){
-        if(bSobreMazo(ev.clientX,ev.clientY)) bAbrirHoja('biblio', base);
-      } else if(!bSobreMazo(ev.clientX,ev.clientY)){
-        B.plan[B.dia].splice(indx,1);
-        if(navigator.vibrate) navigator.vibrate([12,40,12]);
-        bPintarMazo(); bPintarGrilla(); bPintarDias();
-      } else {
-        var cards=[].slice.call(b$('bMazo').querySelectorAll('.r-pc'));
-        var destino=cards.length;
-        for(var i=0;i<cards.length;i++){ var r=cards[i].getBoundingClientRect(); if(ev.clientX<r.left+r.width/2){ destino=i; break; } }
-        var lista=B.plan[B.dia], item=lista.splice(indx,1)[0];
-        if(destino>indx) destino--;
-        lista.splice(Math.max(0,destino),0,item);
-        bPintarMazo(); bPintarGrilla();
+    try{
+      if(arrastraba && movio){
+        if(t==='nuevo'){
+          if(bSobreMazo(ev.clientX,ev.clientY)) bAbrirHoja('biblio', base);
+        } else if(!bSobreMazo(ev.clientX,ev.clientY)){
+          B.plan[B.dia].splice(indx,1);
+          if(navigator.vibrate) navigator.vibrate([12,40,12]);
+          bPintarMazo(); bPintarGrilla(); bPintarDias();
+        } else {
+          var cards=[].slice.call(b$('bMazo').querySelectorAll('.r-pc'));
+          var destino=cards.length;
+          for(var i=0;i<cards.length;i++){ var r=cards[i].getBoundingClientRect(); if(ev.clientX<r.left+r.width/2){ destino=i; break; } }
+          var lista=B.plan[B.dia], item=lista.splice(indx,1)[0];
+          if(destino>indx) destino--;
+          lista.splice(Math.max(0,destino),0,item);
+          bPintarMazo(); bPintarGrilla();
+        }
+        ultimoGesto=Date.now();
       }
-      ultimoGesto=Date.now();
-    }
-    limpiar();
+    }catch(e){ if(window&&window.console) console.error('soltar carta:', e); }
+    finally{ limpiar(); }   // SIEMPRE quitar el fantasma y restaurar la carta, aunque algo falle
   }
   el.addEventListener('pointerup', fin);
   el.addEventListener('pointercancel', limpiar);
@@ -1763,29 +1789,7 @@ function dToast(m){ var t=d$('rAppAlumno').querySelector('.r-toast'); t.textCont
 function dHoy(){ return claveDia(Date.now()); }
 function dPlan(){ return planDe(sesion); }
 function dLista(dia){ return dPlan()[dia]||[]; }
-/* ── tiempo de ejercicios por duración (plancha, trote, etc.) ── */
-function tiempoSegundosDe(x){
-  if(x==null) return 0;
-  if(typeof x==='number' && isFinite(x)) return x>1000?Math.round(x/1000):x;
-  var s=String(x).toLowerCase().replace(',','.');
-  var m=s.match(/(\d+(?:\.\d+)?)\s*(min|mn|m|hs|h)/);
-  if(m){ var v=parseFloat(m[1]); if(m[2]==='hs'||m[2]==='h') v*=60; return Math.round(v*60); }
-  m=s.match(/(\d+)\s*[:']\s*(\d{1,2})/);
-  if(m) return parseInt(m[1],10)*60+parseInt(m[2],10);
-  m=s.match(/(\d+(?:\.\d+)?)/);
-  return m ? Math.round(parseFloat(m[1])) : 0;
-}
-function dFmtTiempo(seg){
-  seg=Math.max(0,Math.round(seg));
-  var m=Math.floor(seg/60), s=seg%60;
-  return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
-}
-function tiempoTextoDe(e){
-  var seg = e && e.tiempo ? tiempoSegundosDe(e.tiempo) : 0;
-  if(!seg) return '';
-  if(seg>=60){ var m=seg/60; return (m%1?m.toFixed(1):m)+' min'; }
-  return seg+' seg';
-}
+/* (tiempoSegundosDe / dFmtTiempo / tiempoTextoDe son globales, definidas arriba) */
 /* timers de ejercicios por tiempo: T[ejId]={fin,total,corriendo,resto} */
 var dTimers = {};
 var dTimerInt = null;
