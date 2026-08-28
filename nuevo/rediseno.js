@@ -953,7 +953,24 @@ R.ocultarEntrenador = function(){
 (function(){
 var R = window.Rediseno;
 var B = { abierta:false, userId:null, nombre:'', plan:null, dia:'lun', cat:'todo',
-          editando:null, vivos:null, cargas:{} };
+          editando:null, vivos:null, cargas:{}, semana:1, maxSemana:1 };
+function bSemanaVacia(){ var s={}; DIAS.forEach(function(d){ s[d[0]]=[]; }); return s; }
+function bCambiarSemana(n){
+  // guarda la semana actual en B.semanas y pasa a la n
+  if(!B.semanas) B.semanas = {};
+  B.semanas[B.semana] = B.plan;
+  B.semana = n;
+  B.plan = (B.semanas[n] && planTieneAlgo(B.semanas[n])) ? B.semanas[n]
+        : (function(){ var s=bSemanaVacia(); B.semanas[n]=s; return s; })();
+  bPintarSemanas(); bPintarDias(); bPintarMazo(); bPintarGrilla();
+  bToast('Semana '+n);
+}
+function bPintarSemanas(){
+  var act=b$('bSemAct'), ant=b$('bSemAnt'), sig=b$('bSemSig');
+  if(act) act.textContent='Semana '+B.semana+(B.semana===B.maxSemana?'':' · '+B.maxSemana+' en total');
+  if(ant){ ant.disabled = B.semana<=1; ant.style.opacity = B.semana<=1?'.35':'1'; }
+  if(sig){ sig.textContent = B.semana>=B.maxSemana ? '+' : '›'; sig.title = B.semana>=B.maxSemana ? 'Agregar semana' : 'Semana siguiente'; }
+}
 R.builder = B;
 
 function b$(id){ return document.getElementById(id); }
@@ -961,9 +978,17 @@ function nuevoId(){ return 'e'+Date.now()+Math.floor(Math.random()*99999); }
 
 B.abrir = function(u){
   B.userId = u.id; B.nombre = u.nombre; B.demo = !!u.demo; B.prevDia = null;
+  B.semana = 1; B.maxSemana = 1; B.semanas = {};
   var planBase = u.demo ? R.rLeer(R.rDemoPlanKey(u.id), null) : u.plan;
   B.vivos = planBase ? JSON.parse(JSON.stringify(planBase)) : null;
   B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] };  // plan nuevo: arranca vacío
+  B.semanas[1] = B.plan;
+  // si el plan vigente ya tenía semanas extra guardadas, las recupera
+  if (B.vivos && B.vivos.__semanas){
+    Object.keys(B.vivos.__semanas).forEach(function(k){
+      var n=Number(k); if(n>1){ B.semanas[n]=JSON.parse(JSON.stringify(B.vivos.__semanas[n])); B.maxSemana=Math.max(B.maxSemana,n); }
+    });
+  }
   B.dia = claveDia(Date.now()); B.cat = 'todo';
   if (!$('rAppBuilder')){
     document.body.appendChild(crearEstructura());
@@ -1004,8 +1029,9 @@ function crearEstructura(){
     '<div class="r-head"><button class="r-atras" id="bAtras">‹</button>'+
       '<h1>Armar plan<small>Plan de <span id="bNombre"></span></small></h1>'+
       '<button class="r-salir-btn" id="bSalir" title="Cerrar sesión">🚪</button></div>'+
-    // PANEL IZQUIERDO (días, sesión, acciones y planes anteriores)
+    // PANEL IZQUIERDO (semanas, días, sesión, acciones y planes anteriores)
     '<div class="r-bpanel">'+
+      '<div class="r-semanas" id="bSemanas"><button class="r-sem-nav" id="bSemAnt" title="Semana anterior">‹</button><div class="r-sem-act" id="bSemAct">Semana 1</div><button class="r-sem-nav" id="bSemSig" title="Semana siguiente">+</button></div>'+
       '<div class="r-pildoras"><div class="r-pcentro" id="bDias"></div></div>'+
       '<div class="r-plan-zona"><div class="r-plan-titulo"><b>Sesión</b><span id="bAyuda"></span></div>'+
         '<div class="r-mazo" id="bMazo"></div></div>'+
@@ -1257,6 +1283,15 @@ function conectar(){
     }
   };
   b$('bAtras').onclick = function(){ B.pedirVolver(); };
+  var sAnt=b$('bSemAnt'), sSig=b$('bSemSig');
+  if(sAnt) sAnt.onclick=function(){ if(B.semana>1) bCambiarSemana(B.semana-1); };
+  if(sSig) sSig.onclick=function(){
+    if(B.semana < B.maxSemana){ bCambiarSemana(B.semana+1); return; }
+    // semana nueva: pide confirmación si la actual está vacía
+    if(!planTieneAlgo(B.plan)){ bToast('Primero armá algo en esta semana'); return; }
+    B.maxSemana++; bCambiarSemana(B.maxSemana);
+  };
+  bPintarSemanas();
   var bSalir = b$('bSalir');
   if (bSalir) bSalir.onclick = function(ev){
     ev.preventDefault(); ev.stopPropagation();
@@ -1388,8 +1423,14 @@ function conectar(){
   };
   b$('bGuardar').onclick=function(){ B.guardar(); };
   B.guardar = async function(){
+    B.semanas[B.semana] = B.plan;   // sincroniza la semana en edición
     var final={};
-    DIAS.forEach(function(d){ final[d[0]]=B.plan[d[0]]; });
+    var w1 = B.semanas[1] || B.plan;
+    DIAS.forEach(function(d){ final[d[0]] = w1[d[0]]; });
+    // semanas extra del programa (periodización): semana 1 es el plan en vivo
+    var extras={}; var hayExtras=false;
+    for (var n=2; n<=B.maxSemana; n++){ if(B.semanas[n] && planTieneAlgo(B.semanas[n])){ extras[n]=B.semanas[n]; hayExtras=true; } }
+    if(hayExtras) final.__semanas = extras;
     if (B.demo){   // alumno de prueba: el plan queda solo en este dispositivo
       var vivo = B.vivos;
       if (vivo){
