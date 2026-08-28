@@ -366,7 +366,13 @@
 .r-dibujo{ position:relative; flex:1; display:grid; place-items:center; overflow:hidden;
   background:linear-gradient(160deg,rgba(124,58,237,.06),rgba(59,130,246,.06)); }
 .r-dibujo img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:6px;
-  opacity:0; transition:opacity .55s ease; }
+  opacity:0; transition:opacity .55s ease;
+  pointer-events:none; -webkit-user-drag:none; user-select:none; -webkit-user-select:none; }
+/* ningún elemento interno de la carta captura el gesto: se agarra desde cualquier punto */
+.r-dcarta img, .r-dcarta h2, .r-dcarta i, .r-dcarta span, .r-dcarta div{ -webkit-user-drag:none; }
+.r-dcarta .r-dibujo, .r-dcarta .r-datos, .r-dcarta .r-dibujo *{ pointer-events:none; }
+/* la pastilla de peso sí se sigue pudiendo tocar */
+.r-dcarta .r-pastillas [data-peso]{ pointer-events:auto; }
 .r-dibujo img.viendo{ opacity:1; }
 .r-dibujo .r-dib-emoji{ font-size:110px; }
 .r-num-ej{ position:absolute; top:16px; left:16px; background:rgba(35,35,63,.78); color:#fff; font-size:13px;
@@ -395,7 +401,8 @@
   border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.8); font-size:20px; color:var(--tinta);
   display:none; place-items:center; box-shadow:0 6px 16px rgba(60,50,120,.18); }
 .r-nav-dia.vis{ display:grid; }
-.r-nav-dia.izq{ left:14px; } .r-nav-dia.der{ right:14px; }
+/* flechas de pasar carta retiradas: el mazo se maneja solo con deslizar/✓✗ */
+.r-nav-dia{ display:none !important; }
 .r-deck-botones{ position:absolute; bottom:32px; left:0; right:0; z-index:6; display:flex; gap:30px;
   justify-content:center; align-items:center; }
 .r-bbtn{ width:68px; height:68px; border-radius:50%; font-size:27px; font-weight:900;
