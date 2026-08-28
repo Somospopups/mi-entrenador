@@ -446,6 +446,16 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
   /* el panel del profe/constructor a pantalla completa (oculta la app vieja) */
   #rAppProfe, #rAppBuilder{ max-width:none; }
 
+  /* ── MAZO DEL ALUMNO en PC: panel a pantalla completa (fondo claro) y el
+        deck centrado en una columna tipo teléfono, sin ver la app vieja atrás ── */
+  #rAppAlumno{ max-width:none; background:var(--fondo); box-shadow:none; }
+  #rAppAlumno .r-deck-top,
+  #rAppAlumno .r-deck-puntos{ max-width:480px; margin-left:auto; margin-right:auto; }
+  #rAppAlumno .r-deck-botones{ left:50%; right:auto; width:min(480px,92vw); transform:translateX(-50%); justify-content:center; }
+  #rAppAlumno .r-deck-pista{ left:50%; right:auto; width:min(480px,92vw); transform:translateX(-50%); }
+  #rAppAlumno .r-deck-zona{ left:50%; right:auto; width:min(480px,92vw); transform:translateX(-50%); }
+  #rAppAlumno .r-deck-fin{ width:min(480px,92vw); left:50%; right:auto; transform:translateX(-50%); }
+
   /* ── ESCRITORIO DE DOS PANELES (profe) ── */
   #rAppProfe .r-head{ max-width:1400px; margin:0 auto; padding:22px 30px 6px; }
   #rAppProfe .r-head h1{ font-size:23px; }
