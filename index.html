@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#4f7df2">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="nuevo/rediseno.css?v=63">
+<link rel="stylesheet" href="nuevo/rediseno.css?v=64">
 <title>Mi Entrenador · Ingreso</title>
 <!-- ============================================================
      PROTOTIPO REUTILIZABLE · Login con DNI + Panel de Administración
@@ -746,15 +746,8 @@ var LIBRERIA = [
       <div class="logo-zona">
         <div class="logo-prev" id="logoPrev"></div>
         <button class="btn-chico" id="btnSubirLogo">Subir / elegir de la galería</button>
-        <button class="btn-chico" id="btnColoresLogo">Usar los colores del logo</button>
         <button class="btn-chico" id="btnQuitarLogo">Quitar</button>
         <input type="file" id="inputLogo" accept="image/*" hidden>
-      </div>
-      <label style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Colores de la app</label>
-      <div class="fila-paletas">
-        <div class="paletas" id="paletas"></div>
-        <button class="btn-chico" id="btnAzar" style="width:100%;margin-top:8px">Sorprendeme: colores al azar</button>
-        <button class="btn-chico" id="btnResetColor" style="width:100%;margin-top:8px">Restablecer colores de fábrica</button>
       </div>
       <div class="campo"><label>Nombre de la app</label><input id="cfgNombre"></div>
       <div class="campo"><label>Precio sugerido de 1 mes</label><input id="cfgPrecio" inputmode="numeric"></div>
@@ -2774,7 +2767,13 @@ function guardarMarca(cambios){
   guardar(CONFIG.CLAVE_DATOS + '_marca', m);
   aplicarMarca();
 }
-function setColores(c1, c2){ guardarMarca({ c1:c1, c2:c2 }); pintarPaletas(); }
+// Personalización de colores: RETIRADA. El tema violeta/azul es fijo de la marca.
+function setColores(){ /* sin función: los colores son fijos */ }
+function pintarLogo(){
+  var prev = $('logoPrev'); if(!prev) return;
+  var m = leerMarca();
+  prev.innerHTML = m.logo ? '<img src="'+m.logo+'" alt="logo">' : LOGO_SVG;
+}
 
 /* — conversores de color — */
 function aHsl(r,g,b){
@@ -2823,29 +2822,7 @@ function coloresDesdeLogo(dataUrl, listo){
   img.src=dataUrl;
 }
 
-function pintarPaletas(){
-  var m = leerMarca(), c1 = m.c1||CONFIG.COLOR_1, c2 = m.c2||CONFIG.COLOR_2;
-  $('paletas').innerHTML = PALETAS.map(function(p,i){
-    var activa = (p.c1===c1 && p.c2===c2) ? ' activa' : '';
-    return '<button class="paleta'+activa+'" data-paleta="'+i+'" title="'+p.nombre+'"'+
-      ' style="background:linear-gradient(135deg,'+p.c1+','+p.c2+')"><span>'+p.nombre+'</span></button>';
-  }).join('');
-  document.querySelectorAll('[data-paleta]').forEach(function(b){
-    b.onclick = function(){ var p = PALETAS[Number(b.getAttribute('data-paleta'))]; setColores(p.c1, p.c2); avisar(p.nombre); };
-  });
-  var logo = m.logo;
-  $('logoPrev').innerHTML = logo ? '<img src="'+logo+'" alt="logo">' : LOGO_SVG;
-}
-$('btnAzar').onclick = function(){
-  var h = Math.floor(Math.random()*360);
-  setColores(hslHex(h,.62,.55), hslHex(h+40+Math.floor(Math.random()*50),.6,.5));
-  avisar('¡Nuevos colores!');
-};
-$('btnResetColor').onclick = function(){
-  setColores(CONFIG.COLOR_1, CONFIG.COLOR_2);
-  avisar('Colores restablecidos');
-};
-
+function pintarPaletas(){ pintarLogo(); }  // paletas retiradas: solo refresca el logo
 /* — subir logo (galería/cámara), achicado a 256px para que pese poco — */
 $('btnSubirLogo').onclick = function(){ $('inputLogo').click(); };
 $('inputLogo').addEventListener('change', function(){
@@ -2860,30 +2837,23 @@ $('inputLogo').addEventListener('change', function(){
       cv.width = Math.max(1, Math.round(img.width*esc)); cv.height = Math.max(1, Math.round(img.height*esc));
       cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
       guardarMarca({ logo: cv.toDataURL('image/png') });
-      pintarPaletas(); avisar('Logo guardado');
+      pintarLogo(); avisar('Logo guardado');
     };
     img.src = lector.result;
   };
   lector.readAsDataURL(archivo);
   this.value = '';
 });
-$('btnQuitarLogo').onclick = function(){ guardarMarca({ logo:null }); pintarPaletas(); avisar('Logo quitado'); };
-$('btnColoresLogo').onclick = function(){
-  var m = leerMarca();
-  if (!m.logo){ avisar('Primero subí un logo'); return; }
-  coloresDesdeLogo(m.logo, function(colores){
-    if (!colores){ avisar('El logo no tiene colores vivos: elegí una paleta'); return; }
-    setColores(colores[0], colores[1]); avisar('Colores del logo aplicados');
-  });
-};
+$('btnQuitarLogo').onclick = function(){ guardarMarca({ logo:null }); pintarLogo(); avisar('Logo quitado'); };
 
 /* configuración de la marca (persistida) */
 function aplicarMarca(){
   var extra = leerMarca();
   if (extra.nombre) CONFIG.APP_NOMBRE = extra.nombre;
   if (extra.precio) CONFIG.PRECIO_MES = extra.precio;
-  document.documentElement.style.setProperty('--c1', extra.c1 || CONFIG.COLOR_1);
-  document.documentElement.style.setProperty('--c2', extra.c2 || CONFIG.COLOR_2);
+  // Colores de marca FIJOS (violeta/azul): ya no se personalizan por usuario.
+  document.documentElement.style.setProperty('--c1', CONFIG.COLOR_1);
+  document.documentElement.style.setProperty('--c2', CONFIG.COLOR_2);
   document.title = CONFIG.APP_NOMBRE + ' · Ingreso';
   document.querySelectorAll('[data-marca-nombre]').forEach(function(n){ n.textContent = CONFIG.APP_NOMBRE; });
   document.querySelectorAll('[data-marca-emoji]').forEach(function(n){
@@ -2924,7 +2894,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   reanudarSiHabiaSesion();
 })();
 </script>
-<script src="nuevo/rediseno.js?v=63"></script>
+<script src="nuevo/rediseno.js?v=64"></script>
 <script>
 /* cuando el alumno vuelve del tab Progreso al tab Hoy, re-monta el mazo nuevo */
 document.addEventListener('click', function(ev){

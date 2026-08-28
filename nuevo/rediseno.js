@@ -1955,14 +1955,6 @@ function crearEstructura(){
           '<input id="oDni" inputmode="numeric" placeholder="DNI de la cuenta" class="r-busca" style="margin:0;width:auto;flex:1">'+
           '<button class="r-chato" id="oBuscar" style="flex:0 0 auto">Buscar</button></div>'+
         '<div id="oRes" style="margin-top:12px"></div></div>'+
-      '<div class="r-caja" style="margin-bottom:14px">'+
-        '<h3>🎨 Colores de la app</h3>'+
-        '<p style="font-size:12.5px;color:var(--gris);margin:2px 0 10px;line-height:1.4">Elegí una paleta: se aplica a la app para todos los entrenadores y alumnos.</p>'+
-        '<div class="o-paletas" id="oPaletas"></div>'+
-        '<div style="display:flex;gap:8px;margin-top:12px">'+
-          '<button class="r-chato" id="oAzar" style="flex:1;justify-content:center">🎲 Colores al azar</button>'+
-          '<button class="r-chato" id="oResetColor" style="flex:1;justify-content:center">↺ De fábrica</button>'+
-        '</div></div>'+
       '<p style="font-size:10.5px;color:var(--gris);text-align:center;line-height:1.5">Los entrenadores solo pueden sobrescribir <b>sus propios</b> alumnos.<br>Si un DNI está tomado por otra cuenta, liberalo desde acá.</p>'+
     '</div>'+
     '<div class="r-toast" id="rOwnToast"></div>';
@@ -1977,37 +1969,9 @@ R.renderOwner = function(){
   var buscar = function(){ oBuscar(); };
   o$('oBuscar').onclick = buscar;
   o$('oDni').addEventListener('keydown', function(e){ if(e.key==='Enter') buscar(); });
-  oPintarColores();
   oRenderEntrenadores();
   if (o$('oRecargar')) o$('oRecargar').onclick = function(){ oRenderEntrenadores(); oToast('↺ Actualizado'); };
-  if (o$('oAzar')) o$('oAzar').onclick = function(){
-    if (typeof setColores!=='function'){ oToast('No disponible en modo prueba'); return; }
-    var h=Math.floor(Math.random()*360);
-    setColores(hslHex(h,.62,.55), hslHex(h+40+Math.floor(Math.random()*50),.6,.5));
-    oPintarColores(); oToast('🎲 Colores al azar');
-  };
-  if (o$('oResetColor')) o$('oResetColor').onclick = function(){
-    if (typeof setColores!=='function'){ oToast('No disponible en modo prueba'); return; }
-    setColores(CONFIG.COLOR_1, CONFIG.COLOR_2);
-    oPintarColores(); oToast('↺ Colores de fábrica');
-  };
 };
-function oPintarColores(){
-  var caja = o$('oPaletas'); if(!caja) return;
-  if (typeof PALETAS==='undefined' || typeof leerMarca!=='function'){ caja.innerHTML=''; return; }
-  var m = leerMarca(), c1 = m.c1||CONFIG.COLOR_1, c2 = m.c2||CONFIG.COLOR_2;
-  caja.innerHTML = PALETAS.map(function(p,i){
-    var activa = (p.c1===c1 && p.c2===c2) ? ' activa' : '';
-    return '<button class="o-paleta'+activa+'" data-p="'+i+'" title="'+p.nombre+'" style="background:linear-gradient(135deg,'+p.c1+','+p.c2+')"><span>'+p.nombre+'</span></button>';
-  }).join('');
-  caja.querySelectorAll('.o-paleta').forEach(function(b){
-    b.onclick = function(){
-      if (typeof setColores!=='function'){ oToast('No disponible en modo prueba'); return; }
-      var p = PALETAS[Number(b.getAttribute('data-p'))];
-      setColores(p.c1, p.c2); oPintarColores(); oToast(p.nombre);
-    };
-  });
-}
 R.ocultarOwner = function(){ var a=o$('rAppOwner'); if(a) a.classList.remove('ver'); };
 
 async function oRenderEntrenadores(){
