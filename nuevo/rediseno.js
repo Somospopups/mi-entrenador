@@ -31,6 +31,51 @@ function rToast(msg, root){
 function rAbrirVelo(velo){ velo.classList.add('abierto'); }
 function rCerrarVelo(velo){ velo.classList.remove('abierto'); }
 
+/* Hoja modal de entrada de texto (reemplaza prompt nativo). cb(valor|null) */
+function rHojaInput(opts, cb){
+  var existente = $('rVeloInput'); if (existente) existente.remove();
+  var v = rEl(rVeloBase('rVeloInput',
+    '<b style="font-size:16px">'+esc(opts.titulo||'')+'</b>'+
+    (opts.mensaje?'<small style="color:var(--gris);display:block;margin:3px 0 12px">'+esc(opts.mensaje)+'</small>':'')+
+    '<div class="r-campo" style="margin-top:8px"><label>'+esc(opts.label||'')+'</label>'+
+    '<input id="rInpTexto" placeholder="'+esc(opts.placeholder||'')+'" value="'+esc(opts.valor||'')+'"></div>'+
+    '<div class="r-hb"><button class="r-cancela" id="rInpNo">Cancelar</button>'+
+    '<button class="r-listo" id="rInpSi">'+esc(opts.okTexto||'Aceptar')+'</button></div>'));
+  var host = opts.host || document.body;
+  host.appendChild(v); rAbrirVelo(v);
+  function cerrar(val){ rCerrarVelo(v); setTimeout(function(){ v.remove(); },220); cb && cb(val); }
+  v.onclick = function(ev){ if(ev.target===v) cerrar(null); };
+  v.querySelector('#rInpNo').onclick=function(){ cerrar(null); };
+  var inp=v.querySelector('#rInpTexto');
+  v.querySelector('#rInpSi').onclick=function(){ var val=inp.value.trim(); if(!val){ inp.focus(); return; } cerrar(val); };
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var val=inp.value.trim(); if(val) cerrar(val); } });
+  setTimeout(function(){ inp.focus(); },320);
+}
+
+/* Hoja modal para elegir de una lista (reemplaza prompt con opciones).
+   items: [{id, titulo, sub, emoji}] → cb(item|null) */
+function rHojaLista(opts, items, cb){
+  var existente = $('rVeloPick'); if (existente) existente.remove();
+  var filas = items.length ? items.map(function(it,i){
+    return '<button class="r-pick" data-i="'+i+'"><span class="r-pick-em">'+(it.emoji||'📄')+'</span>'+
+      '<span class="r-pick-tx"><b>'+esc(it.titulo)+'</b>'+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span>'+
+      '<span class="r-pick-fle">›</span></button>'; }).join('')
+    : '<p style="color:var(--gris);font-size:13px;text-align:center;padding:14px">'+esc(opts.vacio||'No hay opciones')+'</p>';
+  var v = rEl(rVeloBase('rVeloPick',
+    '<b style="font-size:16px">'+esc(opts.titulo||'Elegí una opción')+'</b>'+
+    (opts.mensaje?'<small style="color:var(--gris);display:block;margin:3px 0 12px">'+esc(opts.mensaje)+'</small>':'')+
+    '<div class="r-pick-lista" style="margin-top:10px;display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow-y:auto">'+filas+'</div>'+
+    '<div class="r-hb"><button class="r-cancela" id="rPickNo" style="width:100%">Cancelar</button></div>'));
+  var host = opts.host || document.body;
+  host.appendChild(v); rAbrirVelo(v);
+  function cerrar(it){ rCerrarVelo(v); setTimeout(function(){ v.remove(); },220); cb && cb(it); }
+  v.onclick=function(ev){ if(ev.target===v) cerrar(null); };
+  v.querySelector('#rPickNo').onclick=function(){ cerrar(null); };
+  v.querySelectorAll('.r-pick').forEach(function(b){
+    b.onclick=function(){ var it=items[Number(b.getAttribute('data-i'))]; cerrar(it); };
+  });
+}
+
 /* ── Confirmación PROPIA de la app (reemplaza el confirm() del navegador) ──
    rConfirmar(opts, onOk, onCancel)  · onCancel se dispara al cancelar/tocar fondo. */
 function rConfirmar(opts, onOk, onCancel){
@@ -392,6 +437,7 @@ function rFichaHTML(u, conAtras){
       '<div class="r-cred"><span class="r-avatar">'+inicial(u.nombre)+'</span>'+
       '<div style="flex:1"><b>'+esc(u.nombre)+'</b><small>DNI '+esc(u.dni)+(u.telefono?' · '+esc(u.telefono):'')+'</small>'+
       '<div><button class="r-chato" id="rFWsp">💬 WhatsApp</button>'+
+      '<button class="r-chato" id="rFEditar">✏️ Editar datos</button>'+
       (u.demo?'<span style="font-size:11px;font-weight:700;color:#d97706">🧪 Alumno de prueba · los datos quedan en este dispositivo</span>':'')+
       '</div></div></div>'+
       '<button class="r-btn-prin" id="rFCrear"><span style="font-size:18px">+</span> Crear plan nuevo</button>'+
@@ -414,6 +460,8 @@ function rConectarFicha(wrap, u){
     if (!link){ rToast('Este alumno no tiene WhatsApp cargado', $('rAppProfe')); return; }
     window.open(link, '_blank');
   };
+  var btnEditar = wrap.querySelector('#rFEditar');
+  if (btnEditar) btnEditar.onclick = function(){ rHojaEditarAlumno(u); };
   var btnClave = wrap.querySelector('#rFClave');
   if (btnClave) btnClave.onclick = function(){
     rConfirmar({ icono:'🔑', titulo:'¿Blanquear la contraseña?', mensaje:u.nombre+' tendrá que elegir una nueva en su próximo ingreso.', okTexto:'Blanquear' }, function(){
@@ -709,6 +757,47 @@ function rHojaAlta(){
     rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
   };
 }
+function rHojaEditarAlumno(u){
+  var existente = $('rVeloEdit'); if (existente) existente.remove();
+  var v = rEl(rVeloBase('rVeloEdit',
+    '<b style="font-size:17px">✏️ Editar datos</b>'+
+    '<small style="color:var(--gris);display:block;margin:3px 0 14px">'+esc(u.nombre)+(u.demo?' · alumno de prueba':'')+'</small>'+
+    '<div class="r-campo"><label>Nombre y apellido</label><input id="rEdNombre" value="'+esc(u.nombre||'')+'"></div>'+
+    '<div class="r-campo"><label>WhatsApp</label><input id="rEdTel" inputmode="tel" value="'+esc(u.telefono||'')+'" placeholder="351 000 0000"></div>'+
+    '<button class="r-btn-prin" id="rEdGuardar">Guardar cambios</button>'));
+  $('rAppProfe').appendChild(v);
+  rAbrirVelo(v);
+  v.onclick = function(ev){ if(ev.target===v) rCerrarVelo(v); };
+  setTimeout(function(){ var i=$('rEdNombre'); if(i) i.focus(); },320);
+  $('rEdGuardar').onclick = async function(){
+    var nombre=$('rEdNombre').value.trim(), tel=$('rEdTel').value.trim();
+    if(!nombre){ rToast('Ponele el nombre', $('rAppProfe')); return; }
+    var btn=$('rEdGuardar'); btn.textContent='Guardando…';
+    if (u.demo){
+      var lista = rDemoAlumnos();
+      var en = lista.find(function(x){return x.id===u.id;});
+      if(en){ en.nombre=nombre; en.telefono=tel; rGuardarDemoAlumno(en); }
+      rCerrarVelo(v); setTimeout(function(){ v.remove(); },220);
+      rToast('Datos actualizados ✓', $('rAppProfe'));
+      rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
+      if (R.entrenador && R.entrenador.usuario && R.entrenador.usuario.id===u.id){ R.entrenador.usuario.nombre=nombre; R.entrenador.usuario.telefono=tel; }
+      return;
+    }
+    var r = await Backend.actualizarPerfil(u.id, { nombre:nombre, telefono:tel });
+    btn.textContent='Guardar cambios';
+    if (r && r.error){ rToast(r.error, $('rAppProfe')); return; }
+    rCerrarVelo(v); setTimeout(function(){ v.remove(); },220);
+    rToast('Datos actualizados ✓', $('rAppProfe'));
+    try{
+      var alumnos = await Backend.listarUsuarios();
+      R.entrenador.alumnos = alumnos;
+      var actual = alumnos.find(function(x){return x.id===u.id;});
+      if (actual && R.entrenador.usuario && R.entrenador.usuario.id===u.id) R.entrenador.usuario = actual;
+      rPintarAlumnos($('rBuscaAlu')?$('rBuscaAlu').value:'');
+    }catch(e){}
+  };
+}
+
 function rHojaCredencial(u, password, opts){
   opts = opts || {};
   var existente = $('rVeloCred'); if (existente) existente.remove();
@@ -1174,30 +1263,44 @@ function conectar(){
   b$('bPlantillas').onclick=function(){ b$('bVeloUtil').classList.add('abierto'); };
   b$('bVeloUtil').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   b$('bUtilGuardar').onclick=function(){
-    var nombre=prompt('Nombre de la plantilla:'); if(!nombre) return;
+    b$('bVeloUtil').classList.remove('abierto');
     if(!planTieneAlgo(B.plan)){ bToast('El plan está vacío'); return; }
-    var k=CONFIG.CLAVE_DATOS+'_plantillas_'+sesion.id, g=(function(){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};} })();
-    g[nombre]=B.plan; try{ localStorage.setItem(k, JSON.stringify(g)); }catch(e){}
-    b$('bVeloUtil').classList.remove('abierto'); bToast('Plantilla guardada');
+    rHojaInput({ host:b$('rAppBuilder'), titulo:'Guardar plantilla', label:'Nombre de la plantilla',
+      placeholder:'Ej: Fuerza · semana 1', okTexto:'Guardar' }, function(nombre){
+      if(!nombre) return;
+      var k=CONFIG.CLAVE_DATOS+'_plantillas_'+sesion.id, g=(function(){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};} })();
+      g[nombre]=B.plan; try{ localStorage.setItem(k, JSON.stringify(g)); }catch(e){}
+      bToast('Plantilla guardada ✓');
+    });
   };
   b$('bUtilUsar').onclick=function(){
+    b$('bVeloUtil').classList.remove('abierto');
     var k=CONFIG.CLAVE_DATOS+'_plantillas_'+sesion.id, g=(function(){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};} })();
     var nombres=Object.keys(g);
     if(!nombres.length){ bToast('No hay plantillas guardadas'); return; }
-    var nombre=prompt('¿Cuál plantilla?\n'+nombres.join('\n')); if(!nombre||!g[nombre]) return;
-    B.plan = JSON.parse(JSON.stringify(g[nombre]));
-    ['lun','mar','mie','jue','vie','sab','dom'].forEach(function(d){ if(!Array.isArray(B.plan[d])) B.plan[d]=[]; });
-    b$('bVeloUtil').classList.remove('abierto'); bPintarDias(); bPintarMazo(); bPintarGrilla(); bToast('Plantilla aplicada: recordá Guardar');
+    rHojaLista({ host:b$('rAppBuilder'), titulo:'Usar plantilla', vacio:'No hay plantillas guardadas' },
+      nombres.map(function(n){ var ej=Object.keys(g[n]).reduce(function(s,dd){ return s+((g[n][dd]||[]).length); },0);
+        return { id:n, titulo:n, sub:ej+' ejercicios', emoji:'📋' }; }), function(it){
+      if(!it) return;
+      B.plan = JSON.parse(JSON.stringify(g[it.id]));
+      ['lun','mar','mie','jue','vie','sab','dom'].forEach(function(d){ if(!Array.isArray(B.plan[d])) B.plan[d]=[]; });
+      bPintarDias(); bPintarMazo(); bPintarGrilla(); bToast('Plantilla aplicada: recordá Guardar');
+    });
   };
   b$('bUtilCopiar').onclick=function(){
+    b$('bVeloUtil').classList.remove('abierto');
     var otros = (R.entrenador.alumnos||[]).filter(function(u){ return u.id!==B.userId && planTieneAlgo(planDe(u)); });
     if(!otros.length){ bToast('Ningún otro alumno con plan'); return; }
-    var nombre=prompt('¿Copiar el plan de quién?\n'+otros.map(function(u,i){ return (i+1)+'. '+u.nombre; }).join('\n'), '1');
-    var idx=parseInt(nombre,10)-1; if(isNaN(idx)||!otros[idx]) return;
-    B.plan = planVacio();
-    var p=planDe(otros[idx]);
-    DIAS.forEach(function(d){ B.plan[d[0]]=(p[d[0]]||[]).map(function(e){ return { id:nuevoId(), nombre:e.nombre, img:e.img||imgDe(e.nombre), emoji:e.emoji||'', series:e.series, reps:e.reps, carga:e.carga, nota:e.nota }; }); });
-    b$('bVeloUtil').classList.remove('abierto'); bPintarDias(); bPintarMazo(); bPintarGrilla(); bToast('Plan copiado: recordá Guardar');
+    rHojaLista({ host:b$('rAppBuilder'), titulo:'Copiar plan de…', vacio:'Ningún otro alumno con plan' },
+      otros.map(function(u){ return { id:u.id, titulo:u.nombre, sub:'Plan cargado', emoji:'👤' }; }),
+      function(it){
+        if(!it) return;
+        var src = otros.find(function(u){ return u.id===it.id; });
+        B.plan = planVacio();
+        var p=planDe(src);
+        DIAS.forEach(function(d){ B.plan[d[0]]=(p[d[0]]||[]).map(function(e){ return { id:nuevoId(), nombre:e.nombre, img:e.img||imgDe(e.nombre), emoji:e.emoji||'', series:e.series, reps:e.reps, carga:e.carga, nota:e.nota }; }); });
+        bPintarDias(); bPintarMazo(); bPintarGrilla(); bToast('Plan copiado: recordá Guardar');
+      });
   };
   b$('bRepetir').onclick=function(){
     var fuente = (B.vivos && B.vivos.__anterior) || (B.vivos && planTieneAlgo(B.vivos) ? B.vivos : null);
@@ -1839,6 +1942,13 @@ function crearEstructura(){
       '<button class="r-salir-btn" id="oSalir" title="Cerrar sesión">🚪</button></div>'+
     '<div style="padding:8px 16px 30px;overflow-y:auto;flex:1">'+
       '<div class="r-caja" style="margin-bottom:14px">'+
+        '<h3>📊 Resumen</h3><div id="oResumen" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div></div>'+
+      '<div class="r-caja" style="margin-bottom:14px">'+
+        '<h3>👥 Entrenadores</h3>'+
+        '<p style="font-size:12.5px;color:var(--gris);margin:2px 0 10px;line-height:1.4">Cobrá membresías, activá pruebas o dales "para siempre". <button class="r-chato" id="oRecargar" style="float:right;padding:5px 11px;font-size:12px">↺ Recargar</button></p>'+
+        '<div id="oEntrenadores"><div style="color:var(--gris);font-size:13px;padding:4px">Cargando…</div></div></div>'+
+
+      '<div class="r-caja" style="margin-bottom:14px">'+
         '<h3>🗑️ Liberar un DNI</h3>'+
         '<p style="font-size:12.5px;color:var(--gris);margin:2px 0 10px;line-height:1.4">Buscá cualquier cuenta por DNI (alumno o entrenador) y podés borrarla para que se pueda volver a crear. Al borrar, el DNI queda libre al instante.</p>'+
         '<div style="display:flex;gap:8px">'+
@@ -1868,6 +1978,8 @@ R.renderOwner = function(){
   o$('oBuscar').onclick = buscar;
   o$('oDni').addEventListener('keydown', function(e){ if(e.key==='Enter') buscar(); });
   oPintarColores();
+  oRenderEntrenadores();
+  if (o$('oRecargar')) o$('oRecargar').onclick = function(){ oRenderEntrenadores(); oToast('↺ Actualizado'); };
   if (o$('oAzar')) o$('oAzar').onclick = function(){
     if (typeof setColores!=='function'){ oToast('No disponible en modo prueba'); return; }
     var h=Math.floor(Math.random()*360);
@@ -1897,6 +2009,85 @@ function oPintarColores(){
   });
 }
 R.ocultarOwner = function(){ var a=o$('rAppOwner'); if(a) a.classList.remove('ver'); };
+
+async function oRenderEntrenadores(){
+  var caja=o$('oEntrenadores'), res=o$('oResumen');
+  if(!caja) return;
+  var todos;
+  try{ todos = await Backend.listarUsuarios(); }catch(e){ caja.innerHTML='<div style="color:#dc2626;font-size:13px">No se pudo cargar. Revisá la conexión.</div>'; return; }
+  var entrenadores = todos.filter(function(u){ return u.rol==='entrenador'; });
+  var alumnos = todos.filter(function(u){ return u.rol==='alumno'; });
+  var vencidos = entrenadores.filter(function(u){ var b=badgeDe(u); return b && b[0]==='mal'; }).length;
+  var prueba = entrenadores.filter(function(u){ return u.membresia && u.membresia.tipo==='prueba'; }).length;
+  if(res){
+    var chip=function(t,n,color){ return '<span style="background:'+color+';color:#fff;border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:800">'+n+' '+t+'</span>'; };
+    res.innerHTML = chip('entrenadores', entrenadores.length, 'linear-gradient(135deg,#7c3aed,#3b82f6)')
+      + chip('alumnos', alumnos.length, 'linear-gradient(135deg,#0ea5e9,#22c55e)')
+      + (vencidos?chip('con deuda', vencidos, 'linear-gradient(135deg,#ef4444,#dc2626)'):'')
+      + (prueba?chip('en prueba', prueba, 'linear-gradient(135deg,#f59e0b,#d97706)'):'');
+  }
+  if(!entrenadores.length){ caja.innerHTML='<div style="color:var(--gris);font-size:13px;padding:4px">Todavía no hay entrenadores creados.</div>'; return; }
+  caja.innerHTML = entrenadores.map(function(u,i){
+    var b=(typeof badgeDe==='function')?badgeDe(u):['ok','Activo'];
+    var color = b[0]==='mal'?'#dc2626':b[0]==='oro'?'#d97706':b[0]==='gris'?'#9ca3af':b[0].indexOf('Prueba')>=0?'#d97706':'#16a34a';
+    var nAlu = alumnos.filter(function(a){ return a.entrenadorId===u.id || a.entrenador_id===u.id; }).length;
+    return '<div class="o-ent" data-i="'+i+'">'+
+      '<span class="r-avatar">'+oEsc((u.nombre||'?').charAt(0).toUpperCase())+'</span>'+
+      '<div style="flex:1;min-width:0"><b style="font-size:14px">'+oEsc(u.nombre)+'</b>'+
+      '<small style="display:block;color:var(--gris);font-size:11.5px">DNI '+oEsc(u.dni)+(u.telefono?' · '+oEsc(u.telefono):'')+' · '+nAlu+' alumnos</small>'+
+      '<span style="display:inline-block;margin-top:4px;font-size:11px;font-weight:800;color:'+color+'">● '+oEsc(b[1])+(u.activo===false?' · desactivado':'')+'</span></div>'+
+      '<button class="r-chato o-ent-btn" data-acc="pagar" style="padding:6px 10px;font-size:12px">💵 Cobrar</button>'+
+      '<button class="r-chato o-ent-btn" data-acc="prueba" style="padding:6px 10px;font-size:12px">🧪 Prueba</button>'+
+      '<button class="r-chato o-ent-btn" data-acc="siempre" style="padding:6px 10px;font-size:12px">⭐ Siempre</button>'+
+      '<button class="r-chato o-ent-btn" data-acc="toggle" style="padding:6px 10px;font-size:12px">'+(u.activo===false?'▶️ Activar':'⏸️ Pausar')+'</button>'+
+    '</div>';
+  }).join('');
+  caja.querySelectorAll('.o-ent').forEach(function(row){
+    var u = entrenadores[Number(row.getAttribute('data-i'))];
+    row.querySelectorAll('.o-ent-btn').forEach(function(btn){
+      btn.onclick=function(){ oAccionEntrenador(u, btn.getAttribute('data-acc')); };
+    });
+  });
+}
+function oAccionEntrenador(u, acc){
+  if(acc==='pagar'){
+    rHojaInput({ titulo:'💵 Cobrar membresía', label:'Meses a cobrar', placeholder:'1', valor:'1', okTexto:'Confirmar pago' }, function(meses){
+      if(!meses) return;
+      var m = parseInt(meses,10); if(!m || m<1){ oToast('Poné los meses'); return; }
+      R.rConfirmar({ icono:'💵', titulo:'¿Registrar pago de '+u.nombre+'?', mensaje:m+' mes(es) de membresía. Se extiende su vencimiento.', okTexto:'Sí, cobrar' }, async function(){
+        var precio = (window.CONFIG && CONFIG.PRECIO_MES) ? CONFIG.PRECIO_MES : 0;
+        var r = await Backend.registrarPago(u.id, m, precio*m);
+        if(r && r.error){ oToast(r.error); return; }
+        oToast('Pago registrado ✓'); oRenderEntrenadores();
+      });
+    });
+    return;
+  }
+  if(acc==='prueba'){
+    R.rConfirmar({ icono:'🧪', titulo:'¿Activar prueba a '+u.nombre+'?', mensaje:'Tendrá unos días de uso con la franja de prueba a la vista.', okTexto:'Activar prueba' }, async function(){
+      var r = await Backend.cambiarMembresia(u.id,'prueba');
+      if(r && r.error){ oToast(r.error); return; } oToast('Prueba activada ✓'); oRenderEntrenadores();
+    });
+    return;
+  }
+  if(acc==='siempre'){
+    R.rConfirmar({ icono:'⭐', titulo:'¿Membresía para siempre?', mensaje:u.nombre+' no vencerá nunca más (badge dorado).', okTexto:'Dar para siempre' }, async function(){
+      var r = await Backend.cambiarMembresia(u.id,'siempre');
+      if(r && r.error){ oToast(r.error); return; } oToast('Membresía para siempre ⭐'); oRenderEntrenadores();
+    });
+    return;
+  }
+  if(acc==='toggle'){
+    var va = u.activo===false;
+    R.rConfirmar({ icono: va?'▶️':'⏸️', titulo: va?('¿Activar a '+u.nombre+'?'):('¿Pausar a '+u.nombre+'?'),
+      mensaje: va?'Vuelve a poder ingresar con normalidad.':'No podrá ingresar hasta que lo reactives.',
+      okTexto: va?'Activar':'Pausar', peligro: !va }, async function(){
+      var r = await Backend.setActivo(u.id, va);
+      if(r && r.error){ oToast(r.error); return; } oToast(va?'Activado ✓':'Pausado'); oRenderEntrenadores();
+    });
+    return;
+  }
+}
 
 var oActual = null;
 async function oBuscar(){
