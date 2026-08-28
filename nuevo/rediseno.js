@@ -30,6 +30,39 @@ function tiempoTextoDe(e){
   if(seg>=60){ var m=seg/60; return (m%1?m.toFixed(1):m)+' min'; }
   return seg+' seg';
 }
+/* ── "MODO PROPIO": un entrenador o el dueño entrena él mismo.
+   Su plan y progreso se guardan SOLO en este dispositivo (privado, no toca
+   la nube ni las tablas de alumnos), y no afecta sus funciones de gestión. */
+var __modoPropio = false;
+function miClavePlan(){ return (window.CONFIG?CONFIG.CLAVE_DATOS:'proto_entrenador_v1') + '_miplan_' + (window.sesion?sesion.id:'x'); }
+function miClaveHechos(){ return (window.CONFIG?CONFIG.CLAVE_DATOS:'proto_entrenador_v1') + '_mihechos_' + (window.sesion?sesion.id:'x'); }
+function miLeerPlan(){ try{ var v=JSON.parse(localStorage.getItem(miClavePlan())); return v||null; }catch(e){ return null; } }
+function miGuardarPlan(p){ try{ localStorage.setItem(miClavePlan(), JSON.stringify(p)); }catch(e){} }
+function miLeerHechos(){ try{ var v=JSON.parse(localStorage.getItem(miClaveHechos())); return v||{}; }catch(e){ return {}; } }
+function miGuardarHechos(h){ try{ localStorage.setItem(miClaveHechos(), JSON.stringify(h)); }catch(e){} }
+function miEsGestor(){ return window.sesion && (sesion.rol==='entrenador' || sesion.rol==='superadmin' || sesion.rol==='admin'); }
+/* entrar al entrenamiento propio del gestor: si tiene plan → mazo; si no → armarlo */
+function entrarEntrenar(){
+  if(!miEsGestor()){ window.Rediseno.renderAlumno(); return; }
+  __modoPropio = true;
+  var plan = miLeerPlan();
+  if(!plan || !planTieneAlgo(plan)){
+    // todavía no tiene plan propio: lo abre a armarlo
+    window.Rediseno.builder.abrir({ id:sesion.id, nombre:sesion.nombre, demo:false }, { propio:true });
+    return;
+  }
+  window.Rediseno.renderAlumno();
+}
+/* volver del entrenamiento propio al panel de gestión (no desloguea) */
+function dVolverDePropio(){
+  __modoPropio = false;
+  var a=document.getElementById('rAppAlumno'); if(a) a.classList.remove('ver');
+  var b=document.getElementById('rAppBuilder'); if(b) b.classList.remove('ver');
+  var fin=document.getElementById('dFin'); if(fin) fin.classList.remove('ver');
+  if(window.sesion && (sesion.rol==='entrenador')){ window.Rediseno.renderEntrenador(); }
+  else if(window.sesion && (sesion.rol==='superadmin'||sesion.rol==='admin')){ window.Rediseno.renderOwner(); }
+  else { try{ window.Rediseno.ocultarAlumno(); }catch(e){} }
+}
 (function(){
 var R = {};
 window.Rediseno = R;
@@ -395,7 +428,8 @@ function rPintarLista(){
   var nombre = (sesion.nombre.split(' ')[0]||'Profe');
   wrap.innerHTML =
     '<div class="r-head"><h1>Hola, '+esc(nombre)+'<small class="r-sub">Mis alumnos</small></h1>'+
-      '<button class="r-pill head" id="rBtnFin" style="margin-left:auto">💰 Finanzas · <b id="rTotalHead">$0</b></button>'+
+      '<button class="r-pill head" id="rBtnYo" style="margin-left:auto" title="Entrenar vos mismo">🏋️ Mi entrenamiento</button>'+
+      '<button class="r-pill head" id="rBtnFin">💰 Finanzas · <b id="rTotalHead">$0</b></button>'+
       '<button class="r-sync-btn" id="rBtnAyuda" title="Cómo usar la app">❓</button>'+
       '<button class="r-sync-btn" id="rBtnSync" title="Sincronizar con la nube">🔄</button>'+
       '<button class="r-salir-btn" id="rBtnSalir" title="Cerrar sesión">🚪</button>'+
@@ -409,6 +443,7 @@ function rPintarLista(){
       '<div class="r-col-der" id="rColDer"></div>'+
     '</div>';
   $('rBtnFin').onclick = function(){ rIrPantalla('finanzas'); };
+  var _btnYo = $('rBtnYo'); if(_btnYo) _btnYo.onclick = function(){ entrarEntrenar(); };
   $('rBtnSalir').onclick = function(){ rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); }); };
   $('rBtnSync').onclick = function(){ rSincronizarAhora(this); };
   var _btnAyuda = $('rBtnAyuda'); if(_btnAyuda) _btnAyuda.onclick = rAyuda;
@@ -1002,10 +1037,16 @@ R.builder = B;
 function b$(id){ return document.getElementById(id); }
 function nuevoId(){ return 'e'+Date.now()+Math.floor(Math.random()*99999); }
 
-B.abrir = function(u){
-  B.userId = u.id; B.nombre = u.nombre; B.demo = !!u.demo; B.prevDia = null;
+B.abrir = function(u, opts){
+  opts = opts || {};
+  B.modoPropio = !!opts.propio;
+  if (B.modoPropio){ __modoPropio = true; }
+  B.userId = u.id; B.nombre = u.nombre; B.demo = !!u.demo && !B.modoPropio; B.prevDia = null;
+  B.nombreAlumno = null;
   B.semana = 1; B.maxSemana = 1; B.semanas = {};
-  var planBase = u.demo ? R.rLeer(R.rDemoPlanKey(u.id), null) : u.plan;
+  var planBase;
+  if (B.modoPropio) planBase = miLeerPlan();
+  else planBase = u.demo ? R.rLeer(R.rDemoPlanKey(u.id), null) : u.plan;
   B.vivos = planBase ? JSON.parse(JSON.stringify(planBase)) : null;
   B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] };  // plan nuevo: arranca vacío
   B.semanas[1] = B.plan;
@@ -1022,7 +1063,7 @@ B.abrir = function(u){
   }
   $('rAppBuilder').classList.add('ver');
   // borrador automático: si el plan NUEVO todavía no se guardó y hay un borrador, lo recupera
-  if (!planBase){
+  if (!planBase && !B.modoPropio){
     var borr = R.rLeer(B._claveBorrador(), null);
     if (borr && borr.plan && planTieneAlgo(borr.plan)){
       B.plan = borr.plan; B.dia = borr.dia || B.dia;
@@ -1033,7 +1074,14 @@ B.abrir = function(u){
   }
   bPintarDias(); bPintarMazo(); bPintarGrilla();
   b$('bBusca').value='';
-  Backend.obtenerProgreso(u.id).then(function(r){ B.cargas = r.cargas||{}; }).catch(function(){});
+  if (B.modoPropio){
+    B.cargas = {};
+    var mh = miLeerHechos();
+    Object.keys(mh).forEach(function(f){ B.cargas[f]=mh[f]; });
+    bPintarMazo(); bPintarGrilla(); bPintarDias();
+  } else {
+    Backend.obtenerProgreso(u.id).then(function(r){ B.cargas = r.cargas||{}; }).catch(function(){});
+  }
 };
 B._claveBorrador = function(){ return CONFIG.CLAVE_DATOS+'_borradorPlan_'+(sesion?sesion.id:'x')+'_'+B.userId; };
 B._guardarBorrador = function(){
@@ -1456,6 +1504,21 @@ function conectar(){
   b$('bGuardar').onclick=function(){ B.guardar(); };
   B.guardar = async function(){
     B.semanas[B.semana] = B.plan;   // sincroniza la semana en edición
+    if (B.modoPropio){   // el gestor entrena: plan privado en el dispositivo
+      var mio={};
+      var w1p = B.semanas[1] || B.plan;
+      DIAS.forEach(function(d){ mio[d[0]] = w1p[d[0]]; });
+      var exP={}, hayP=false;
+      for(var nn=2; nn<=B.maxSemana; nn++){ if(B.semanas[nn] && planTieneAlgo(B.semanas[nn])){ exP[nn]=B.semanas[nn]; hayP=true; } }
+      if(hayP){ mio.__semanas=exP; var lunP=new Date(); lunP.setHours(0,0,0,0); lunP.setDate(lunP.getDate()-((lunP.getDay()+6)%7)); mio.__inicio=fechaClave(lunP.getTime()); }
+      miGuardarPlan(mio);
+      B._borrarBorrador();
+      $('rAppBuilder').classList.remove('ver');
+      __modoPropio=true;
+      window.Rediseno.renderAlumno();
+      try{ dToast('Tu plan quedó guardado 💪'); }catch(e){}
+      return;
+    }
     var final={};
     var w1 = B.semanas[1] || B.plan;
     DIAS.forEach(function(d){ final[d[0]] = w1[d[0]]; });
@@ -1735,6 +1798,7 @@ R.renderAlumno = function(){
     document.body.appendChild(crearEstructura());
     conectar();
   }
+  var vbtn = d$('dVolver'); if(vbtn) vbtn.style.display = (miEsGestor() && __modoPropio) ? 'grid' : 'none';
   d$('rAppAlumno').classList.add('ver');
   dRender();
 };
@@ -1746,6 +1810,7 @@ function crearEstructura(){
   d.innerHTML='<div class="r-manchas"><i></i><i></i><i></i></div>'+
     '<div class="r-deck-top">'+
       '<div class="r-deck-fila1">'+
+        '<button class="r-atras-deck" id="dVolver" style="display:none" title="Volver a mi panel" aria-label="Volver a mi panel">‹</button>'+
         '<div class="r-deck-titulo"><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b></div>'+
         '<span class="r-sem-badge" id="dSemBadge" style="display:none"></span>'+
         '<div class="r-deck-der"><div class="r-anillo-wrap"><div class="r-anillo" id="dAnillo"></div><i id="dAnilloTxt">0%</i></div>'+
@@ -1789,7 +1854,16 @@ function crearEstructura(){
 }
 function dToast(m){ var t=d$('rAppAlumno').querySelector('.r-toast'); t.textContent=m; t.classList.add('ver'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('ver'); },1900); }
 function dHoy(){ return claveDia(Date.now()); }
-function dPlan(){ return planDe(sesion); }
+function dPlan(){
+  if(__modoPropio){
+    var p=miLeerPlan()||{}; var v=planVacio();
+    var n=semanaActualDe(p), src=p;
+    if(n && n>1 && p.__semanas && p.__semanas[n]) src=p.__semanas[n];
+    DIAS.forEach(function(d){ if(Array.isArray(src[d[0]])) v[d[0]]=src[d[0]]; });
+    return v;
+  }
+  return planDe(sesion);
+}
 function dLista(dia){ return dPlan()[dia]||[]; }
 /* (tiempoSegundosDe / dFmtTiempo / tiempoTextoDe son globales, definidas arriba) */
 /* timers de ejercicios por tiempo: T[ejId]={fin,total,corriendo,resto} */
@@ -1804,7 +1878,8 @@ function dTimerHayCorriendo(){
   return Object.keys(T).some(function(k){ return k!=='__f' && T[k].corriendo; });
 }
 function dEsHoy(){ return D.dia===dHoy(); }
-function dMarcasHoy(dia){ var f=fechaClave(Date.now()); if(dia!==dHoy()) return {}; return (sesion.hechos||{})[f]||{}; }
+function dHechos(){ return __modoPropio ? miLeerHechos() : (sesion.hechos||{}); }
+function dMarcasHoy(dia){ var f=fechaClave(Date.now()); if(dia!==dHoy()) return {}; return dHechos()[f]||{}; }
 function dEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
 function dRender(){
@@ -1856,7 +1931,7 @@ function dHacerCarta(e, i, clase){
     ? imgsCuadro.map(function(src){ return '<img src="'+src+'">'; }).join('')
     : '<span class="r-dib-emoji">🏋️</span>';
   var pesoClave='p:'+String(e.nombre||'').trim().toLowerCase();
-  var pesoUsado = (sesion.hechos&&(sesion.hechos[fechaClave(Date.now())]||{})[pesoClave]) || '';
+  var pesoUsado = (dHechos()[fechaClave(Date.now())]||{})[pesoClave] || '';
   var pillPeso = pesoUsado || e.carga;
   var sxr = (e.series&&e.reps)?(e.series+' × '+e.reps):(e.series||e.reps||'');
   var segT = tiempoSegundosDe(e.tiempo);
@@ -1872,8 +1947,8 @@ function dHacerCarta(e, i, clase){
   var ult='';
   if(!pesoUsado && e.carga===undefined){}
   // última carga real
-  var fechas=Object.keys(sesion.hechos||{}).sort().reverse();
-  for(var fi=0;fi<fechas.length;fi++){ var v=(sesion.hechos[fechas[fi]]||{})[pesoClave]; if(v){ ult=v; break; } }
+  var fechas=Object.keys(dHechos()).sort().reverse();
+  for(var fi=0;fi<fechas.length;fi++){ var v=(dHechos()[fechas[fi]]||{})[pesoClave]; if(v){ ult=v; break; } }
   var c=document.createElement('div');
   c.className='r-dcarta '+clase;
   c.innerHTML='<div class="r-dibujo"><span class="r-num-ej">'+(i+1)+' / '+dLista(D.dia).length+'</span>'+
@@ -1959,13 +2034,24 @@ function dSemBadge(){
   }catch(e){ el.style.display='none'; }
 }
 function dNavFlechas2(){}
+function miMarcar(fecha, ejId, valor){
+  var h=miLeerHechos(); h[fecha]=h[fecha]||{}; h[fecha][ejId]=valor; miGuardarHechos(h); return {ok:true, hechos:h};
+}
+function miGuardarPesoLocal(fecha, nombre, peso){
+  var h=miLeerHechos(); h[fecha]=h[fecha]||{};
+  var k='p:'+String(nombre||'').trim().toLowerCase();
+  var t=String(peso||'').trim(); if(t) h[fecha][k]=t; else delete h[fecha][k];
+  miGuardarHechos(h); return {ok:true, hechos:h};
+}
 async function dResponder(ok){
   if(!dEsHoy()) return;
   var lista=dLista(D.dia), e=lista[D.idx];
   var carta=d$('dZona').querySelector('.r-dcarta.entra');
-  var r = await Backend.marcarHecho(sesion.id, fechaClave(Date.now()), e.id, ok);
+  var r;
+  if(__modoPropio){ r = miMarcar(fechaClave(Date.now()), e.id, !!ok); }
+  else { r = await Backend.marcarHecho(sesion.id, fechaClave(Date.now()), e.id, ok); }
   if(r.error){ dToast(r.error); return; }
-  if(r.hechos) sesion.hechos=r.hechos;
+  if(!__modoPropio && r.hechos) sesion.hechos=r.hechos;
   if(carta){ carta.classList.add(ok?'fuera-ok':'fuera-no'); if(navigator.vibrate) navigator.vibrate(ok?20:[15,40,15]); }
   dPintarAnillo(); dPintarDias();
   setTimeout(function(){
@@ -1997,7 +2083,7 @@ function dMostrarFin(){
 }
 function dAbrirPeso(e){
   var f=fechaClave(Date.now()), k='p:'+String(e.nombre||'').trim().toLowerCase();
-  var actual=(sesion.hechos&&(sesion.hechos[f]||{})[k])||'';
+  var actual=(dHechos()[f]||{})[k]||'';
   d$('dPesoSub').textContent='Profe te indicó: '+(e.carga||'sin peso')+(actual?' · ya anotaste '+actual:'');
   d$('dPesoInput').value=actual||e.carga||'';
   d$('dVeloPeso').classList.add('abierto');
@@ -2109,15 +2195,18 @@ function conectar(){
   },300);
   d$('dPesoListo').onclick=async function(){
     var v=d$('dPesoInput').value.trim();
-    var r=await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), dPesoEj.nombre, v);
+    var r;
+    if(__modoPropio){ r=miGuardarPesoLocal(fechaClave(Date.now()), dPesoEj.nombre, v); }
+    else { r=await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), dPesoEj.nombre, v); }
     if(r.error){ dToast(r.error); return; }
-    if(r.hechos) sesion.hechos=r.hechos;
+    if(!__modoPropio && r.hechos) sesion.hechos=r.hechos;
     d$('dVeloPeso').classList.remove('abierto'); dRender();
   };
   d$('dFinRevisar').onclick=function(){ d$('dFin').classList.remove('ver'); D.idx=0; dRender(); };
-  d$('dFinSalir').onclick=function(){ d$('dFin').classList.remove('ver'); R.ocultarAlumno(); mostrar('home'); };
+  d$('dFinSalir').onclick=function(){ d$('dFin').classList.remove('ver'); dVolverDePropio(); };
   d$('dMenu').onclick=function(){ d$('dVeloMenu').classList.add('abierto'); };
   d$('dSalir').onclick=function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); }); };
+  var _dv=d$('dVolver'); if(_dv) _dv.onclick=function(){ dVolverDePropio(); };
   d$('dVeloMenu').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   d$('dMenuSalir').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); salir(); };
   d$('dMenuAyuda').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); if(window.Rediseno.rAyuda) window.Rediseno.rAyuda(); };
@@ -2241,6 +2330,13 @@ window.aLaApp = function(){
    El doble-toque para salir lo maneja index.html. */
 R.atras = function(){
   function visible(el){ return el && el.classList.contains('ver'); }
+  // gestor entrenando en su mazo propio → vuelve a su panel de gestión
+  if (typeof __modoPropio !== 'undefined' && __modoPropio){
+    var _a = $('rAppAlumno'), _b = $('rAppBuilder');
+    if ((_a && _a.classList.contains('ver')) || (_b && _b.classList.contains('ver'))){
+      if (typeof dVolverDePropio === 'function'){ dVolverDePropio(); return 'capa'; }
+    }
+  }
   function capasAbiertas(raiz){
     return Array.prototype.slice.call(raiz.querySelectorAll('.r-velo.ver, .r-hoja.ver'))
       .concat(Array.prototype.slice.call(document.querySelectorAll('.velo.abierto')));
@@ -2280,6 +2376,8 @@ R.atras = function(){
 // al salir
 var _salir = window.salir;
 window.salir = function(){
+  try{ window.__modoPropio = false; }catch(e){}
+  if (typeof __modoPropio !== 'undefined') __modoPropio = false;
   try{
     window.Rediseno && window.Rediseno.ocultarAlumno && window.Rediseno.ocultarAlumno();
     window.Rediseno && window.Rediseno.ocultarEntrenador && window.Rediseno.ocultarEntrenador();
@@ -2312,6 +2410,7 @@ function crearEstructura(){
   d.className='r-app'; d.id='rAppOwner';
   d.innerHTML='<div class="r-manchas"><i></i><i></i><i></i></div>'+
     '<div class="r-head"><h1>Panel del dueño<small class="r-sub">Hola, '+(window.sesion&&sesion.nombre?sesion.nombre.split(' ')[0]:'')+'</small></h1>'+
+      '<button class="r-pill head" id="oYo" title="Entrenar vos mismo" style="margin-left:auto">🏋️ Mi entrenamiento</button>'+
       '<button class="r-sync-btn" id="oAyuda" title="Cómo usar la app">❓</button>'+
       '<button class="r-sync-btn" id="oSync" title="Sincronizar">🔄</button>'+
       '<button class="r-salir-btn" id="oSalir" title="Cerrar sesión">🚪</button></div>'+
@@ -2342,6 +2441,7 @@ R.renderOwner = function(){
   o$('oSalir').onclick = function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ R.ocultarOwner(); salir(); }); };
   o$('oSync').onclick = function(){ oToast('✓ Datos actualizados'); };
   var _oAyuda = o$('oAyuda'); if(_oAyuda) _oAyuda.onclick = function(){ R.rAyuda && R.rAyuda(); };
+  var _oYo = o$('oYo'); if(_oYo) _oYo.onclick = function(){ entrarEntrenar(); };
   var buscar = function(){ oBuscar(); };
   o$('oBuscar').onclick = buscar;
   o$('oDni').addEventListener('keydown', function(e){ if(e.key==='Enter') buscar(); });
