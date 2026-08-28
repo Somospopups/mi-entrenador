@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#4f7df2">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="nuevo/rediseno.css?v=79">
+<link rel="stylesheet" href="nuevo/rediseno.css?v=80">
 <title>Mi Entrenador · Ingreso</title>
 <!-- ============================================================
      PROTOTIPO REUTILIZABLE · Login con DNI + Panel de Administración
@@ -2916,9 +2916,37 @@ $('btnGuardarCfg').onclick = function(){
 function alternarTema(){ document.body.classList.toggle('dark'); guardar(CONFIG.CLAVE_DATOS+'_tema', document.body.classList.contains('dark')?'dark':'claro'); if (window.__pintarTema) window.__pintarTema(); }
 $('btnTema1').onclick = alternarTema; $('btnTema2').onclick = alternarTema;
 
-/* la PWA: instalable y con los dibujos disponibles sin conexión */
+/* la PWA: instalable y con los dibujos disponibles sin conexión.
+   Nos aseguramos de SIEMPRE tomar la versión nueva: buscamos actualización
+   al arrancar y, si el service worker nuevo se activa, se recarga una sola vez. */
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
-  navigator.serviceWorker.register('sw.js').catch(function(){});
+  var __swRecargo = false;
+  function __swRecargarUnaVez(){
+    if (__swRecargo) return; __swRecargo = true;
+    setTimeout(function(){ location.reload(); }, 300);
+  }
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    // si el navegador ya instaló un SW que no controla esta página, actualizar.
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.addEventListener('controllerchange', __swRecargarUnaVez);
+    }
+    function buscar(){
+      try{
+        reg.update().then(function(){
+          var nw = reg.installing || reg.waiting;
+          if (nw){
+            nw.addEventListener('statechange', function(){
+              if (nw.state === 'activated' && navigator.serviceWorker.controller) __swRecargarUnaVez();
+            });
+            // si el nuevo ya quedó en 'waiting', forzamos su activación
+            if (nw.state === 'installed' && reg.waiting) { try{ reg.waiting.postMessage({accion:'saltar'}); }catch(e){} }
+          }
+        }).catch(function(){});
+      }catch(e){}
+    }
+    buscar();
+    setTimeout(buscar, 2500);     // una segunda búsqueda por si la primera tardó
+  }).catch(function(){});
 }
 
 /* arranque */
@@ -2941,7 +2969,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   reanudarSiHabiaSesion();
 })();
 </script>
-<script src="nuevo/rediseno.js?v=79"></script>
+<script src="nuevo/rediseno.js?v=80"></script>
 <script>
 /* cuando el alumno vuelve del tab Progreso al tab Hoy, re-monta el mazo nuevo */
 document.addEventListener('click', function(ev){
