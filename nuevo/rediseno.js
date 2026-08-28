@@ -1838,6 +1838,9 @@ function dPintarCuadritos(lista, marcas){
   caja.querySelectorAll('.r-cuadrito').forEach(function(b){
     b.onclick=function(){ D.idx=Number(b.getAttribute('data-i')); dRender(); };
   });
+  // si hay muchos ejercicios y la fila scrollea, mantener el actual a la vista
+  var act=caja.querySelector('.r-cuadrito.act');
+  if(act) caja.scrollLeft = act.offsetLeft - (caja.clientWidth - act.offsetWidth)/2;
 }
 function dPintarDias(){
   var plan=dPlan(), hoyK=dHoy();

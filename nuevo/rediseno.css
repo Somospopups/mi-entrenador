@@ -332,8 +332,10 @@
   box-shadow:0 6px 14px rgba(124,58,237,.35); }
 .r-dp.activo small{ color:rgba(255,255,255,.85); }
 /* cuadraditos de ejercicios del día (tipo las cartas del profe) */
-.r-deck-ejs{ position:absolute; left:0; right:0; bottom:48px; z-index:6; display:none;
-  justify-content:center; gap:9px; padding:0 14px; flex-wrap:wrap; }
+.r-deck-ejs{ position:absolute; left:0; right:0; bottom:40px; z-index:6; display:none;
+  justify-content:center; justify-content:safe center; gap:9px; padding:0 14px; flex-wrap:nowrap;
+  overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.r-deck-ejs::-webkit-scrollbar{ display:none; }
 .r-cuadrito{ position:relative; width:52px; height:52px; flex:0 0 auto; border-radius:14px; overflow:hidden;
   border:2px solid rgba(124,58,237,.16); background:#fff; padding:0; cursor:pointer;
   box-shadow:0 6px 16px rgba(60,50,120,.12); transition:transform .15s, border-color .15s; }
@@ -347,8 +349,8 @@
 .r-cuadrito.ok{ border-color:#16a34a; } .r-cuadrito.no{ border-color:#dc2626; }
 .r-cuadrito.ok b{ opacity:1; background:rgba(22,163,74,.72); }
 .r-cuadrito.no b{ opacity:1; background:rgba(220,38,38,.72); }
-@media (max-height:700px){ .r-deck-ejs{ bottom:108px; } .r-cuadrito{ width:46px; height:46px; } }
-.r-deck-zona{ position:absolute; left:0; right:0; top:108px; bottom:158px; z-index:2; }
+@media (max-height:700px){ .r-deck-ejs{ bottom:34px; } .r-cuadrito{ width:46px; height:46px; } }
+.r-deck-zona{ position:absolute; left:0; right:0; top:127px; bottom:112px; z-index:2; }
 .r-dcarta{ position:absolute; inset:0; margin:0 auto;
   width:calc(100% - 48px); max-width:360px;
   border-radius:28px; overflow:hidden; background:#fff;
@@ -357,7 +359,7 @@
   touch-action:none; -webkit-user-select:none; user-select:none;
   transition:transform .28s cubic-bezier(.22,.9,.35,1), opacity .26s ease;
   will-change:transform; backface-visibility:hidden; }
-@media (max-height:700px){ .r-deck-zona{ top:100px; bottom:150px; } }
+@media (max-height:700px){ .r-deck-zona{ top:118px; bottom:100px; } }
 /* la pila de atrás apenas asoma, sin marco visible */
 .r-dcarta.detras{ opacity:.4; }
 .r-dcarta.detras2{ opacity:.16; }
