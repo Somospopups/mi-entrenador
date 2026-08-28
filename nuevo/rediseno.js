@@ -1817,6 +1817,7 @@ R.renderAlumno = function(){
   }
   var vbtn = d$('dVolver'); if(vbtn) vbtn.style.display = (miEsGestor() && __modoPropio) ? 'grid' : 'none';
   d$('rAppAlumno').classList.add('ver');
+  dIniciarLive();
   dRender();
 };
 R.ocultarAlumno = function(){ var a=d$('rAppAlumno'); if(a) a.classList.remove('ver'); };
@@ -1896,6 +1897,32 @@ function dTimerHayCorriendo(){
   return Object.keys(T).some(function(k){ return k!=='__f' && T[k].corriendo; });
 }
 function dEsHoy(){ return D.dia===dHoy(); }
+/* sincronización viva del mazo: baja plan+marcas de la nube (PC↔celu) sin molestar */
+var dLiveInit=false;
+function dRefrescoVivo(){
+  var app=d$('rAppAlumno'); if(!app || !app.classList.contains('ver')) return;
+  if(document.querySelector('#rAppAlumno .r-velo.abierto, #rAppAlumno .r-timer-velo.ver')) return;
+  if(document.querySelector('#dZona .r-dcarta.fuera-ok, #dZona .r-dcarta.fuera-no')) return;
+  (async function(){
+    try{
+      if(__modoPropio){ await miSyncNube(); }
+      else {
+        var r=await Backend.obtenerMiPlan(sesion.id);
+        if(r && r.plan) sesion.plan=r.plan;
+        if(r && r.hechos) sesion.hechos=Object.assign({}, sesion.hechos||{}, r.hechos);
+      }
+      if(d$('rAppAlumno').classList.contains('ver')) dRender();
+    }catch(e){}
+  })();
+}
+function dIniciarLive(){
+  if(dLiveInit) return; dLiveInit=true;
+  var f=function(){ dRefrescoVivo(); };
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') f(); });
+  window.addEventListener('focus', f);
+  window.addEventListener('pageshow', f);
+  setInterval(f, 10000);
+}
 function dHechos(){
   var cloud = sesion.hechos||{};
   if(__modoPropio && !Object.keys(cloud).length){ var loc=miLeerHechos(); if(Object.keys(loc).length) return loc; }
@@ -2070,22 +2097,19 @@ async function dResponder(ok){
   var lista=dLista(D.dia), e=lista[D.idx];
   var carta=d$('dZona').querySelector('.r-dcarta.entra');
   var f=fechaClave(Date.now());
-  var r;
+  // ── ESCRITURA OPTIMISTA: la carta vuela YA, sin esperar la red ──
+  var idClave = __modoPropio ? sesion.id : sesion.id;
   if(__modoPropio){
-    // optimista: espejo local al instante (offline) + nube en paralelo
     var loc=miLeerHechos(); loc[f]=loc[f]||{}; loc[f][e.id]=!!ok; miGuardarHechos(loc);
-    var mem = (sesion.hechos&&sesion.hechos[f]) ? Object.assign({}, sesion.hechos[f]) : {};
-    mem[e.id]=!!ok;
-    var hechosObj=Object.assign({}, sesion.hechos||{}); hechosObj[f]=mem; sesion.hechos=hechosObj;
-    Backend.marcarHecho(sesion.id, f, e.id, ok).then(function(rr){
-      if(rr && rr.hechos){ sesion.hechos=rr.hechos; }
-    }).catch(function(){ /* quedó el espejo local; se sincroniza al volver */ });
-    r={ ok:true, hechos:hechosObj };
-  } else {
-    r = await Backend.marcarHecho(sesion.id, f, e.id, ok);
   }
-  if(r.error){ dToast(r.error); return; }
-  if(r.hechos) sesion.hechos=r.hechos;
+  var mem = (sesion.hechos && sesion.hechos[f]) ? Object.assign({}, sesion.hechos[f]) : {};
+  mem[e.id]=!!ok;
+  var hechosObj=Object.assign({}, sesion.hechos||{}); hechosObj[f]=mem; sesion.hechos=hechosObj;
+  // se sincroniza a la nube en segundo plano (Backend ya encola offline si no hay red)
+  Backend.marcarHecho(idClave, f, e.id, ok).then(function(rr){
+    if(rr && rr.error){ dToast('No se pudo sincronizar, se reintenta solo'); }
+    if(rr && rr.hechos){ sesion.hechos=rr.hechos; }
+  }).catch(function(){ /* quedó local; la cola offline lo sube al volver */ });
   if(carta){ carta.classList.add(ok?'fuera-ok':'fuera-no'); if(navigator.vibrate) navigator.vibrate(ok?20:[15,40,15]); }
   dPintarAnillo(); dPintarDias();
   setTimeout(function(){
@@ -2230,17 +2254,14 @@ function conectar(){
   d$('dPesoListo').onclick=async function(){
     var v=d$('dPesoInput').value.trim();
     var f=fechaClave(Date.now());
-    var r;
-    if(__modoPropio){
-      // optimista: espejo local + nube
-      r=miGuardarPesoLocal(f, dPesoEj.nombre, v);
-      if(r.hechos) sesion.hechos=r.hechos;
-      Backend.guardarPeso(sesion.id, f, dPesoEj.nombre, v).then(function(rr){ if(rr&&rr.hechos) sesion.hechos=rr.hechos; }).catch(function(){});
-    } else {
-      r=await Backend.guardarPeso(sesion.id, f, dPesoEj.nombre, v);
-    }
-    if(r.error){ dToast(r.error); return; }
-    if(r.hechos) sesion.hechos=r.hechos;
+    // optimista: espejo local + guardado en la UI YA; la nube en segundo plano
+    if(__modoPropio){ var rl=miGuardarPesoLocal(f, dPesoEj.nombre, v); if(rl.hechos) sesion.hechos=rl.hechos; }
+    var mem=(sesion.hechos && sesion.hechos[f]) ? Object.assign({}, sesion.hechos[f]) : {};
+    var pk='p:'+String(dPesoEj.nombre||'').trim().toLowerCase();
+    if(v) mem[pk]=v; else delete mem[pk];
+    var hh=Object.assign({}, sesion.hechos||{}); hh[f]=mem; sesion.hechos=hh;
+    if(__modoPropio) miGuardarHechos(hh);
+    Backend.guardarPeso(sesion.id, f, dPesoEj.nombre, v).then(function(rr){ if(rr && rr.hechos) sesion.hechos=rr.hechos; }).catch(function(){});
     d$('dVeloPeso').classList.remove('abierto'); dRender();
   };
   d$('dFinRevisar').onclick=function(){ d$('dFin').classList.remove('ver'); D.idx=0; dRender(); };
