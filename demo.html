@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tu Entrenador — Demo animada</title>
+<style>
+  :root{ --c1:#7c3aed; --c2:#3b82f6; --tinta:#1e1b3a; --gris:#8b88a8; --borde:#eceaf6; }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:radial-gradient(1200px 700px at 20% -10%,#4c1d95 0%,transparent 55%),
+               radial-gradient(1000px 700px at 110% 110%,#1e3a8a 0%,transparent 55%),
+               #15122b;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:22px; padding:28px 14px; color:#fff; overflow-x:hidden;
+  }
+  .titulo{ text-align:center; }
+  .titulo h1{ font-size:clamp(22px,4.5vw,34px); font-weight:900;
+    background:linear-gradient(135deg,#c4b5fd,#93c5fd); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .titulo p{ color:#b9b5e0; font-size:14px; margin-top:6px; }
+  .escena-texto{ height:46px; text-align:center; }
+  .escena-texto b{ display:block; font-size:17px; font-weight:800; transition:opacity .4s; }
+  .escena-texto small{ display:block; color:#b9b5e0; font-size:13px; margin-top:4px; transition:opacity .4s; }
+
+  /* ── teléfono ── */
+  .phone{
+    position:relative; width:290px; height:596px; border-radius:42px;
+    background:#0d0b1e; padding:11px;
+    box-shadow:0 40px 90px rgba(0,0,0,.55), 0 0 0 2px rgba(255,255,255,.06);
+  }
+  .pantalla{
+    position:relative; width:100%; height:100%; border-radius:32px; overflow:hidden;
+    background:linear-gradient(180deg,#f7f6fe,#eef0fc);
+  }
+  .notch{ position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:24px;
+    background:#0d0b1e; border-radius:0 0 16px 16px; z-index:60; }
+  .statusbar{ position:absolute; top:0; left:0; right:0; height:30px; z-index:55;
+    display:flex; align-items:center; justify-content:space-between; padding:0 20px;
+    font-size:11px; font-weight:800; color:var(--tinta); }
+
+  .escena{ position:absolute; inset:0; opacity:0; transform:translateX(40px) scale(.97);
+    transition:opacity .55s ease, transform .55s cubic-bezier(.34,1.4,.64,1); pointer-events:none;
+    display:flex; flex-direction:column; }
+  .escena.activa{ opacity:1; transform:none; }
+
+  /* cabecera genérica */
+  .cab{ padding:38px 18px 10px; display:flex; align-items:center; gap:10px; }
+  .avatar{ width:38px; height:38px; border-radius:50%;
+    background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; display:grid; place-items:center;
+    font-weight:900; font-size:15px; flex:0 0 auto; }
+  .cab b{ font-size:15px; color:var(--tinta); display:block; line-height:1.1; }
+  .cab small{ font-size:11px; color:var(--gris); }
+  .cuerpo{ flex:1; padding:6px 16px 18px; display:flex; flex-direction:column; position:relative; }
+
+  /* pastillas de días */
+  .dias{ display:flex; gap:5px; margin:6px 0 10px; }
+  .dias i{ flex:1; text-align:center; font-style:normal; font-size:10px; font-weight:800; color:var(--gris);
+    background:#fff; border:1px solid var(--borde); border-radius:9px; padding:6px 0; }
+  .dias i.hoy{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent; }
+  .dias i.ok{ color:#16a34a; }
+  .dias i.ok::after{ content:' ✓'; }
+
+  /* carta de ejercicio */
+  .deck{ position:relative; flex:1; }
+  .carta{ position:absolute; inset:0; background:#fff; border-radius:22px;
+    box-shadow:0 14px 34px rgba(80,60,180,.16); border:1px solid var(--borde);
+    display:flex; flex-direction:column; overflow:hidden; }
+  .carta.dos{ transform:scale(.94) translateY(12px); opacity:.7; }
+  .carta.tres{ transform:scale(.88) translateY(24px); opacity:.4; }
+  .dibujo{ flex:1; display:grid; place-items:center; font-size:74px; position:relative;
+    background:linear-gradient(160deg,#f1edff,#e6edff); }
+  .num{ position:absolute; top:10px; left:12px; font-size:10px; font-weight:900; color:var(--gris);
+    background:rgba(255,255,255,.8); padding:4px 9px; border-radius:999px; }
+  .sello{ position:absolute; top:34px; right:14px; border:3px solid #16a34a; color:#16a34a;
+    font-size:20px; font-weight:900; padding:4px 12px; border-radius:10px; transform:rotate(14deg) scale(0);
+    opacity:0; letter-spacing:1px; }
+  .datos{ padding:13px 15px 16px; }
+  .datos h2{ font-size:17px; color:var(--tinta); margin-bottom:8px; }
+  .pills{ display:flex; gap:6px; flex-wrap:wrap; }
+  .pills i{ font-style:normal; font-size:11px; font-weight:800; color:var(--c1);
+    background:rgba(124,58,237,.09); border-radius:999px; padding:5px 10px; }
+  .pills i.peso{ color:#b45309; background:#fff6e0; }
+  .sug{ margin-top:10px; font-size:10.5px; font-weight:700; color:#9a6a00; line-height:1.35;
+    background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(245,158,11,.07));
+    border:1px solid rgba(245,158,11,.4); border-radius:11px; padding:8px 10px;
+    opacity:0; transform:translateY(6px); }
+  .canje-btn{ margin-top:9px; width:100%; border:1.5px dashed rgba(124,58,237,.5);
+    background:rgba(124,58,237,.05); color:var(--c1); border-radius:12px; padding:9px;
+    font-size:12px; font-weight:800; }
+
+  /* animación del swipe */
+  .carta.uno{ animation:swipe 5.6s ease-in-out infinite; transform-origin:center 80%; z-index:5; }
+  @keyframes swipe{
+    0%,12%{ transform:translate3d(0,0,0) rotate(0); }
+    30%{ transform:translate3d(-130px,26px,0) rotate(-16deg); }
+    34%{ transform:translate3d(-340px,70px,0) rotate(-26deg); opacity:1; }
+    40%{ transform:translate3d(-340px,70px,0) rotate(-26deg); opacity:0; }
+    41%{ transform:translate3d(0,60px,0); opacity:0; }
+    48%{ transform:translate3d(0,0,0); opacity:1; }
+    100%{ transform:translate3d(0,0,0); opacity:1; }
+  }
+  .carta.uno .sello{ animation:sello 5.6s ease-in-out infinite; }
+  @keyframes sello{
+    0%,26%{ transform:rotate(14deg) scale(0); opacity:0; }
+    31%,39%{ transform:rotate(14deg) scale(1); opacity:1; }
+    42%,100%{ transform:rotate(14deg) scale(0); opacity:0; }
+  }
+  .sug{ animation:sugA 5.6s ease-in-out infinite; }
+  @keyframes sugA{ 0%,55%{opacity:0;transform:translateY(6px);} 66%,92%{opacity:1;transform:none;} 100%{opacity:0;} }
+
+  /* hoja inferior (peso / canje / menú) */
+  .hoja{ position:absolute; left:0; right:0; bottom:0; background:#fff; border-radius:24px 24px 0 0;
+    box-shadow:0 -12px 34px rgba(60,40,140,.18); padding:12px 16px 18px; z-index:20;
+    transform:translateY(102%); transition:transform .5s cubic-bezier(.34,1.3,.64,1); }
+  .escena.activa .hoja.sube{ transform:translateY(0); }
+  .agarre{ width:42px; height:5px; border-radius:3px; background:#d9d6ee; margin:0 auto 12px; }
+  .hoja h3{ font-size:14px; text-align:center; color:var(--tinta); margin-bottom:3px; }
+  .hoja .sub{ font-size:11px; color:var(--gris); text-align:center; margin-bottom:12px; }
+  .op{ display:flex; align-items:center; gap:10px; border:1.5px solid var(--borde); border-radius:14px;
+    padding:8px 11px; margin-bottom:8px; }
+  .op .em{ width:38px; height:38px; flex:0 0 38px; display:grid; place-items:center; font-size:22px;
+    background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(59,130,246,.12)); border-radius:11px; }
+  .op b{ font-size:12.5px; color:var(--tinta); }
+  .op .chk{ margin-left:auto; width:22px; height:22px; border-radius:50%;
+    background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; display:grid; place-items:center;
+    font-size:12px; font-weight:900; opacity:0; transform:scale(.4); transition:.35s; }
+  .op.sel .chk{ opacity:1; transform:scale(1); }
+
+  /* resumen semanal */
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 10px; }
+  .stat{ background:rgba(124,58,237,.07); border:1.5px solid rgba(124,58,237,.15);
+    border-radius:14px; padding:12px 6px; text-align:center; }
+  .stat b{ display:block; font-size:21px; font-weight:900; color:var(--c1); line-height:1; }
+  .stat small{ font-size:10px; color:var(--gris); font-weight:700; }
+  .stat.ancha{ grid-column:1 / -1; display:flex; flex-direction:column; gap:3px; padding:11px; }
+  .btn-grad{ width:100%; border:0; border-radius:14px; padding:13px; color:#fff; font-weight:900; font-size:13.5px;
+    background:linear-gradient(135deg,var(--c1),var(--c2)); box-shadow:0 10px 22px rgba(124,58,237,.35); }
+  .emoji-fiesta{ font-size:38px; text-align:center; }
+
+  /* login */
+  .login{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:0 26px; }
+  .logo{ width:76px; height:76px; border-radius:22px; display:grid; place-items:center; font-size:40px;
+    background:linear-gradient(135deg,var(--c1),var(--c2)); box-shadow:0 16px 34px rgba(124,58,237,.4); }
+  .login h2{ font-size:21px; color:var(--tinta); font-weight:900; }
+  .login p{ font-size:12px; color:var(--gris); text-align:center; margin-top:-8px; }
+  .rol{ width:100%; background:#fff; border:1.5px solid var(--borde); border-radius:15px; padding:12px 14px;
+    display:flex; align-items:center; gap:11px; font-size:13px; font-weight:800; color:var(--tinta);
+    opacity:0; transform:translateY(12px); }
+  .escena.activa .rol{ animation:rolIn .5s forwards; }
+  .escena.activa .rol:nth-child(3){ animation-delay:.25s; }
+  .escena.activa .rol:nth-child(4){ animation-delay:.45s; }
+  .escena.activa .rol:nth-child(5){ animation-delay:.65s; }
+  @keyframes rolIn{ to{ opacity:1; transform:none; } }
+  .rol .em{ font-size:22px; }
+  .rol small{ display:block; font-size:10px; color:var(--gris); font-weight:600; }
+
+  /* profe: lista y progreso */
+  .alu{ display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--borde);
+    border-radius:15px; padding:10px 12px; margin-bottom:8px; }
+  .alu .info{ flex:1; }
+  .alu b{ font-size:13px; color:var(--tinta); display:block; }
+  .alu small{ font-size:10.5px; color:var(--gris); }
+  .racha{ font-size:11px; font-weight:900; color:#f59e0b; }
+  .barras{ display:flex; gap:6px; align-items:flex-end; height:84px; margin:10px 0; }
+  .barras i{ flex:1; font-style:normal; border-radius:7px 7px 3px 3px;
+    background:rgba(124,58,237,.12); position:relative; height:20%; }
+  .barras i b{ position:absolute; bottom:4px; left:0; right:0; text-align:center; color:#fff;
+    font-size:9px; font-style:normal; }
+  .caja{ background:#fff; border:1px solid var(--borde); border-radius:16px; padding:12px 14px; margin-bottom:9px; }
+  .caja h4{ font-size:12px; color:var(--tinta); margin-bottom:9px; }
+  .fila{ display:flex; align-items:center; gap:9px; font-size:11.5px; color:var(--tinta); padding:5px 0; }
+  .fila small{ color:var(--gris); display:block; font-size:10px; }
+  .subir{ margin-left:auto; border:0; border-radius:9px; padding:6px 10px; font-size:10.5px; font-weight:900;
+    background:linear-gradient(135deg,#16a34a,#22c55e); color:#fff; opacity:0; transform:scale(.7); }
+  .escena.activa .subir{ animation:pop .5s .9s forwards; }
+  @keyframes pop{ to{ opacity:1; transform:scale(1); } }
+
+  /* builder */
+  .build-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+  .bej{ background:#fff; border:1.5px solid var(--borde); border-radius:13px; padding:9px 4px;
+    text-align:center; font-size:10.5px; font-weight:800; color:var(--tinta); }
+  .bej .em{ font-size:24px; display:block; margin-bottom:3px; }
+  .bej.drag{ border-color:var(--c1); background:rgba(124,58,237,.08);
+    animation:draga 5s ease-in-out infinite; position:relative; z-index:6; }
+  @keyframes draga{
+    0%,30%{ transform:translate(0,0) scale(1); box-shadow:0 0 0 rgba(124,58,237,0); }
+    45%{ transform:translate(6px,-52px) scale(1.05); box-shadow:0 14px 26px rgba(124,58,237,.35); }
+    60%,84%{ transform:translate(8px,-52px) scale(1.05); box-shadow:0 14px 26px rgba(124,58,237,.35); }
+    100%{ transform:translate(0,0) scale(1); box-shadow:0 0 0 rgba(124,58,237,0); }
+  }
+  .mazo{ border:2px dashed rgba(124,58,237,.4); border-radius:15px; padding:9px; min-height:74px;
+    margin-top:10px; transition:.3s; }
+  .mazo.hl{ border-color:var(--c1); background:rgba(124,58,237,.06); }
+  .mazo .vacio{ font-size:10.5px; color:var(--gris); text-align:center; padding:12px 0; }
+  .chip{ display:inline-flex; align-items:center; gap:6px; background:rgba(124,58,237,.1); color:var(--c1);
+    border:1.5px solid rgba(124,58,237,.25); border-radius:999px; padding:4px 6px 4px 10px;
+    font-size:10.5px; font-weight:800; margin:3px 3px 0 0; opacity:0; transform:scale(.6); }
+  .escena.activa .chip{ animation:pop .45s forwards; }
+  .escena.activa .chip:nth-of-type(1){ animation-delay:2.6s; }
+  .escena.activa .chip:nth-of-type(2){ animation-delay:2.9s; }
+
+  /* dots */
+  .dots{ display:flex; gap:7px; }
+  .dots i{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.25); transition:.3s; font-style:normal; }
+  .dots i.activa{ background:#a78bfa; width:20px; border-radius:4px; }
+  .nota{ color:#8f8bb5; font-size:11.5px; text-align:center; max-width:340px; line-height:1.5; }
+</style>
+</head>
+<body>
+  <div class="titulo">
+    <h1>🏋️ Tu Entrenador — la app</h1>
+    <p>Demo animada · se reproduce sola</p>
+  </div>
+
+  <div class="phone">
+    <div class="pantalla">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:41</span><span>📶 🔋</span></div>
+
+      <!-- 1 · LOGIN -->
+      <div class="escena" data-i="0">
+        <div class="login">
+          <div class="logo">🏋️</div>
+          <h2>Tu Entrenador</h2>
+          <p>Una sola app, tres formas de entrar</p>
+          <div class="rol"><span class="em">🏋️</span><span>Alumno<small>ve su plan del día y entrena</small></span></div>
+          <div class="rol"><span class="em">🧑‍🏫</span><span>Entrenador<small>arma planes y sigue a todos</small></span></div>
+          <div class="rol"><span class="em">👑</span><span>Dueño del gimnasio<small>gestiona profes, cobros… y entrena</small></span></div>
+        </div>
+      </div>
+
+      <!-- 2 · ALUMNO DECK -->
+      <div class="escena" data-i="1">
+        <div class="cab"><div class="avatar">G</div><div><b>Hola, Germán 👋</b><small>Martes · te toca empuje</small></div></div>
+        <div class="cuerpo">
+          <div class="dias"><i>L</i><i class="ok">L</i><i class="hoy">M</i><i>X</i><i>J</i><i>V</i><i>S</i><i>D</i></div>
+          <div class="deck">
+            <div class="carta tres"><div class="dibujo">🏋️</div></div>
+            <div class="carta dos"><div class="dibujo">💪</div></div>
+            <div class="carta uno">
+              <div class="dibujo"><span class="num">1 / 6</span>🤸<span class="sello">¡HECHO!</span></div>
+              <div class="datos">
+                <h2>Press de banca</h2>
+                <div class="pills"><i>4 × 10</i><i class="peso">40 kg ✎</i><i>⏱️ 90″</i></div>
+                <div class="sug">🔥 ¡Vení muy bien con 40 kg! La próxima probá con <b>42,5 kg</b> (tu profe lo ve).</div>
+                <button class="canje-btn">🔄 Cambiar ejercicio</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · CANJE -->
+      <div class="escena" data-i="2">
+        <div class="cab"><div class="avatar">G</div><div><b>Hola, Germán 👋</b><small>Martes · te toca empuje</small></div></div>
+        <div class="cuerpo">
+          <div class="dias"><i>L</i><i class="ok">L</i><i class="hoy">M</i><i>X</i><i>J</i><i>V</i><i>S</i><i>D</i></div>
+          <div class="deck">
+            <div class="carta" style="opacity:.55"><div class="dibujo">🤸</div></div>
+          </div>
+          <div class="hoja sube">
+            <div class="agarre"></div>
+            <h3>🔄 Cambiar ejercicio</h3>
+            <div class="sub">Opciones que dejó tu profe para hoy:</div>
+            <div class="op sel"><span class="em">🤸</span><b>Press con mancuernas</b><span class="chk">✓</span></div>
+            <div class="op sel"><span class="em">💪</span><b>Flexiones</b><span class="chk">✓</span></div>
+            <div class="op"><span class="em">🏋️</span><b>Fondos</b><span class="chk">✓</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 · RESUMEN SEMANAL -->
+      <div class="escena" data-i="3">
+        <div class="cuerpo" style="justify-content:center">
+          <div class="emoji-fiesta">🎉</div>
+          <h3 style="text-align:center;color:var(--tinta);font-size:17px;margin:2px 0 10px">Tu semana</h3>
+          <div class="stats">
+            <div class="stat"><b>4</b><small>días entrenando</small></div>
+            <div class="stat"><b>23</b><small>ejercicios hechos</small></div>
+            <div class="stat"><b>6</b><small>🔥 racha</small></div>
+            <div class="stat"><b>9.820 kg</b><small>volumen</small></div>
+            <div class="stat ancha"><small>🏆 Tu récord de peso</small><b style="font-size:16px">80 kg · Press de banca</b></div>
+          </div>
+          <button class="btn-grad">¡Vamos por más! 💪</button>
+        </div>
+      </div>
+
+      <!-- 5 · PROFE PROGRESO -->
+      <div class="escena" data-i="4">
+        <div class="cab"><div class="avatar" style="background:linear-gradient(135deg,#0ea5e9,#22c55e)">🧑‍🏫</div><div><b>Profe Marina</b><small>Tus alumnos</small></div></div>
+        <div class="cuerpo">
+          <div class="alu"><div class="avatar" style="width:32px;height:32px;font-size:13px">G</div>
+            <div class="info"><b>Germán Díaz</b><small>Empuje · 4 ejercicios</small></div><span class="racha">🔥 6</span></div>
+          <div class="caja">
+            <h4>📅 Esta semana</h4>
+            <div class="barras">
+              <i style="height:70%"><b>70%</b></i><i style="height:90%;background:linear-gradient(180deg,var(--c1),var(--c2))"><b>90%</b></i>
+              <i style="height:55%"><b></b></i><i style="height:80%;background:linear-gradient(180deg,var(--c1),var(--c2))"><b>80%</b></i>
+              <i style="height:65%"><b></b></i><i style="height:95%;background:linear-gradient(180deg,var(--c1),var(--c2))"><b>95%</b></i>
+              <i style="height:30%"><b></b></i>
+            </div>
+          </div>
+          <div class="caja">
+            <h4>📈 Listos para subir peso</h4>
+            <div class="fila"><b>Press de banca</b><small>40 kg → 42,5 kg · 3+ sesiones</small><button class="subir">Subir ↑</button></div>
+            <div class="fila"><b>Sentadilla</b><small>60 kg → 62,5 kg · 3+ sesiones</small><button class="subir">Subir ↑</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 · BUILDER -->
+      <div class="escena" data-i="5">
+        <div class="cab"><div class="avatar" style="background:linear-gradient(135deg,#0ea5e9,#22c55e)">🧑‍🏫</div><div><b>Armando plan</b><small>Martes · Germán</small></div></div>
+        <div class="cuerpo">
+          <div class="dias"><i>L</i><i>M</i><i>X</i><i>J</i><i>V</i><i>S</i><i>D</i></div>
+          <div class="build-grid">
+            <div class="bej"><span class="em">🏃</span>Cinta</div>
+            <div class="bej drag"><span class="em">🤸</span>Press</div>
+            <div class="bej"><span class="em">💪</span>Flexiones</div>
+            <div class="bej"><span class="em">🦵</span>Sentadilla</div>
+            <div class="bej"><span class="em">🏋️</span>Peso muerto</div>
+            <div class="bej"><span class="em">🧘</span>Plancha</div>
+          </div>
+          <div class="mazo hl">
+            <span class="vacio">⬇️ Arrastrá acá los ejercicios del día</span>
+            <span class="chip">🤸 Press banca ×</span>
+            <span class="chip">🔄 2 alternativas ×</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="escena-texto">
+    <b id="et-t"></b>
+    <small id="et-s"></small>
+  </div>
+  <div class="dots" id="dots"></div>
+  <p class="nota">Sincronización inmediata en la nube ☁️ · funciona sin conexión · tarjetas que se marcan deslizando como Tinder · sin instalar nada, es una PWA.</p>
+
+<script>
+  var ESCENAS=[
+    ["Un login, tres roles","Cada quien entra a su vista: alumno, entrenador o dueño. El dueño también puede entrenar. 🏋️"],
+    ["El alumno entrena con tarjetas","Deslizá a la derecha = hecho ✅. Pesos, series, timer y… ¡la app te avisa cuándo subir de carga! 🔥"],
+    ["Canjear ejercicio (lo controla el profe)","El profe marca las alternativas permitidas; el alumno elige solo entre esas. 🔄"],
+    ["Resumen semanal motivador","Racha, días entrenando, volumen levantado y récord de peso. 🎉🏆"],
+    ["El profe sigue a todos","Cumplimiento de cada alumno y avisos de 'listo para subir peso' con un toque. 📈"],
+    ["Armá planes arrastrando","Builder con biblioteca de ejercicios, alternativas de canje y todo guardado en la nube. 🧑‍🏫"]
+  ];
+  var escena=0, total=ESCENAS.length, timer=null;
+  var dots=document.getElementById('dots');
+  ESCENAS.forEach(function(_,i){ var d=document.createElement('i'); dots.appendChild(d); });
+  function mostrar(i){
+    escena=i;
+    document.querySelectorAll('.escena').forEach(function(e,j){ e.classList.toggle('activa', j===i); });
+    document.querySelectorAll('#dots i').forEach(function(d,j){ d.classList.toggle('activa', j===i); });
+    var t=document.getElementById('et-t'), s=document.getElementById('et-s');
+    t.style.opacity=0; s.style.opacity=0;
+    setTimeout(function(){ t.textContent=ESCENAS[i][0]; s.textContent=ESCENAS[i][1]; t.style.opacity=1; s.style.opacity=1; },180);
+  }
+  function arrancar(){ clearInterval(timer); timer=setInterval(function(){ mostrar((escena+1)%total); }, 5200); }
+  mostrar(0); arrancar();
+  // tocar para avanzar
+  document.querySelector('.phone').addEventListener('click', function(){ mostrar((escena+1)%total); arrancar(); });
+</script>
+</body>
+</html>
