@@ -172,6 +172,8 @@ function rConfirmar(opts, onOk, onCancel){
 }
 R.rConfirmar = rConfirmar;
 R.rAyuda = rAyuda;
+R.rHojaInput = rHojaInput;
+R.rHojaLista = rHojaLista;
 
 function rWaLink(tel, texto){
   var d = String(tel||'').replace(/\D/g,'').replace(/^0+/,'');
@@ -1407,7 +1409,7 @@ function conectar(){
   b$('bUtilGuardar').onclick=function(){
     b$('bVeloUtil').classList.remove('abierto');
     if(!planTieneAlgo(B.plan)){ bToast('El plan está vacío'); return; }
-    rHojaInput({ host:b$('rAppBuilder'), titulo:'Guardar plantilla', label:'Nombre de la plantilla',
+    R.rHojaInput({ host:b$('rAppBuilder'), titulo:'Guardar plantilla', label:'Nombre de la plantilla',
       placeholder:'Ej: Fuerza · semana 1', okTexto:'Guardar' }, function(nombre){
       if(!nombre) return;
       var k=CONFIG.CLAVE_DATOS+'_plantillas_'+sesion.id, g=(function(){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};} })();
@@ -1420,7 +1422,7 @@ function conectar(){
     var k=CONFIG.CLAVE_DATOS+'_plantillas_'+sesion.id, g=(function(){ try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};} })();
     var nombres=Object.keys(g);
     if(!nombres.length){ bToast('No hay plantillas guardadas'); return; }
-    rHojaLista({ host:b$('rAppBuilder'), titulo:'Usar plantilla', vacio:'No hay plantillas guardadas' },
+    R.rHojaLista({ host:b$('rAppBuilder'), titulo:'Usar plantilla', vacio:'No hay plantillas guardadas' },
       nombres.map(function(n){ var ej=Object.keys(g[n]).reduce(function(s,dd){ return s+((g[n][dd]||[]).length); },0);
         return { id:n, titulo:n, sub:ej+' ejercicios', emoji:'📋' }; }), function(it){
       if(!it) return;
@@ -1433,7 +1435,7 @@ function conectar(){
     b$('bVeloUtil').classList.remove('abierto');
     var otros = (R.entrenador.alumnos||[]).filter(function(u){ return u.id!==B.userId && planTieneAlgo(planDe(u)); });
     if(!otros.length){ bToast('Ningún otro alumno con plan'); return; }
-    rHojaLista({ host:b$('rAppBuilder'), titulo:'Copiar plan de…', vacio:'Ningún otro alumno con plan' },
+    R.rHojaLista({ host:b$('rAppBuilder'), titulo:'Copiar plan de…', vacio:'Ningún otro alumno con plan' },
       otros.map(function(u){ return { id:u.id, titulo:u.nombre, sub:'Plan cargado', emoji:'👤' }; }),
       function(it){
         if(!it) return;
@@ -2118,7 +2120,7 @@ function conectar(){
   d$('dSalir').onclick=function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); }); };
   d$('dVeloMenu').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   d$('dMenuSalir').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); salir(); };
-  d$('dMenuAyuda').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); rAyuda(); };
+  d$('dMenuAyuda').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); if(window.Rediseno.rAyuda) window.Rediseno.rAyuda(); };
   d$('dMenuProg').onclick=function(){
     d$('dVeloMenu').classList.remove('abierto');
     R.ocultarAlumno();
@@ -2210,7 +2212,7 @@ function montar(){
   window.Rediseno.ocultarAlumno && window.Rediseno.ocultarAlumno();
   window.Rediseno.ocultarEntrenador && window.Rediseno.ocultarEntrenador();
   window.Rediseno.ocultarOwner && window.Rediseno.ocultarOwner();
-  if(sesion.rol==='superadmin'){
+  if(sesion.rol==='superadmin' || sesion.rol==='admin'){
     window.Rediseno.renderOwner && window.Rediseno.renderOwner();
   } else if(sesion.rol==='entrenador'){
     window.Rediseno.renderEntrenador();
@@ -2339,7 +2341,7 @@ R.renderOwner = function(){
   o$('rAppOwner').classList.add('ver');
   o$('oSalir').onclick = function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ R.ocultarOwner(); salir(); }); };
   o$('oSync').onclick = function(){ oToast('✓ Datos actualizados'); };
-  var _oAyuda = o$('oAyuda'); if(_oAyuda) _oAyuda.onclick = rAyuda;
+  var _oAyuda = o$('oAyuda'); if(_oAyuda) _oAyuda.onclick = function(){ R.rAyuda && R.rAyuda(); };
   var buscar = function(){ oBuscar(); };
   o$('oBuscar').onclick = buscar;
   o$('oDni').addEventListener('keydown', function(e){ if(e.key==='Enter') buscar(); });
@@ -2389,7 +2391,7 @@ async function oRenderEntrenadores(){
 }
 function oAccionEntrenador(u, acc){
   if(acc==='pagar'){
-    rHojaInput({ titulo:'💵 Cobrar membresía', label:'Meses a cobrar', placeholder:'1', valor:'1', okTexto:'Confirmar pago' }, function(meses){
+    R.rHojaInput({ titulo:'💵 Cobrar membresía', label:'Meses a cobrar', placeholder:'1', valor:'1', okTexto:'Confirmar pago' }, function(meses){
       if(!meses) return;
       var m = parseInt(meses,10); if(!m || m<1){ oToast('Poné los meses'); return; }
       R.rConfirmar({ icono:'💵', titulo:'¿Registrar pago de '+u.nombre+'?', mensaje:m+' mes(es) de membresía. Se extiende su vencimiento.', okTexto:'Sí, cobrar' }, async function(){
