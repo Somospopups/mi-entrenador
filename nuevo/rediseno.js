@@ -1709,13 +1709,18 @@ function crearEstructura(){
   var d=document.createElement('div');
   d.className='r-app'; d.id='rAppAlumno';
   d.innerHTML='<div class="r-manchas"><i></i><i></i><i></i></div>'+
-    '<div class="r-deck-top"><div class="r-deck-titulo"><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b><span class="r-sem-badge" id="dSemBadge" style="display:none"></span></div>'+
+    '<div class="r-deck-top">'+
+      '<div class="r-deck-fila1">'+
+        '<div class="r-deck-titulo"><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b></div>'+
+        '<span class="r-sem-badge" id="dSemBadge" style="display:none"></span>'+
+        '<div class="r-deck-der"><div class="r-anillo-wrap"><div class="r-anillo" id="dAnillo"></div><i id="dAnilloTxt">0%</i></div>'+
+        '<button class="r-salir-btn" id="dSalir" title="Cerrar sesión">🚪</button>'+
+        '<button class="r-menu-btn" id="dMenu" title="Menú">☰</button></div>'+
+      '</div>'+
       '<div class="r-deck-dias" id="dDias"></div>'+
-      '<div class="r-anillo-wrap"><div class="r-anillo" id="dAnillo"></div><i id="dAnilloTxt">0%</i></div>'+
-      '<button class="r-salir-btn" id="dSalir" title="Cerrar sesión">🚪</button>'+
-      '<button class="r-menu-btn" id="dMenu" title="Menú">☰</button></div>'+
-    '<div class="r-deck-puntos" id="dPuntos"></div>'+
-    '<div class="r-deck-zona" id="dZona"><button class="r-nav-dia izq" id="dIzq">‹</button><button class="r-nav-dia der" id="dDer">›</button></div>'+
+    '</div>'+
+    '<div class="r-deck-zona" id="dZona"></div>'+
+    '<div class="r-deck-ejs" id="dCuadritos"></div>'+
     '<div class="r-deck-botones" id="dBotones"><button class="r-bbtn no" id="dNo">✗</button><button class="r-bbtn ok" id="dSi">✓</button></div>'+
     '<div class="r-deck-pista" id="dPista">Deslizá la carta · ✓ hecha · ✗ no salió</div>'+
     '<div class="r-deck-fin" id="dFin"><div class="r-confeti" id="dConfeti"></div><div class="r-emoji" id="dFinEmoji">🎉</div>'+
@@ -1723,7 +1728,8 @@ function crearEstructura(){
       '<div><button id="dFinRevisar">Revisar</button> <button id="dFinSalir" style="background:#f1f1f8;color:var(--gris);box-shadow:none">Salir</button></div></div>'+
     // peso
     '<div class="r-velo" id="dVeloPeso"><div class="r-hoja"><div class="r-agarre"></div>'+
-      '<h3 style="font-size:17px;text-align:center">¿Qué peso usaste?</h3><p style="font-size:12.5px;color:var(--gris);text-align:center;margin:4px 0 14px" id="dPesoSub"></p>'+
+      '<h3 style="font-size:17px;text-align:center">¿Qué peso usaste?</h3><p style="font-size:12.5px;color:var(--gris);text-align:center;margin:4px 0 8px" id="dPesoSub"></p>'+
+      '<p style="font-size:11.5px;color:#a06a00;text-align:center;margin:0 0 12px;background:#fff8e6;border:1px solid #ffe2a8;border-radius:10px;padding:7px 10px">💡 Si subiste o bajaste el peso que te indicó tu profe, anotá el real: lo ve en tu progreso. 📈</p>'+
       '<input id="dPesoInput" inputmode="decimal" placeholder="60 kg" style="width:100%;border:1.5px solid var(--borde);border-radius:14px;padding:14px;font-size:18px;font-weight:800;text-align:center;outline:none;background:#fafaff;color:var(--tinta)">'+
       '<div class="r-hb"><button class="r-cancela" id="dPesoCancela">Cancelar</button><button class="r-listo" id="dPesoListo">Listo</button></div></div></div>'+
     // menú
@@ -1756,13 +1762,12 @@ function dRender(){
     else carta.innerHTML='<div class="r-gran">🌙</div><h2>Día de descanso</h2><p>El descanso también entrena. Recargá pilas: mañana se vuelve.</p>';
     zona.appendChild(carta);
     d$('dBotones').style.display='none';
-    d$('dPista').textContent = dEsHoy() ? '' : 'Estás mirando otro día';
-    d$('dPuntos').innerHTML='';
-    dNavFlechas();
+    d$('dPista').textContent = dEsHoy() ? '' : 'Tocá un día arriba para volver';
+    dPintarCuadritos([], {});
     return;
   }
   d$('dBotones').style.display = dEsHoy() ? 'flex' : 'none';
-  d$('dPista').textContent = dEsHoy() ? 'Deslizá la carta · ✓ hecha · ✗ no salió' : 'Estás mirando otro día · tocá "hoy" para volver';
+  d$('dPista').textContent = dEsHoy() ? 'Deslizá la carta · ✓ hecha · ✗ no salió' : 'Tocá un cuadrito para ver cada ejercicio';
   var marcas=dMarcasHoy(D.dia);
   // cartas: solo la actual (el mazo real sale de Supabase; atrás mostramos difuminado)
   [-1,-2].forEach(function(atras){
@@ -1771,11 +1776,8 @@ function dRender(){
   });
   var actual=dHacerCarta(lista[D.idx], D.idx, 'entra');
   zona.appendChild(actual);
-  // puntos
-  d$('dPuntos').innerHTML = lista.map(function(e,i){
-    var m=marcas[e.id];
-    return '<span class="'+(m===true?'ok':m===false?'no':(i===D.idx&&dEsHoy()?'act':''))+'"></span>';
-  }).join('');
+  // cuadraditos de todos los ejercicios del día (tocables; ✓ verde / ✗ roja)
+  dPintarCuadritos(lista, marcas);
   // animación del dibujo
   var imgs=actual.querySelectorAll('.r-dibujo img');
   if(imgs.length>1){
@@ -1786,11 +1788,7 @@ function dRender(){
   } else if(imgs.length===1) imgs[0].classList.add('viendo');
   dNavFlechas();
 }
-function dNavFlechas(){
-  var lista=dLista(D.dia), mostrar = !dEsHoy() && lista.length>1;
-  d$('dIzq').classList.toggle('vis', mostrar && D.idx>0);
-  d$('dDer').classList.toggle('vis', mostrar && D.idx<lista.length-1);
-}
+function dNavFlechas(){ /* flechas retiradas: se navega con los cuadraditos */ }
 function dHacerCarta(e, i, clase){
   var marcas=dMarcasHoy(D.dia);
   var m=marcas[e.id];
@@ -1824,6 +1822,23 @@ function dHacerCarta(e, i, clase){
   var pill=c.querySelector('[data-peso]');
   if(pill && dEsHoy()) pill.onclick=function(ev){ ev.stopPropagation(); dAbrirPeso(e); };
   return c;
+}
+function dPintarCuadritos(lista, marcas){
+  var caja=d$('dCuadritos'); if(!caja) return;
+  if(!lista.length){ caja.innerHTML=''; caja.style.display='none'; return; }
+  caja.style.display='flex';
+  caja.innerHTML = lista.map(function(e,i){
+    var m=marcas[e.id];
+    var cuadros=imgsDe(e.nombre);
+    var mini = cuadros.length
+      ? '<img src="'+cuadros[0]+'" alt="">'
+      : '<span class="r-cu-em">'+(e.emoji||'🏋️')+'</span>';
+    var sello = m===true ? '<b class="r-cu-v">✓</b>' : m===false ? '<b class="r-cu-x">✗</b>' : '';
+    return '<button class="r-cuadrito'+(i===D.idx?' act':'')+(m===true?' ok':m===false?' no':'')+'" data-i="'+i+'">'+mini+sello+'</button>';
+  }).join('');
+  caja.querySelectorAll('.r-cuadrito').forEach(function(b){
+    b.onclick=function(){ D.idx=Number(b.getAttribute('data-i')); dRender(); };
+  });
 }
 function dPintarDias(){
   var plan=dPlan(), hoyK=dHoy();
@@ -1914,8 +1929,6 @@ var dPesoEj=null;
 function conectar(){
   d$('dSi').onclick=function(){ dResponder(true); };
   d$('dNo').onclick=function(){ dResponder(false); };
-  d$('dIzq').onclick=function(){ if(D.idx>0){ D.idx--; dRender(); } };
-  d$('dDer').onclick=function(){ if(D.idx<dLista(D.dia).length-1){ D.idx++; dRender(); } };
   d$('dPesoCancela').onclick=function(){ d$('dVeloPeso').classList.remove('abierto'); };
   d$('dVeloPeso').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   d$('dPesoListo').onclick=async function(){
@@ -1990,8 +2003,6 @@ function conectar(){
     var esHoy = dEsHoy();
     if(esHoy && dx>umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-ok'); dResponder(true); }
     else if(esHoy && dx<-umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-no'); dResponder(false); }
-    else if(!esHoy && dx>umbral && D.idx>0){ carta.classList.remove('sw-ok','sw-no'); carta.classList.add('fuera-ok'); setTimeout(function(){ D.idx--; dRender(); },260); }
-    else if(!esHoy && dx<-umbral && D.idx<dLista(D.dia).length-1){ carta.classList.remove('sw-ok','sw-no'); carta.classList.add('fuera-no'); setTimeout(function(){ D.idx++; dRender(); },260); }
     else { carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },520); }
     arr=null;
   }
