@@ -1721,8 +1721,7 @@ function crearEstructura(){
     '</div>'+
     '<div class="r-deck-zona" id="dZona"></div>'+
     '<div class="r-deck-ejs" id="dCuadritos"></div>'+
-    '<div class="r-deck-botones" id="dBotones"><button class="r-bbtn no" id="dNo">✗</button><button class="r-bbtn ok" id="dSi">✓</button></div>'+
-    '<div class="r-deck-pista" id="dPista">Deslizá la carta · ✓ hecha · ✗ no salió</div>'+
+    '<div class="r-deck-pista" id="dPista">Deslizá la carta → ✓ hecho · ← ✗ no salió</div>'+
     '<div class="r-deck-fin" id="dFin"><div class="r-confeti" id="dConfeti"></div><div class="r-emoji" id="dFinEmoji">🎉</div>'+
       '<h2 id="dFinTitulo"></h2><p id="dFinTexto"></p>'+
       '<div><button id="dFinRevisar">Revisar</button> <button id="dFinSalir" style="background:#f1f1f8;color:var(--gris);box-shadow:none">Salir</button></div></div>'+
@@ -1761,13 +1760,13 @@ function dRender(){
     if(sinPlan) carta.innerHTML='<div class="r-gran">✨</div><h2>Tu plan está en camino</h2><p>Tu entrenador lo está preparando. En cuanto lo tengas, lo vas a ver acá.</p>';
     else carta.innerHTML='<div class="r-gran">🌙</div><h2>Día de descanso</h2><p>El descanso también entrena. Recargá pilas: mañana se vuelve.</p>';
     zona.appendChild(carta);
-    d$('dBotones').style.display='none';
+    var db0=d$('dBotones'); if(db0) db0.style.display='none';
     d$('dPista').textContent = dEsHoy() ? '' : 'Tocá un día arriba para volver';
     dPintarCuadritos([], {});
     return;
   }
-  d$('dBotones').style.display = dEsHoy() ? 'flex' : 'none';
-  d$('dPista').textContent = dEsHoy() ? 'Deslizá la carta · ✓ hecha · ✗ no salió' : 'Tocá un cuadrito para ver cada ejercicio';
+  var db1=d$('dBotones'); if(db1) db1.style.display='none';
+  d$('dPista').textContent = dEsHoy() ? 'Deslizá la carta → ✓ hecho · ← ✗ no salió' : 'Tocá un cuadrito para ver cada ejercicio';
   var marcas=dMarcasHoy(D.dia);
   // cartas: solo la actual (el mazo real sale de Supabase; atrás mostramos difuminado)
   [-1,-2].forEach(function(atras){
@@ -1927,8 +1926,8 @@ function dAbrirPeso(e){
 }
 var dPesoEj=null;
 function conectar(){
-  d$('dSi').onclick=function(){ dResponder(true); };
-  d$('dNo').onclick=function(){ dResponder(false); };
+  if(d$('dSi')) d$('dSi').onclick=function(){ dResponder(true); };
+  if(d$('dNo')) d$('dNo').onclick=function(){ dResponder(false); };
   d$('dPesoCancela').onclick=function(){ d$('dVeloPeso').classList.remove('abierto'); };
   d$('dVeloPeso').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   d$('dPesoListo').onclick=async function(){

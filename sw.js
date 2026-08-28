@@ -4,7 +4,7 @@
    - dibujos e íconos: caché primero (no cambian nunca).
    - IMPORTANTE: nunca se guardan respuestas fallidas (404, etc.).
    - Al activarse una versión nueva, reclama los clientes y recarga las pestañas. */
-const CACHE = 'entrenador-v74';
+const CACHE = 'entrenador-v75';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html', './manifest.json', './icon-192.png'])).then(() => self.skipWaiting()));
 });

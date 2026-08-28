@@ -321,8 +321,8 @@
 .r-deck-dias{ position:relative; z-index:5; display:flex; gap:6px; justify-content:space-between;
   padding:2px 0; width:100%; }
 .r-deck-dias::-webkit-scrollbar{ display:none; }
-.r-dp{ flex:1 1 0; min-width:0; padding:6px 0; border-radius:12px; border:1.5px solid rgba(255,255,255,.9);
-  background:rgba(255,255,255,.6); backdrop-filter:blur(10px); font-size:11px; font-weight:800; color:var(--tinta);
+.r-dp{ flex:1 1 0; min-width:0; padding:8px 0; border-radius:12px; border:1.5px solid rgba(124,58,237,.1);
+  background:rgba(255,255,255,.82); font-size:11.5px; font-weight:800; color:var(--tinta);
   position:relative; }
 .r-dp small{ display:block; font-size:6.5px; font-weight:700; color:var(--gris); }
 .r-dp .r-pd{ position:absolute; top:3px; right:5px; width:6px; height:6px; border-radius:50%; }
@@ -332,8 +332,8 @@
   box-shadow:0 6px 14px rgba(124,58,237,.35); }
 .r-dp.activo small{ color:rgba(255,255,255,.85); }
 /* cuadraditos de ejercicios del día (tipo las cartas del profe) */
-.r-deck-ejs{ position:absolute; left:0; right:0; bottom:118px; z-index:6; display:none;
-  justify-content:center; gap:8px; padding:0 14px; flex-wrap:wrap; }
+.r-deck-ejs{ position:absolute; left:0; right:0; bottom:48px; z-index:6; display:none;
+  justify-content:center; gap:9px; padding:0 14px; flex-wrap:wrap; }
 .r-cuadrito{ position:relative; width:52px; height:52px; flex:0 0 auto; border-radius:14px; overflow:hidden;
   border:2px solid rgba(124,58,237,.16); background:#fff; padding:0; cursor:pointer;
   box-shadow:0 6px 16px rgba(60,50,120,.12); transition:transform .15s, border-color .15s; }
@@ -348,16 +348,16 @@
 .r-cuadrito.ok b{ opacity:1; background:rgba(22,163,74,.72); }
 .r-cuadrito.no b{ opacity:1; background:rgba(220,38,38,.72); }
 @media (max-height:700px){ .r-deck-ejs{ bottom:108px; } .r-cuadrito{ width:46px; height:46px; } }
-.r-deck-zona{ position:absolute; left:0; right:0; top:104px; bottom:176px; z-index:2; }
+.r-deck-zona{ position:absolute; left:0; right:0; top:108px; bottom:158px; z-index:2; }
 .r-dcarta{ position:absolute; inset:0; margin:0 auto;
-  width:calc(100% - 56px); max-width:340px;
+  width:calc(100% - 48px); max-width:360px;
   border-radius:28px; overflow:hidden; background:#fff;
-  box-shadow:0 24px 60px rgba(60,50,120,.22);
+  box-shadow:0 18px 44px rgba(60,50,120,.18);
   border:none; display:flex; flex-direction:column;
   touch-action:none; -webkit-user-select:none; user-select:none;
-  transition:transform .38s cubic-bezier(.22,.9,.35,1), opacity .38s ease, box-shadow .2s ease;
-  will-change:transform; }
-@media (max-height:700px){ .r-deck-zona{ top:96px; bottom:168px; } }
+  transition:transform .28s cubic-bezier(.22,.9,.35,1), opacity .26s ease;
+  will-change:transform; backface-visibility:hidden; }
+@media (max-height:700px){ .r-deck-zona{ top:100px; bottom:150px; } }
 /* la pila de atrás apenas asoma, sin marco visible */
 .r-dcarta.detras{ opacity:.4; }
 .r-dcarta.detras2{ opacity:.16; }
@@ -420,8 +420,7 @@
 .r-nav-dia.vis{ display:grid; }
 /* flechas de pasar carta retiradas: el mazo se maneja solo con deslizar/✓✗ */
 .r-nav-dia{ display:none !important; }
-.r-deck-botones{ position:absolute; bottom:32px; left:0; right:0; z-index:6; display:flex; gap:30px;
-  justify-content:center; align-items:center; }
+.r-deck-botones{ display:none !important; }
 .r-bbtn{ width:68px; height:68px; border-radius:50%; font-size:27px; font-weight:900;
   display:grid; place-items:center; transition:transform .12s;
   backdrop-filter:blur(16px) saturate(1.6); -webkit-backdrop-filter:blur(16px) saturate(1.6);
@@ -658,3 +657,23 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
 .r-sem-badge{ margin-left:auto; align-self:flex-start; font-size:11px; font-weight:800; color:#fff;
   background:linear-gradient(135deg,var(--c1),var(--c2)); border-radius:20px; padding:5px 11px;
   box-shadow:0 6px 14px rgba(124,58,237,.3); white-space:nowrap; }
+
+/* ── MOBILE PERFORMANCE: alivianar blur/sombras/animaciones en pantallas chicas ── */
+@media (max-width:719px){
+  /* en el mazo del alumno, fuera blur de backdrop (lo que más traba en celus) */
+  #rAppAlumno .r-anillo-wrap, #rAppAlumno .r-dp, #rAppAlumno .r-cuadrito{
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  }
+  /* manchas de fondo más livianas (blur chico) */
+  #rAppAlumno .r-manchas i, #rAppProfe .r-manchas i, #rAppBuilder .r-manchas i{
+    filter:blur(34px) !important; opacity:.35 !important;
+  }
+  /* sombras de carta más livianas durante el toque/arrastre */
+  .r-dcarta{ box-shadow:0 12px 30px rgba(60,50,120,.16); }
+  .r-dcarta.sw-ok{ box-shadow:0 14px 34px rgba(22,163,74,.3); }
+  .r-dcarta.sw-no{ box-shadow:0 14px 34px rgba(220,38,38,.3); }
+}
+/* Si el usuario tiene "reducir movimiento" en el sistema, sin animaciones */
+@media (prefers-reduced-motion: reduce){
+  .r-dcarta, .r-fantasma, .r-cuadrito, .r-pc{ transition:none !important; animation:none !important; }
+}
