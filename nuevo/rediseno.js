@@ -437,6 +437,7 @@ function rFichaHTML(u, conAtras){
       '<div class="r-cred"><span class="r-avatar">'+inicial(u.nombre)+'</span>'+
       '<div style="flex:1"><b>'+esc(u.nombre)+'</b><small>DNI '+esc(u.dni)+(u.telefono?' · '+esc(u.telefono):'')+'</small>'+
       '<div><button class="r-chato" id="rFWsp">💬 WhatsApp</button>'+
+      '<button class="r-chato" id="rFRecordar">🔔 Recordar entrenar</button>'+
       '<button class="r-chato" id="rFEditar">✏️ Editar datos</button>'+
       (u.demo?'<span style="font-size:11px;font-weight:700;color:#d97706">🧪 Alumno de prueba · los datos quedan en este dispositivo</span>':'')+
       '</div></div></div>'+
@@ -462,6 +463,19 @@ function rConectarFicha(wrap, u){
   };
   var btnEditar = wrap.querySelector('#rFEditar');
   if (btnEditar) btnEditar.onclick = function(){ rHojaEditarAlumno(u); };
+  var btnRec = wrap.querySelector('#rFRecordar');
+  if (btnRec) btnRec.onclick = function(){
+    var link = rWaLink(u.telefono, '');
+    if (!link){ rToast('Este alumno no tiene WhatsApp cargado', $('rAppProfe')); return; }
+    var nombre = (u.nombre.split(' ')[0]||'');
+    var est = rEstadoAlumno(u);
+    var entrenoHoy = est[1].indexOf('Entrenó hoy')===0;
+    var msg = entrenoHoy
+      ? '¡Hola '+nombre+'! Vi que ya entrenaste hoy 💪 ¡Genial, seguí así! Cualquier cosa me escribís.'
+      : '¡Hola '+nombre+'! Te quería recordar que tenés tu plan de entrenamiento listo 📋. Buscá un ratito y hacelo, que cuando lo cumplís se nota. ¡Vamos que se puede! 🔥';
+    var l = rWaLink(u.telefono, msg);
+    window.open(l, '_blank');
+  };
   var btnClave = wrap.querySelector('#rFClave');
   if (btnClave) btnClave.onclick = function(){
     rConfirmar({ icono:'🔑', titulo:'¿Blanquear la contraseña?', mensaje:u.nombre+' tendrá que elegir una nueva en su próximo ingreso.', okTexto:'Blanquear' }, function(){
@@ -623,16 +637,32 @@ async function rPintarProgFicha(u){
       '<b style="position:absolute;bottom:4px;left:0;right:0;color:#fff;font-size:9px;font-style:normal">'+(pct?pct+'%':'')+'</b></i>'+
       '<small style="font-size:9px;color:var(--gris)">'+['h7','h6','h5','h4','h3','h2','at','hoy'][7-j]+'</small></div>';
   }
-  // últimas cargas
-  var fechas = Object.keys(cargas).sort().reverse(), vistos = {}, filas = '';
-  for (var fi=0; fi<fechas.length && Object.keys(vistos).length<6; fi++){
-    Object.keys(cargas[fechas[fi]]||{}).forEach(function(k){
-      if (k.indexOf('p:')===0 && !vistos[k]){ vistos[k]=cargas[fechas[fi]][k]; }
+  // últimas cargas + evolución
+  function rPesoNum(t){ if(t==null) return null; var m=String(t).replace(',','.').match(/(\d+(?:\.\d+)?)/); return m?parseFloat(m[1]):null; }
+  var fechas = Object.keys(cargas).sort(), vistos = {}, filas = '';
+  var series = {};
+  fechas.forEach(function(f){
+    Object.keys(cargas[f]||{}).forEach(function(k){
+      if(k.indexOf('p:')!==0) return;
+      if(!vistos[k]) vistos[k]=cargas[f][k];
+      var v=rPesoNum(cargas[f][k]); if(v!=null){ (series[k]=series[k]||[]).push(v); }
     });
+  });
+  function rSparkline(vals){
+    if(!vals || vals.length<2) return '';
+    var w=96,h=32,p=4, min=Math.min.apply(null,vals), max=Math.max.apply(null,vals), rango=(max-min)||1;
+    var xy=vals.map(function(v,i){ return [p+(w-2*p)*(i/(vals.length-1)), h-p-(h-2*p)*((v-min)/rango)]; });
+    var pts=xy.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' ');
+    var up=vals[vals.length-1]>=vals[0], col=up?'#16a34a':'#dc2626';
+    var ult=xy[xy.length-1];
+    return '<svg width="'+w+'" height="'+h+'" style="flex:0 0 auto"><polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+ult[0].toFixed(1)+'" cy="'+ult[1].toFixed(1)+'" r="3.2" fill="'+col+'"/></svg>';
   }
   Object.keys(vistos).forEach(function(k){
-    filas += '<div class="r-pago"><span class="r-d" style="flex:1"><b>'+esc(k.slice(2).charAt(0).toUpperCase()+k.slice(3))+'</b>'+
-      '<small>último peso registrado</small></span><span class="r-m">'+esc(vistos[k])+'</span></div>';
+    var vals=series[k]||[];
+    filas += '<div class="r-pago" style="align-items:center"><span class="r-d" style="flex:1"><b>'+esc(k.slice(2).charAt(0).toUpperCase()+k.slice(3))+'</b>'+
+      '<small>'+(vals.length>1?('evolución · '+vals.length+' registros'):'último peso registrado')+'</small></span>'+
+      (vals.length>1?rSparkline(vals):'')+
+      '<span class="r-m" style="margin-left:8px">'+esc(vistos[k])+'</span></div>';
   });
   c.innerHTML =
     '<div class="r-caja"><h3>🔥 Racha actual</h3><div style="display:flex;align-items:center;gap:10px">'+
@@ -937,6 +967,7 @@ function crearEstructura(){
       '<div class="r-pildoras"><div class="r-pcentro">'+
         '<button class="r-pill acc" id="bRepetir">↺ Repetir día anterior</button>'+
         '<button class="r-pill acc" id="bPlantillas">Plantillas</button>'+
+        '<button class="r-pill acc" id="bImprimir">🖨️ Imprimir / PDF</button>'+
       '</div></div>'+
       '<div class="r-ant" id="bPrevZona"><div class="r-ant-cab">🕘 Plan anterior <span id="bPrevFecha"></span></div><div class="r-ant-dias" id="bPrev"></div></div>'+
     '</div>'+
@@ -1261,6 +1292,7 @@ function conectar(){
   };
   // utilidades
   b$('bPlantillas').onclick=function(){ b$('bVeloUtil').classList.add('abierto'); };
+  b$('bImprimir').onclick=function(){ bImprimirPlan(); };
   b$('bVeloUtil').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   b$('bUtilGuardar').onclick=function(){
     b$('bVeloUtil').classList.remove('abierto');
@@ -1346,6 +1378,44 @@ function conectar(){
     B._salir();
     bOfrecerWhatsapp(B.nombre, final);
   };
+}
+
+/* ── imprimir / exportar a PDF el plan que se está armando ── */
+function bImprimirPlan(){
+  if(!planTieneAlgo(B.plan)){ bToast('El plan está vacío'); return; }
+  var nombreApp = (window.CONFIG && CONFIG.APP_NOMBRE) ? CONFIG.APP_NOMBRE : 'Mi Entrenador';
+  var c1='#7c3aed', c2='#3b82f6';
+  var diasHtml = DIAS.map(function(d){
+    var items = (B.plan[d[0]]||[]);
+    if(!items.length) return '';
+    var filas = items.map(function(e,i){
+      var det = [e.series&&e.reps?(e.series+'×'+e.reps):(e.series||e.reps||''), e.carga].filter(Boolean).join(' · ');
+      return '<tr><td class="n">'+(i+1)+'</td><td><b>'+escHtml(e.nombre)+'</b>'+(det?'<span>'+escHtml(det)+'</span>':'')+(e.nota?'<em>↳ '+escHtml(e.nota)+'</em>':'')+'</td></tr>';
+    }).join('');
+    return '<section><h2>'+d[1]+'</h2><table>'+filas+'</table></section>';
+  }).join('');
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Plan · '+escHtml(B.nombre)+'</title>'+
+    '<style>'+
+    '*{box-sizing:border-box}body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#23233f;margin:0;padding:34px 30px}'+
+    '.cab{border-bottom:3px solid '+c1+';padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end}'+
+    '.cab h1{margin:0;font-size:22px;background:linear-gradient(135deg,'+c1+','+c2+');-webkit-background-clip:text;background-clip:text;color:transparent}'+
+    '.cab small{color:#8d8bb0;font-size:13px}.cab .al{text-align:right;font-weight:800;font-size:16px}.cab .al small{display:block;font-weight:500}'+
+    'section{margin-bottom:18px;break-inside:avoid}h2{font-size:15px;color:'+c1+';margin:0 0 7px;border-left:4px solid '+c2+';padding-left:9px}'+
+    'table{width:100%;border-collapse:collapse}td{padding:7px 8px;border-bottom:1px solid #eee;vertical-align:top;font-size:13px}'+
+    'td.n{width:26px;color:#8d8bb0;font-weight:700}td b{font-size:13.5px}td span{display:block;color:#6b6990;font-size:12px;margin-top:1px}'+
+    'td em{display:block;color:#b45309;font-size:11.5px;font-style:normal;margin-top:2px}'+
+    '.pie{margin-top:24px;text-align:center;color:#8d8bb0;font-size:11.5px;border-top:1px solid #eee;padding-top:12px}'+
+    '@media print{body{padding:10px}.cab{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'+
+    '</style></head><body>'+
+    '<div class="cab"><div><h1>'+escHtml(nombreApp)+'</h1><small>Plan de entrenamiento</small></div>'+
+    '<div class="al">'+escHtml(B.nombre)+'<small>'+new Date().toLocaleDateString('es-AR')+'</small></div></div>'+
+    diasHtml+
+    '<div class="pie">Generado con '+escHtml(nombreApp)+' · ¡A darle con todo! 🔥</div>'+
+    '<script>window.onload=function(){try{window.focus();setTimeout(function(){window.print();},250);}catch(e){}};<\/script>'+
+    '</body></html>';
+  var w = window.open('', '_blank');
+  if(!w){ bToast('El navegador bloqueó la ventana. Permití pop-ups.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
 }
 
 /* ── mensaje amigable del plan + ofrecer enviarlo por WhatsApp ── */
