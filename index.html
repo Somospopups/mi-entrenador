@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#4f7df2">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="nuevo/rediseno.css?v=84">
+<link rel="stylesheet" href="nuevo/rediseno.css?v=85">
 <title>Mi Entrenador · Ingreso</title>
 <!-- ============================================================
      PROTOTIPO REUTILIZABLE · Login con DNI + Panel de Administración
@@ -1191,6 +1191,12 @@ var BackendLocal = {
     var u = db.usuarios.find(function(x){ return x.id===userId; });
     if (!u) return { error:'No existe esa cuenta.' };
     return { progreso: u.progreso || {}, cargas: u.hechos || {} };
+  },
+  async obtenerMiPlan(userId){
+    var db = await this._cargar();
+    var u = db.usuarios.find(function(x){ return x.id===userId; });
+    if (!u) return { plan:null, hechos:{} };
+    return { plan: u.plan||null, hechos: u.hechos||{} };
   }
 };
 /* ╔══════════════════════════════════════════════════════════╗
@@ -1547,6 +1553,16 @@ var BackendSupabase = {
     var cargas = {};
     (rm.ok ? (rm.data || []) : []).forEach(function(x){ cargas[x.fecha] = x.marcas || {}; });
     return { progreso: progreso, cargas: cargas };
+  },
+  /* plan y marcas del que entrena (alumno o el propio gestor), por su user_id */
+  async obtenerMiPlan(userId){
+    var rpl = await nubeApi('/rest/v1/fit_planes?select=plan&alumno_id=eq.' + userId);
+    var plan = (rpl.ok && rpl.data && rpl.data[0]) ? rpl.data[0].plan : null;
+    var desde = fechaClave(Date.now() - 119 * 86400000);
+    var rm2 = await nubeApi('/rest/v1/fit_marcas?select=fecha,marcas&alumno_id=eq.' + userId + '&fecha=gte.' + desde + '&order=fecha.asc');
+    var hechos = {};
+    (rm2.ok ? (rm2.data || []) : []).forEach(function(m){ hechos[m.fecha] = m.marcas || {}; });
+    return { plan: plan, hechos: hechos };
   }
 };
 var Backend = (NUBE.activa && NUBE.url && location.hash.indexOf('local') < 0) ? BackendSupabase : BackendLocal;
@@ -2966,7 +2982,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   reanudarSiHabiaSesion();
 })();
 </script>
-<script src="nuevo/rediseno.js?v=84"></script>
+<script src="nuevo/rediseno.js?v=85"></script>
 <script>
 /* cuando el alumno vuelve del tab Progreso al tab Hoy, re-monta el mazo nuevo */
 document.addEventListener('click', function(ev){

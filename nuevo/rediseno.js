@@ -41,13 +41,30 @@ function miGuardarPlan(p){ try{ localStorage.setItem(miClavePlan(), JSON.stringi
 function miLeerHechos(){ try{ var v=JSON.parse(localStorage.getItem(miClaveHechos())); return v||{}; }catch(e){ return {}; } }
 function miGuardarHechos(h){ try{ localStorage.setItem(miClaveHechos(), JSON.stringify(h)); }catch(e){} }
 function miEsGestor(){ return window.sesion && (sesion.rol==='entrenador' || sesion.rol==='superadmin' || sesion.rol==='admin'); }
+/* Sincroniza el plan y marcas propios del gestor desde la nube a esta sesión
+   (para que lo armado en la PC aparezca en el celu al instante). Devuelve una promesa. */
+async function miSyncNube(){
+  if(!miEsGestor()) return;
+  __modoPropio = true;
+  var r;
+  try { r = await Backend.obtenerMiPlan(sesion.id); }
+  catch(e){ r=null; }
+  if(r && r.plan && planTieneAlgo(r.plan)){
+    sesion.plan = r.plan; miGuardarPlan(r.plan);   // nube manda
+  }
+  if(r && r.hechos){
+    var h=Object.assign({}, miLeerHechos());      // mezclar: nube + lo local (lo local gana por si quedó offline)
+    Object.keys(r.hechos||{}).forEach(function(f){ h[f]=Object.assign({}, r.hechos[f]||{}, h[f]||{}); });
+    sesion.hechos = h; miGuardarHechos(h);
+  }
+}
 /* entrar al entrenamiento propio del gestor: si tiene plan → mazo; si no → armarlo */
-function entrarEntrenar(){
+async function entrarEntrenar(){
   if(!miEsGestor()){ window.Rediseno.renderAlumno(); return; }
   __modoPropio = true;
-  var plan = miLeerPlan();
+  await miSyncNube();   // bajar lo de la nube (PC↔celu)
+  var plan = (window.sesion && sesion.plan && planTieneAlgo(sesion.plan)) ? sesion.plan : miLeerPlan();
   if(!plan || !planTieneAlgo(plan)){
-    // todavía no tiene plan propio: lo abre a armarlo
     window.Rediseno.builder.abrir({ id:sesion.id, nombre:sesion.nombre, demo:false }, { propio:true });
     return;
   }
@@ -1045,7 +1062,7 @@ B.abrir = function(u, opts){
   B.nombreAlumno = null;
   B.semana = 1; B.maxSemana = 1; B.semanas = {};
   var planBase;
-  if (B.modoPropio) planBase = miLeerPlan();
+  if (B.modoPropio) planBase = (window.sesion && sesion.plan && planTieneAlgo(sesion.plan)) ? sesion.plan : miLeerPlan();
   else planBase = u.demo ? R.rLeer(R.rDemoPlanKey(u.id), null) : u.plan;
   B.vivos = planBase ? JSON.parse(JSON.stringify(planBase)) : null;
   B.plan = { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] };  // plan nuevo: arranca vacío
@@ -1504,31 +1521,33 @@ function conectar(){
   b$('bGuardar').onclick=function(){ B.guardar(); };
   B.guardar = async function(){
     B.semanas[B.semana] = B.plan;   // sincroniza la semana en edición
-    if (B.modoPropio){   // el gestor entrena: plan privado en el dispositivo
-      var mio={};
-      var w1p = B.semanas[1] || B.plan;
-      DIAS.forEach(function(d){ mio[d[0]] = w1p[d[0]]; });
-      var exP={}, hayP=false;
-      for(var nn=2; nn<=B.maxSemana; nn++){ if(B.semanas[nn] && planTieneAlgo(B.semanas[nn])){ exP[nn]=B.semanas[nn]; hayP=true; } }
-      if(hayP){ mio.__semanas=exP; var lunP=new Date(); lunP.setHours(0,0,0,0); lunP.setDate(lunP.getDate()-((lunP.getDay()+6)%7)); mio.__inicio=fechaClave(lunP.getTime()); }
-      miGuardarPlan(mio);
-      B._borrarBorrador();
-      $('rAppBuilder').classList.remove('ver');
-      __modoPropio=true;
-      window.Rediseno.renderAlumno();
-      try{ dToast('Tu plan quedó guardado 💪'); }catch(e){}
-      return;
-    }
     var final={};
     var w1 = B.semanas[1] || B.plan;
     DIAS.forEach(function(d){ final[d[0]] = w1[d[0]]; });
-    // semanas extra del programa (periodización): semana 1 es el plan en vivo
     var extras={}; var hayExtras=false;
     for (var n=2; n<=B.maxSemana; n++){ if(B.semanas[n] && planTieneAlgo(B.semanas[n])){ extras[n]=B.semanas[n]; hayExtras=true; } }
     if(hayExtras){
       final.__semanas = extras;
-      var lun = new Date(); lun.setHours(0,0,0,0); lun.setDate(lun.getDate() - ((lun.getDay()+6)%7)); // lunes de esta semana
+      var lun = new Date(); lun.setHours(0,0,0,0); lun.setDate(lun.getDate() - ((lun.getDay()+6)%7));
       final.__inicio = fechaClave(lun.getTime());
+    }
+    if (B.modoPropio){   // el gestor entrena: su plan se SINCRONIZA A LA NUBE como un alumno
+      // respaldo local al instante (por si no hay red)
+      miGuardarPlan(final);
+      if (window.sesion) sesion.plan = final;
+      var rr;
+      try { rr = await Backend.guardarPlan(sesion.id, final); } catch(e){ rr={error:'Sin conexión'}; }
+      if (rr && rr.error){
+        // sin red: queda en el dispositivo y el service worker no está; avisamos que se sincroniza al volver
+        bToast('Guardado en este dispositivo. Se sincronizará al tener conexión.');
+      } else {
+        bToast('Plan guardado y sincronizado ☁️');
+      }
+      B._borrarBorrador();
+      $('rAppBuilder').classList.remove('ver');
+      __modoPropio=true;
+      window.Rediseno.renderAlumno();
+      return;
     }
     if (B.demo){   // alumno de prueba: el plan queda solo en este dispositivo
       var vivo = B.vivos;
@@ -1695,8 +1714,7 @@ function bGesto(el, tipo, idx){
     try{ el.setPointerCapture(st.pid); }catch(e){}
     if(navigator.vibrate) navigator.vibrate(15);
     st.fantasma = bFantasma(el);
-    st.fantasma.style.left=(st.lx-48)+'px';
-    st.fantasma.style.top=(st.ly-50)+'px';
+    st.fantasma.style.transform='translate3d('+(st.lx-48)+'px,'+(st.ly-50)+'px,0) scale(1.06)';
     el.style.opacity='.25';
   }
 
@@ -1738,8 +1756,7 @@ function bGesto(el, tipo, idx){
       }
     }
     if(dist>6) st.seMovio=true;
-    st.fantasma.style.left=(ev.clientX-48)+'px';
-    st.fantasma.style.top=(ev.clientY-50)+'px';
+    st.fantasma.style.transform='translate3d('+(ev.clientX-48)+'px,'+(ev.clientY-50)+'px,0) scale(1.06)';
     if(st.tipo==='nuevo'){
       b$('bMazo').classList.toggle('sobre', bSobreMazo(ev.clientX,ev.clientY));
     } else {
@@ -1855,14 +1872,15 @@ function crearEstructura(){
 function dToast(m){ var t=d$('rAppAlumno').querySelector('.r-toast'); t.textContent=m; t.classList.add('ver'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('ver'); },1900); }
 function dHoy(){ return claveDia(Date.now()); }
 function dPlan(){
-  if(__modoPropio){
-    var p=miLeerPlan()||{}; var v=planVacio();
-    var n=semanaActualDe(p), src=p;
-    if(n && n>1 && p.__semanas && p.__semanas[n]) src=p.__semanas[n];
-    DIAS.forEach(function(d){ if(Array.isArray(src[d[0]])) v[d[0]]=src[d[0]]; });
-    return v;
+  var p = planDe(sesion);
+  if(__modoPropio && !DIAS.some(function(d){ return (p[d[0]]||[]).length; })){
+    // si todavía no llegó el plan de la nube (ej. sin conexión), usamos el respaldo local
+    var loc=miLeerPlan(); if(loc){
+      var n=semanaActualDe(loc), src=(n&&n>1&&loc.__semanas&&loc.__semanas[n])?loc.__semanas[n]:loc;
+      var v=planVacio(); DIAS.forEach(function(d){ if(Array.isArray(src[d[0]])) v[d[0]]=src[d[0]]; }); return v;
+    }
   }
-  return planDe(sesion);
+  return p;
 }
 function dLista(dia){ return dPlan()[dia]||[]; }
 /* (tiempoSegundosDe / dFmtTiempo / tiempoTextoDe son globales, definidas arriba) */
@@ -1878,7 +1896,11 @@ function dTimerHayCorriendo(){
   return Object.keys(T).some(function(k){ return k!=='__f' && T[k].corriendo; });
 }
 function dEsHoy(){ return D.dia===dHoy(); }
-function dHechos(){ return __modoPropio ? miLeerHechos() : (sesion.hechos||{}); }
+function dHechos(){
+  var cloud = sesion.hechos||{};
+  if(__modoPropio && !Object.keys(cloud).length){ var loc=miLeerHechos(); if(Object.keys(loc).length) return loc; }
+  return cloud;
+}
 function dMarcasHoy(dia){ var f=fechaClave(Date.now()); if(dia!==dHoy()) return {}; return dHechos()[f]||{}; }
 function dEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
@@ -2047,11 +2069,23 @@ async function dResponder(ok){
   if(!dEsHoy()) return;
   var lista=dLista(D.dia), e=lista[D.idx];
   var carta=d$('dZona').querySelector('.r-dcarta.entra');
+  var f=fechaClave(Date.now());
   var r;
-  if(__modoPropio){ r = miMarcar(fechaClave(Date.now()), e.id, !!ok); }
-  else { r = await Backend.marcarHecho(sesion.id, fechaClave(Date.now()), e.id, ok); }
+  if(__modoPropio){
+    // optimista: espejo local al instante (offline) + nube en paralelo
+    var loc=miLeerHechos(); loc[f]=loc[f]||{}; loc[f][e.id]=!!ok; miGuardarHechos(loc);
+    var mem = (sesion.hechos&&sesion.hechos[f]) ? Object.assign({}, sesion.hechos[f]) : {};
+    mem[e.id]=!!ok;
+    var hechosObj=Object.assign({}, sesion.hechos||{}); hechosObj[f]=mem; sesion.hechos=hechosObj;
+    Backend.marcarHecho(sesion.id, f, e.id, ok).then(function(rr){
+      if(rr && rr.hechos){ sesion.hechos=rr.hechos; }
+    }).catch(function(){ /* quedó el espejo local; se sincroniza al volver */ });
+    r={ ok:true, hechos:hechosObj };
+  } else {
+    r = await Backend.marcarHecho(sesion.id, f, e.id, ok);
+  }
   if(r.error){ dToast(r.error); return; }
-  if(!__modoPropio && r.hechos) sesion.hechos=r.hechos;
+  if(r.hechos) sesion.hechos=r.hechos;
   if(carta){ carta.classList.add(ok?'fuera-ok':'fuera-no'); if(navigator.vibrate) navigator.vibrate(ok?20:[15,40,15]); }
   dPintarAnillo(); dPintarDias();
   setTimeout(function(){
@@ -2195,11 +2229,18 @@ function conectar(){
   },300);
   d$('dPesoListo').onclick=async function(){
     var v=d$('dPesoInput').value.trim();
+    var f=fechaClave(Date.now());
     var r;
-    if(__modoPropio){ r=miGuardarPesoLocal(fechaClave(Date.now()), dPesoEj.nombre, v); }
-    else { r=await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), dPesoEj.nombre, v); }
+    if(__modoPropio){
+      // optimista: espejo local + nube
+      r=miGuardarPesoLocal(f, dPesoEj.nombre, v);
+      if(r.hechos) sesion.hechos=r.hechos;
+      Backend.guardarPeso(sesion.id, f, dPesoEj.nombre, v).then(function(rr){ if(rr&&rr.hechos) sesion.hechos=rr.hechos; }).catch(function(){});
+    } else {
+      r=await Backend.guardarPeso(sesion.id, f, dPesoEj.nombre, v);
+    }
     if(r.error){ dToast(r.error); return; }
-    if(!__modoPropio && r.hechos) sesion.hechos=r.hechos;
+    if(r.hechos) sesion.hechos=r.hechos;
     d$('dVeloPeso').classList.remove('abierto'); dRender();
   };
   d$('dFinRevisar').onclick=function(){ d$('dFin').classList.remove('ver'); D.idx=0; dRender(); };
@@ -2216,25 +2257,32 @@ function conectar(){
     mostrar('home');
     verTab('prog');
   };
-  // gesto deslizar la carta
+  // gesto deslizar la carta (fluido: rAF + transición de resorte)
   var zona=d$('dZona'), arr=null;
-  var umbral=90;
+  var umbral=80, rafId=null;
   function aplicarTirada(carta, dx, dy){
     var ancho = carta.offsetWidth || 300;
-    var rot = dx/14 + Math.max(-6, Math.min(6, dy/34));
+    var rot = dx/16 + Math.max(-7, Math.min(7, dy/40));
     carta.style.transform='translate3d('+dx+'px,'+(dy||0)+'px,0) rotate('+rot+'deg)';
-    carta.classList.toggle('sw-ok', dx>36);
-    carta.classList.toggle('sw-no', dx<-36);
+    carta.classList.toggle('sw-ok', dx>30);
+    carta.classList.toggle('sw-no', dx<-30);
     var sOk=carta.querySelector('.r-sello.ok'), sNo=carta.querySelector('.r-sello.no');
     var fuerza=Math.min(1, Math.abs(dx)/umbral);
-    if(sOk) sOk.style.opacity = dx>18 ? String(fuerza) : '0';
-    if(sNo) sNo.style.opacity = dx<-18 ? String(fuerza) : '0';
-    // la pila de atrás avanza con el dedo
+    if(sOk) sOk.style.opacity = dx>14 ? String(fuerza) : '0';
+    if(sNo) sNo.style.opacity = dx<-14 ? String(fuerza) : '0';
+    // la pila de atrás avanza suave con el dedo
     var prog=Math.min(1, Math.abs(dx)/ancho);
-    var d1=carta.parentElement.querySelector('.r-dcarta.detras');
-    var d2=carta.parentElement.querySelector('.r-dcarta.detras2');
-    if(d1) d1.style.transform='scale('+(0.93+0.07*prog)+') translateY('+(18-18*prog)+'px)';
-    if(d2) d2.style.transform='scale('+(0.86+0.07*prog)+') translateY('+(34-16*prog)+'px)';
+    var p=carta.parentElement;
+    var d1=p.querySelector('.r-dcarta.detras'), d2=p.querySelector('.r-dcarta.detras2');
+    if(d1) d1.style.transform='translate3d(0,'+((18-18*prog))+'px,0) scale('+(0.94+0.06*prog)+')';
+    if(d2) d2.style.transform='translate3d(0,'+((32-14*prog))+'px,0) scale('+(0.88+0.06*prog)+')';
+  }
+  function programar(){
+    if(rafId!=null) return;
+    rafId=requestAnimationFrame(function(){
+      rafId=null;
+      if(arr){ aplicarTirada(arr.c, arr.x, arr.y); }
+    });
   }
   function resetPila(carta){
     var p=carta.parentElement;
@@ -2246,29 +2294,38 @@ function conectar(){
     if(d1) d1.style.transform=''; if(d2) d2.style.transform='';
   }
   zona.addEventListener('pointerdown', function(ev){
-    if(ev.target.closest('[data-peso]')||ev.target.closest('.r-nav-dia')) return;
+    if(ev.target.closest('[data-peso]')||ev.target.closest('.r-nav-dia')||ev.target.closest('[data-timer]')) return;
     var c=ev.target.closest('.r-dcarta.entra'); if(!c) return;
     if(arr && arr.c===c) return;
-    arr={sx:ev.clientX, sy:ev.clientY, x:0, y:0, c:c, cancelado:false};
+    arr={sx:ev.clientX, sy:ev.clientY, x:0, y:0, c:c, movio:false};
+    if(rafId!=null){ cancelAnimationFrame(rafId); rafId=null; }
     try{c.setPointerCapture(ev.pointerId);}catch(e){}
     c.style.transition='none';
+    c.style.zIndex='7';
+    var d1=c.parentElement.querySelector('.r-dcarta.detras'), d2=c.parentElement.querySelector('.r-dcarta.detras2');
+    if(d1) d1.style.transition='transform .18s linear'; if(d2) d2.style.transition='transform .18s linear';
   });
   zona.addEventListener('pointermove', function(ev){
     if(!arr) return;
     arr.x=ev.clientX-arr.sx; arr.y=ev.clientY-arr.sy;
+    if(Math.hypot(arr.x,arr.y)>6) arr.movio=true;
     // si el gesto es casi vertical, lo dejamos (no lo forzamos a swipe)
     if(Math.abs(arr.y) > Math.abs(arr.x)*1.4 && Math.abs(arr.x)<24) return;
-    aplicarTirada(arr.c, arr.x, arr.y);
+    programar();
   });
   function fin(ev){
     if(!arr) return;
     var dx=arr.x||0, carta=arr.c, cancelado = ev && ev.type==='pointercancel';
+    if(rafId!=null){ cancelAnimationFrame(rafId); rafId=null; }
     carta.style.transition='';
-    if(cancelado){ carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },520); arr=null; return; }
+    carta.style.zIndex='';
+    var d1=carta.parentElement.querySelector('.r-dcarta.detras'), d2=carta.parentElement.querySelector('.r-dcarta.detras2');
+    if(d1) d1.style.transition=''; if(d2) d2.style.transition='';
+    if(cancelado){ carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },420); arr=null; return; }
     var esHoy = dEsHoy();
     if(esHoy && dx>umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-ok'); dResponder(true); }
     else if(esHoy && dx<-umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-no'); dResponder(false); }
-    else { carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },520); }
+    else { carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },420); }
     arr=null;
   }
   zona.addEventListener('pointerup', fin);
