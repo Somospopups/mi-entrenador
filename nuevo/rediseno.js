@@ -1940,17 +1940,17 @@ function conectar(){
   };
   // gesto deslizar la carta
   var zona=d$('dZona'), arr=null;
-  var umbral=110;
+  var umbral=90;
   function aplicarTirada(carta, dx, dy){
     var ancho = carta.offsetWidth || 300;
     var rot = dx/14 + Math.max(-6, Math.min(6, dy/34));
     carta.style.transform='translate3d('+dx+'px,'+(dy||0)+'px,0) rotate('+rot+'deg)';
-    carta.classList.toggle('sw-ok', dx>40);
-    carta.classList.toggle('sw-no', dx<-40);
+    carta.classList.toggle('sw-ok', dx>36);
+    carta.classList.toggle('sw-no', dx<-36);
     var sOk=carta.querySelector('.r-sello.ok'), sNo=carta.querySelector('.r-sello.no');
     var fuerza=Math.min(1, Math.abs(dx)/umbral);
-    if(sOk) sOk.style.opacity = dx>20 ? String(fuerza) : '0';
-    if(sNo) sNo.style.opacity = dx<-20 ? String(fuerza) : '0';
+    if(sOk) sOk.style.opacity = dx>18 ? String(fuerza) : '0';
+    if(sNo) sNo.style.opacity = dx<-18 ? String(fuerza) : '0';
     // la pila de atrás avanza con el dedo
     var prog=Math.min(1, Math.abs(dx)/ancho);
     var d1=carta.parentElement.querySelector('.r-dcarta.detras');
@@ -1970,20 +1970,23 @@ function conectar(){
   zona.addEventListener('pointerdown', function(ev){
     if(ev.target.closest('[data-peso]')||ev.target.closest('.r-nav-dia')) return;
     var c=ev.target.closest('.r-dcarta.entra'); if(!c) return;
-    arr={sx:ev.clientX, sy:ev.clientY, x:0, y:0, c:c};
+    if(arr && arr.c===c) return;
+    arr={sx:ev.clientX, sy:ev.clientY, x:0, y:0, c:c, cancelado:false};
     try{c.setPointerCapture(ev.pointerId);}catch(e){}
     c.style.transition='none';
   });
   zona.addEventListener('pointermove', function(ev){
     if(!arr) return;
     arr.x=ev.clientX-arr.sx; arr.y=ev.clientY-arr.sy;
+    // si el gesto es casi vertical, lo dejamos (no lo forzamos a swipe)
+    if(Math.abs(arr.y) > Math.abs(arr.x)*1.4 && Math.abs(arr.x)<24) return;
     aplicarTirada(arr.c, arr.x, arr.y);
   });
-  function fin(){
+  function fin(ev){
     if(!arr) return;
-    var dx=arr.x||0, carta=arr.c;
+    var dx=arr.x||0, carta=arr.c, cancelado = ev && ev.type==='pointercancel';
     carta.style.transition='';
-    var decide = dEsHoy();
+    var decide = dEsHoy() && !cancelado;
     if(decide && dx>umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-ok'); dResponder(true); }
     else if(decide && dx<-umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-no'); dResponder(false); }
     else { carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },520); }
