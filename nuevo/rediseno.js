@@ -1058,6 +1058,7 @@ function crearEstructura(){
         '<div class="r-campo"><label>Series</label><input id="bHSeries" inputmode="numeric" placeholder="4"><div class="r-sugiere" data-p="series"><button>3</button><button>4</button><button>5</button></div></div>'+
         '<div class="r-campo"><label>Repeticiones / tiempo</label><input id="bHReps" placeholder="10-12 · 40 seg"><div class="r-sugiere" data-p="reps"><button>8-10</button><button>10-12</button><button>40 seg</button></div></div>'+
         '<div class="r-campo"><label>Peso / carga</label><input id="bHCarga" placeholder="40 kg · desc. 90 seg"><div class="r-sugiere" data-p="carga"><button>sin peso</button><button>mancuernas</button></div></div>'+
+        '<div class="r-campo"><label>⏱️ Tiempo (si es por duración)</label><input id="bHTiempo" inputmode="decimal" placeholder="Ej: 40 seg · 3 min"><div class="r-sugiere" data-p="tiempo"><button>30 seg</button><button>45 seg</button><button>1 min</button><button>5 min</button></div></div>'+
         '<div class="r-campo"><label>Comentario para el alumno</label><input id="bHNota" placeholder="Ej: bajá lento"></div>'+
       '</div><div class="r-hb"><button class="r-cancela" id="bHCancela">Cancelar</button><button class="r-listo" id="bHListo">Listo</button></div>'+
       '<button class="r-quitar" id="bHQuitar" style="display:none;margin-top:10px;width:100%;border:1.5px solid rgba(220,38,38,.4);background:rgba(220,38,38,.08);color:#dc2626;border-radius:13px;padding:11px;font-size:13.5px;font-weight:800">🗑️ Quitar del plan</button></div></div>'+
@@ -1136,7 +1137,7 @@ function bPintarPrev(){
   var items=ant[prevDia]||[];
   lista.innerHTML = items.length ? items.map(function(e,i){
     return '<div class="r-ant-ej"><span class="r-ant-emoji">'+(e.emoji||'🏋️')+'</span>'+
-      '<div class="r-ant-tx"><b>'+escHtml(e.nombre)+'</b><small>'+[e.series&&e.reps?e.series+'×'+e.reps:(e.series||e.reps||''),e.carga].filter(Boolean).join(' · ')+'</small></div>'+
+      '<div class="r-ant-tx"><b>'+escHtml(e.nombre)+'</b><small>'+[e.series&&e.reps?e.series+'×'+e.reps:(e.series||e.reps||''),tiempoTextoDe(e),e.carga].filter(Boolean).join(' · ')+'</small></div>'+
       '<button class="r-ant-mas" data-nom="'+escHtml(e.nombre)+'" title="Agregar al plan nuevo">＋</button></div>';
   }).join('') : '<p class="r-ant-vacio">Ese día no tenía ejercicios.</p>';
   caja.appendChild(lista);
@@ -1148,7 +1149,8 @@ function bPintarPrev(){
       var lib=bEjLibro(nom);
       B.plan[B.dia].push({
         id:nuevoId(), nombre:nom, img: lib?lib.img:(src&&src.img), emoji: lib?lib.emoji:(src&&src.emoji||'🏋️'),
-        series: src&&src.series, reps: src&&src.reps, carga: src&&src.carga, nota: src&&src.nota
+        series: src&&src.series, reps: src&&src.reps, carga: src&&src.carga, nota: src&&src.nota,
+        tiempo: src&&src.tiempo ? src.tiempo : ''
       });
       bPintarMazo(); bPintarGrilla(); bPintarDias(); bToast('Agregado a la sesión ✓');
     };
@@ -1171,7 +1173,7 @@ function bPintarMazo(){
       pc.innerHTML='<span class="r-pc-num">'+(i+1)+'</span><button class="r-pc-x" data-x="'+i+'">×</button>'+
         '<div class="r-pc-img">'+(e.img?'<img src="'+e.img+'">':'<span class="r-pc-emoji">'+(e.emoji||'🏋️')+'</span>')+'</div>'+
         '<div class="r-pc-info"><div class="r-pc-nom">'+escHtml(e.nombre)+'</div>'+
-        '<div class="r-pc-det">'+[e.series&&e.reps?e.series+'×'+e.reps:(e.series||e.reps||''),e.carga].filter(Boolean).join(' · ')+'</div></div>';
+        '<div class="r-pc-det">'+[e.series&&e.reps?e.series+'×'+e.reps:(e.series||e.reps||''),tiempoTextoDe(e),e.carga].filter(Boolean).join(' · ')+'</div></div>';
       pc.querySelector('[data-x]').onclick=function(ev){ ev.stopPropagation(); lista.splice(i,1); bPintarMazo(); bPintarGrilla(); bPintarDias(); };
       pc.onclick=function(){ if(Date.now()-ultimoGesto<500) return; bAbrirHoja('plan', i); };
       bGesto(pc, 'plan', i);
@@ -1235,6 +1237,7 @@ function bAbrirHoja(tipo, ref){
   b$('bHSeries').value = e.series || (receta?receta.series:'');
   b$('bHReps').value   = e.reps   || (receta?receta.reps:'');
   b$('bHCarga').value  = e.carga  || (receta?receta.carga:'');
+  b$('bHTiempo').value = tiempoTextoDe(e) || (receta?tiempoTextoDe(receta):'');
   b$('bHNota').value   = e.nota   || (receta?(receta.nota||''):'');
   var pistas=[];
   if (receta && tipo!=='plan') pistas.push('La vez pasada le pusiste <b>'+[receta.series&&receta.reps?receta.series+'×'+receta.reps:'',receta.carga].filter(Boolean).join(' · ')+'</b>.');
@@ -1323,17 +1326,20 @@ function conectar(){
   }
   b$('bVelo').onclick = function(ev){ if (ev.target===this) this.classList.remove('abierto'); };
   b$('bVelo').querySelectorAll('.r-sugiere button').forEach(function(b){
-    b.onclick=function(){ var map={series:'bHSeries',reps:'bHReps',carga:'bHCarga'}; b$(map[b.parentElement.getAttribute('data-p')]).value=b.textContent.trim(); };
+    b.onclick=function(){ var map={series:'bHSeries',reps:'bHReps',carga:'bHCarga',tiempo:'bHTiempo'}; b$(map[b.parentElement.getAttribute('data-p')]).value=b.textContent.trim(); };
   });
   b$('bHListo').onclick = function(){
     var v=function(id){ return b$(id).value.trim(); };
+    var seg=tiempoSegundosDe(v('bHTiempo'));
     if (B.editando.tipo==='plan'){
       var e=B.plan[B.dia][B.editando.ref];
       e.series=v('bHSeries'); e.reps=v('bHReps'); e.carga=v('bHCarga'); e.nota=v('bHNota');
+      e.tiempo = seg>0 ? seg : '';
     } else {
       var base=bEjLibro(B.editando.ref);
       B.plan[B.dia].push({ id:nuevoId(), nombre:base.n, img:base.img||'', emoji:base.emoji||'',
-        series:v('bHSeries'), reps:v('bHReps'), carga:v('bHCarga'), nota:v('bHNota') });
+        series:v('bHSeries'), reps:v('bHReps'), carga:v('bHCarga'), nota:v('bHNota'),
+        tiempo: seg>0 ? seg : '' });
     }
     b$('bVelo').classList.remove('abierto');
     bPintarMazo(); bPintarGrilla(); bPintarDias();
@@ -1410,7 +1416,7 @@ function conectar(){
         var src = otros.find(function(u){ return u.id===it.id; });
         B.plan = planVacio();
         var p=planDe(src);
-        DIAS.forEach(function(d){ B.plan[d[0]]=(p[d[0]]||[]).map(function(e){ return { id:nuevoId(), nombre:e.nombre, img:e.img||imgDe(e.nombre), emoji:e.emoji||'', series:e.series, reps:e.reps, carga:e.carga, nota:e.nota }; }); });
+        DIAS.forEach(function(d){ B.plan[d[0]]=(p[d[0]]||[]).map(function(e){ return { id:nuevoId(), nombre:e.nombre, img:e.img||imgDe(e.nombre), emoji:e.emoji||'', series:e.series, reps:e.reps, carga:e.carga, nota:e.nota, tiempo:e.tiempo||'' }; }); });
         bPintarDias(); bPintarMazo(); bPintarGrilla(); bToast('Plan copiado: recordá Guardar');
       });
   };
@@ -1418,7 +1424,7 @@ function conectar(){
     var fuente = (B.vivos && B.vivos.__anterior) || (B.vivos && planTieneAlgo(B.vivos) ? B.vivos : null);
     var prev = fuente ? (fuente[B.dia]||[]) : [];
     if(!prev.length){ bToast('No hay un día anterior para repetir'); return; }
-    prev.forEach(function(e){ B.plan[B.dia].push({ id:nuevoId(), nombre:e.nombre, img:e.img||imgDe(e.nombre), emoji:e.emoji||'', series:e.series, reps:e.reps, carga:e.carga, nota:e.nota }); });
+    prev.forEach(function(e){ B.plan[B.dia].push({ id:nuevoId(), nombre:e.nombre, img:e.img||imgDe(e.nombre), emoji:e.emoji||'', series:e.series, reps:e.reps, carga:e.carga, nota:e.nota, tiempo:e.tiempo||'' }); });
     bPintarMazo(); bPintarGrilla(); bPintarDias(); bToast('Día anterior repetido: '+prev.length+' ejercicios');
   };
   b$('bGuardar').onclick=function(){ B.guardar(); };
@@ -1479,7 +1485,7 @@ function bImprimirPlan(){
     var items = (B.plan[d[0]]||[]);
     if(!items.length) return '';
     var filas = items.map(function(e,i){
-      var det = [e.series&&e.reps?(e.series+'×'+e.reps):(e.series||e.reps||''), e.carga].filter(Boolean).join(' · ');
+      var det = [e.series&&e.reps?(e.series+'×'+e.reps):(e.series||e.reps||''), tiempoTextoDe(e), e.carga].filter(Boolean).join(' · ');
       return '<tr><td class="n">'+(i+1)+'</td><td><b>'+escHtml(e.nombre)+'</b>'+(det?'<span>'+escHtml(det)+'</span>':'')+(e.nota?'<em>↳ '+escHtml(e.nota)+'</em>':'')+'</td></tr>';
     }).join('');
     return '<section><h2>'+d[1]+'</h2><table>'+filas+'</table></section>';
@@ -1514,6 +1520,7 @@ function bResumenEjercicio(e){
   if (e.series && e.reps) partes.push(e.series+' × '+e.reps);
   else if (e.series) partes.push(e.series+' series');
   else if (e.reps) partes.push(e.reps);
+  if (tiempoTextoDe(e)) partes.push('⏱️ '+tiempoTextoDe(e));
   if (e.carga) partes.push(e.carga);
   return '• ' + e.nombre + (partes.length ? ' ('+partes.join(' · ')+')' : '');
 }
@@ -1731,6 +1738,18 @@ function crearEstructura(){
       '<p style="font-size:11.5px;color:#a06a00;text-align:center;margin:0 0 12px;background:#fff8e6;border:1px solid #ffe2a8;border-radius:10px;padding:7px 10px">💡 Si subiste o bajaste el peso que te indicó tu profe, anotá el real: lo ve en tu progreso. 📈</p>'+
       '<input id="dPesoInput" inputmode="decimal" placeholder="60 kg" style="width:100%;border:1.5px solid var(--borde);border-radius:14px;padding:14px;font-size:18px;font-weight:800;text-align:center;outline:none;background:#fafaff;color:var(--tinta)">'+
       '<div class="r-hb"><button class="r-cancela" id="dPesoCancela">Cancelar</button><button class="r-listo" id="dPesoListo">Listo</button></div></div></div>'+
+    // temporizador de ejercicios por tiempo
+    '<div class="r-timer-velo" id="dVeloTimer"><div class="r-timer-box">'+
+      '<button class="r-timer-x" id="dTimerCerrar" aria-label="Cerrar">×</button>'+
+      '<small class="r-timer-ej" id="dTimerNombre"></small>'+
+      '<div class="r-timer-anillo"><svg viewBox="0 0 200 200"><circle class="t-pista" cx="100" cy="100" r="88"/><circle class="t-progreso" id="dTimerCirc" cx="100" cy="100" r="88"/></svg>'+
+      '<div class="r-timer-num" id="dTimerNum">00:00</div></div>'+
+      '<div class="r-timer-botones">'+
+        '<button class="t-btn" id="dTimerReset" title="Reiniciar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>'+
+        '<button class="t-play" id="dTimerPlay"><svg viewBox="0 0 24 24" fill="#fff" stroke="none" id="dTimerPlayIco"><path d="M8 5v14l11-7z"/></svg></button>'+
+        '<button class="t-btn" id="dTimerOk" title="Ejercicio hecho">✓</button>'+
+      '</div>'+
+    '</div></div>'+
     // menú
     '<div class="r-velo" id="dVeloMenu"><div class="r-hoja"><div class="r-agarre"></div>'+
       '<button class="r-semana-cab" id="dMenuProg" style="width:100%;border:0;background:none;border-bottom:1px solid var(--borde);padding:14px 4px;font-size:14px;font-weight:600;text-align:left;color:var(--tinta)">📊 Mi progreso (peso, medidas, cargas)</button>'+
@@ -1744,6 +1763,40 @@ function dToast(m){ var t=d$('rAppAlumno').querySelector('.r-toast'); t.textCont
 function dHoy(){ return claveDia(Date.now()); }
 function dPlan(){ return planDe(sesion); }
 function dLista(dia){ return dPlan()[dia]||[]; }
+/* ── tiempo de ejercicios por duración (plancha, trote, etc.) ── */
+function tiempoSegundosDe(x){
+  if(x==null) return 0;
+  if(typeof x==='number' && isFinite(x)) return x>1000?Math.round(x/1000):x;
+  var s=String(x).toLowerCase().replace(',','.');
+  var m=s.match(/(\d+(?:\.\d+)?)\s*(min|mn|m|hs|h)/);
+  if(m){ var v=parseFloat(m[1]); if(m[2]==='hs'||m[2]==='h') v*=60; return Math.round(v*60); }
+  m=s.match(/(\d+)\s*[:']\s*(\d{1,2})/);
+  if(m) return parseInt(m[1],10)*60+parseInt(m[2],10);
+  m=s.match(/(\d+(?:\.\d+)?)/);
+  return m ? Math.round(parseFloat(m[1])) : 0;
+}
+function dFmtTiempo(seg){
+  seg=Math.max(0,Math.round(seg));
+  var m=Math.floor(seg/60), s=seg%60;
+  return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+}
+function tiempoTextoDe(e){
+  var seg = e && e.tiempo ? tiempoSegundosDe(e.tiempo) : 0;
+  if(!seg) return '';
+  if(seg>=60){ var m=seg/60; return (m%1?m.toFixed(1):m)+' min'; }
+  return seg+' seg';
+}
+/* timers de ejercicios por tiempo: T[ejId]={fin,total,corriendo,resto} */
+var dTimers = {};
+var dTimerInt = null;
+function dTimerDeHoy(){
+  if(!dTimers.__f || dTimers.__f!==dHoy()){ dTimers={ __f:dHoy() }; }
+  return dTimers;
+}
+function dTimerHayCorriendo(){
+  var T=dTimerDeHoy();
+  return Object.keys(T).some(function(k){ return k!=='__f' && T[k].corriendo; });
+}
 function dEsHoy(){ return D.dia===dHoy(); }
 function dMarcasHoy(dia){ var f=fechaClave(Date.now()); if(dia!==dHoy()) return {}; return (sesion.hechos||{})[f]||{}; }
 function dEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
@@ -1800,6 +1853,16 @@ function dHacerCarta(e, i, clase){
   var pesoUsado = (sesion.hechos&&(sesion.hechos[fechaClave(Date.now())]||{})[pesoClave]) || '';
   var pillPeso = pesoUsado || e.carga;
   var sxr = (e.series&&e.reps)?(e.series+' × '+e.reps):(e.series||e.reps||'');
+  var segT = tiempoSegundosDe(e.tiempo);
+  var timerPill='';
+  if(segT){
+    var T=dTimerDeHoy(), st=T[e.id], resto = st ? (st.corriendo?Math.max(0,(st.fin-Date.now())/1000):st.resto) : segT;
+    var corriendo = !!(st && st.corriendo && resto>0);
+    var termino = !!st && !st.corriendo && st.resto===0;
+    timerPill = '<i class="tiempo'+(corriendo?' corre':termino?' fin':'')+'" data-timer="'+e.id+'">'+
+      (termino?'✅ ':(corriendo?'⏸️ ':'⏱️ '))+
+      '<b>'+(termino?'Listo':dFmtTiempo(resto))+'</b>'+(corriendo?' (tocá)':'')+'</i>';
+  }
   var ult='';
   if(!pesoUsado && e.carga===undefined){}
   // última carga real
@@ -1810,9 +1873,13 @@ function dHacerCarta(e, i, clase){
   c.innerHTML='<div class="r-dibujo"><span class="r-num-ej">'+(i+1)+' / '+dLista(D.dia).length+'</span>'+
     '<span class="r-marca '+(m===true?'ok':m===false?'no':'')+'">'+(m===true?'✓ Hecho':m===false?'✗ No salió':'')+'</span>'+
     '<span class="r-sello ok">¡HECHO!</span><span class="r-sello no">NO SALIÓ</span>'+
+    (segT?'<button class="r-timer-fab" data-timer="'+e.id+'" aria-label="Poner el temporizador">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l11-7z"/></svg>'+
+      '<small>'+(segT>=60?Math.round(segT/60)+"′":segT+"″")+'</small></button>':'')+
     dibujo+'</div>'+
     '<div class="r-datos"><h2>'+dEsc(e.nombre)+'</h2>'+
     '<div class="r-pastillas">'+(sxr?'<i>'+sxr+'</i>':'')+
+      timerPill+
       (pillPeso?'<i class="peso'+(pesoUsado?' editado':'')+'" data-peso="1">'+(pesoUsado?'Usaste '+pesoUsado:pillPeso)+' ✎</i>':'')+
     '</div>'+
     (e.nota?'<div class="r-nota"><b>Profe:</b> '+dEsc(e.nota)+'</div>':'')+
@@ -1820,6 +1887,10 @@ function dHacerCarta(e, i, clase){
     '</div>';
   var pill=c.querySelector('[data-peso]');
   if(pill && dEsHoy()) pill.onclick=function(ev){ ev.stopPropagation(); dAbrirPeso(e); };
+  c.querySelectorAll('[data-timer]').forEach(function(b){
+    b.style.pointerEvents='auto';
+    b.onclick=function(ev){ ev.stopPropagation(); ev.preventDefault(); dAbrirTimer(e); };
+  });
   return c;
 }
 function dPintarCuadritos(lista, marcas){
@@ -1928,11 +1999,108 @@ function dAbrirPeso(e){
   dPesoEj=e;
 }
 var dPesoEj=null;
+/* ── temporizador de ejercicios por tiempo ── */
+var dTimerEj=null;
+function dAbrirTimer(e){
+  var seg=tiempoSegundosDe(e.tiempo);
+  if(!seg) return;
+  dTimerEj=e;
+  var T=dTimerDeHoy(), st=T[e.id];
+  if(!st){ st=T[e.id]={ total:seg, resto:seg, fin:0, corriendo:false }; }
+  d$('dTimerNombre').textContent=e.nombre||'';
+  d$('dVeloTimer').classList.add('ver');
+  dTimerRender();
+}
+function dTimerCerrar(){ d$('dVeloTimer').classList.remove('ver'); dTimerEj=null; }
+function dTimerEstado(){ var T=dTimerDeHoy(); return dTimerEj ? T[dTimerEj.id] : null; }
+function dTimerRender(){
+  var st=dTimerEstado(); if(!st) return;
+  var resto = st.corriendo ? Math.max(0,(st.fin-Date.now())/1000) : st.resto;
+  d$('dTimerNum').textContent=dFmtTiempo(resto);
+  var circ=d$('dTimerCirc');
+  var long=2*Math.PI*88, p=st.total?Math.min(1,resto/st.total):0;
+  circ.style.strokeDashoffset=String(long*(1-p));
+  var caja=d$('dVeloTimer');
+  caja.classList.toggle('corre', st.corriendo && resto>0);
+  caja.classList.toggle('fin', !st.corriendo && resto<=0);
+  d$('dTimerPlayIco').innerHTML = st.corriendo && resto>0
+    ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+}
+function dTimerTick(){
+  var st=dTimerEstado();
+  if(!st) return;
+  if(st.corriendo){
+    var resto=Math.max(0,(st.fin-Date.now())/1000);
+    if(resto<=0){ st.corriendo=false; st.resto=0; dTimerFinalizo(); }
+  }
+  if(dTimerEj) dTimerRender();
+  dTimerRefrescarPills();
+}
+function dTimerRefrescarPills(){
+  var zona=d$('dZona'); if(!zona) return;
+  zona.querySelectorAll('[data-timer]').forEach(function(el){
+    var id=el.getAttribute('data-timer');
+    var e=dLista(D.dia).find(function(x){ return String(x.id)===String(id); });
+    if(!e) return;
+    var segT=tiempoSegundosDe(e.tiempo), T=dTimerDeHoy(), stx=T[id];
+    var rr = stx ? (stx.corriendo?Math.max(0,(stx.fin-Date.now())/1000):stx.resto) : segT;
+    var corr = !!(stx && stx.corriendo && rr>0);
+    var listo = !!stx && !stx.corriendo && stx.resto===0;
+    el.classList.toggle('corre',corr); el.classList.toggle('fin',listo);
+    if(el.tagName==='I') el.innerHTML=(listo?'✅ ':'<b>'+dFmtTiempo(rr)+'</b>')+(corr?' ⏸':' ⏱');
+  });
+}
+function dTimerToggle(){
+  var st=dTimerEstado(); if(!st) return;
+  if(!st.corriendo && st.resto<=0){ st.resto=st.total; }
+  st.corriendo=!st.corriendo;
+  if(st.corriendo) st.fin=Date.now()+Math.max(1,Math.round(st.resto*1000));
+  else st.resto=Math.max(0,(st.fin-Date.now())/1000);
+  dTimerRender(); dRender();
+}
+function dTimerReset(){
+  var st=dTimerEstado(); if(!st) return;
+  st.corriendo=false; st.resto=st.total; st.fin=0;
+  dTimerRender(); dRender();
+}
+function dTimerFinalizo(){
+  dBeepFin();
+  if(navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
+  dToast('⏱️ ¡Tiempo! Terminaste el ejercicio');
+  if(!dEsHoy()) return;
+  setTimeout(function(){ dTimerCerrar(); dResponder(true); }, 1400);
+}
+function dBeepFin(){
+  try{
+    var ctx=dBeepFin._ctx || (dBeepFin._ctx=new (window.AudioContext||window.webkitAudioContext)());
+    if(ctx.state==='suspended') ctx.resume();
+    [0,0.22,0.44].forEach(function(t,i){
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.value = i<2?880:1320;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime+t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+t+0.18);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+0.2);
+    });
+  }catch(e){}
+}
 function conectar(){
   if(d$('dSi')) d$('dSi').onclick=function(){ dResponder(true); };
   if(d$('dNo')) d$('dNo').onclick=function(){ dResponder(false); };
   d$('dPesoCancela').onclick=function(){ d$('dVeloPeso').classList.remove('abierto'); };
   d$('dVeloPeso').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
+  // temporizador
+  d$('dTimerPlay').onclick=function(){ dTimerToggle(); };
+  d$('dTimerReset').onclick=function(){ dTimerReset(); };
+  d$('dTimerOk').onclick=function(){ dTimerCerrar(); if(dEsHoy()) dResponder(true); };
+  d$('dTimerCerrar').onclick=function(){ dTimerCerrar(); };
+  d$('dVeloTimer').onclick=function(ev){ if(ev.target===this) dTimerCerrar(); };
+  if(!dTimerInt) dTimerInt=setInterval(function(){
+    if(!d$('dVeloTimer').classList.contains('ver') && !dTimerHayCorriendo()) return;
+    dTimerTick();
+  },300);
   d$('dPesoListo').onclick=async function(){
     var v=d$('dPesoInput').value.trim();
     var r=await Backend.guardarPeso(sesion.id, fechaClave(Date.now()), dPesoEj.nombre, v);

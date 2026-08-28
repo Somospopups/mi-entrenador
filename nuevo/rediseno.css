@@ -679,3 +679,54 @@ body.dark .r-bbtn.ok{ color:#8ff5b0; background:rgba(34,197,94,.3); }
 @media (prefers-reduced-motion: reduce){
   .r-dcarta, .r-fantasma, .r-cuadrito, .r-pc{ transition:none !important; animation:none !important; }
 }
+
+/* ════════ TIMER DE EJERCICIOS POR TIEMPO ════════ */
+/* botón flotante de play sobre la ilustración */
+.r-timer-fab{ position:absolute; right:14px; top:14px; z-index:6;
+  width:54px; height:54px; border-radius:50%; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--c1),var(--c2));
+  box-shadow:0 10px 24px rgba(124,58,237,.45);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  transition:transform .15s; pointer-events:auto; -webkit-tap-highlight-color:transparent; }
+.r-timer-fab:active{ transform:scale(.9); }
+.r-timer-fab svg{ width:20px; height:20px; margin-left:2px; }
+.r-timer-fab small{ color:rgba(255,255,255,.92); font-size:8.5px; font-weight:900; line-height:1; }
+/* pastilla de tiempo */
+.r-pastillas i.tiempo{ background:rgba(124,58,237,.1); color:var(--c1); border:1.5px solid rgba(124,58,237,.25); cursor:pointer; }
+.r-pastillas i.tiempo b{ font-weight:900; }
+.r-pastillas i.tiempo.corre{ background:linear-gradient(135deg,var(--c1),var(--c2)); color:#fff; border-color:transparent; animation:tPulso 1s ease-in-out infinite; }
+.r-pastillas i.tiempo.fin{ background:rgba(22,163,74,.14); color:#15803d; border-color:rgba(22,163,74,.4); }
+@keyframes tPulso{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.07);} }
+/* overlay a pantalla completa */
+.r-timer-velo{ position:absolute; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 120% at 50% 20%, rgba(124,58,237,.96), rgba(30,27,75,.98));
+  opacity:0; pointer-events:none; transition:opacity .25s ease; }
+.r-timer-velo.ver{ opacity:1; pointer-events:auto; }
+.r-timer-box{ position:relative; width:min(330px,88vw); text-align:center; color:#fff; }
+.r-timer-x{ position:absolute; top:-46px; right:0; width:38px; height:38px; border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.35); background:rgba(255,255,255,.1); color:#fff;
+  font-size:22px; line-height:1; cursor:pointer; }
+.r-timer-ej{ display:block; font-size:15px; font-weight:800; margin-bottom:22px; color:rgba(255,255,255,.92);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.r-timer-anillo{ position:relative; width:232px; height:232px; margin:0 auto 26px; }
+.r-timer-anillo svg{ width:100%; height:100%; transform:rotate(-90deg); }
+.r-timer-anillo circle{ fill:none; stroke-width:10; }
+.r-timer-anillo .t-pista{ stroke:rgba(255,255,255,.18); }
+.r-timer-anillo .t-progreso{ stroke:#fff; stroke-linecap:round; stroke-dasharray:553;
+  stroke-dashoffset:0; transition:stroke-dashoffset .35s linear, stroke .3s; filter:drop-shadow(0 0 6px rgba(255,255,255,.5)); }
+.r-timer-num{ position:absolute; inset:0; display:grid; place-items:center;
+  font-size:52px; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:1px; }
+.r-timer-botones{ display:flex; align-items:center; justify-content:center; gap:22px; }
+.t-btn{ width:54px; height:54px; border-radius:50%; border:1.5px solid rgba(255,255,255,.35);
+  background:rgba(255,255,255,.12); color:#fff; cursor:pointer; display:grid; place-items:center; }
+.t-btn svg{ width:22px; height:22px; } .t-btn{ font-size:24px; font-weight:900; }
+.t-play{ width:78px; height:78px; border-radius:50%; border:none; cursor:pointer;
+  background:#fff; color:var(--c1); display:grid; place-items:center;
+  box-shadow:0 12px 30px rgba(0,0,0,.3); transition:transform .15s; }
+.t-play:active{ transform:scale(.92); }
+.t-play svg{ width:30px; height:30px; fill:var(--c1); }
+/* cuando corre, todo violeta; cuando termina, verde */
+.r-timer-velo.corre .t-progreso{ stroke:#c4b5fd; }
+.r-timer-velo.fin{ background:radial-gradient(120% 120% at 50% 20%, rgba(22,163,74,.97), rgba(20,83,45,.98)); }
+.r-timer-velo.fin .t-progreso{ stroke:#fff; }
+@media (max-height:680px){ .r-timer-anillo{ width:190px; height:190px; margin-bottom:16px; } .r-timer-num{ font-size:42px; } }
