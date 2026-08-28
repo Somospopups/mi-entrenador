@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#4f7df2">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="nuevo/rediseno.css?v=76">
+<link rel="stylesheet" href="nuevo/rediseno.css?v=77">
 <title>Mi Entrenador · Ingreso</title>
 <!-- ============================================================
      PROTOTIPO REUTILIZABLE · Login con DNI + Panel de Administración
@@ -2061,7 +2061,7 @@ async function pintarPlanEstudiante(){
     : '¡A entrenar!';
   var sub = sinPlan ? 'Tu entrenador lo está preparando'
     : !lista.length ? 'El descanso también entrena'
-    : esHoy ? (resp ? ('Respondiste ' + resp + ' de ' + lista.length) : (lista.length + ' ejercicio' + (lista.length===1?'':'s') + ' te espera' + (lista.length===1?'':'n')))
+    : esHoy ? (resp ? ('Realizaste ' + resp + ' de ' + lista.length) : (lista.length + ' ejercicio' + (lista.length===1?'':'s') + ' te espera' + (lista.length===1?'':'n')))
     : (lista.length + ' ejercicio' + (lista.length===1?'':'s') + ' · se entrena el día que toca');
   $('heroAlumno').innerHTML = '<div class="hero-alumno"><div class="ha-info">' +
     '<small>Hola, ' + (sesion.nombre.split(' ')[0]||'') + ' · ' + fechaBonita() + '</small>' +
@@ -2941,7 +2941,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   reanudarSiHabiaSesion();
 })();
 </script>
-<script src="nuevo/rediseno.js?v=76"></script>
+<script src="nuevo/rediseno.js?v=77"></script>
 <script>
 /* cuando el alumno vuelve del tab Progreso al tab Hoy, re-monta el mazo nuevo */
 document.addEventListener('click', function(ev){

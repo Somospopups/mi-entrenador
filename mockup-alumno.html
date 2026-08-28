@@ -415,7 +415,7 @@ function mostrarFin(){
   document.getElementById('finTitulo').textContent = hechas===total ? '¡Día completado! 🎉' : '¡Lista la sesión!';
   document.getElementById('finTexto').textContent = hechas===total
     ? 'Hiciste los '+total+' ejercicios. ¡Descansá, te lo ganaste!'
-    : 'Respondiste '+hechas+' de '+total+'. Mañana se vuelve.';
+    : 'Realizaste '+hechas+' de '+total+'. Mañana se vuelve.';
   var caja = document.getElementById('confeti'); caja.innerHTML='';
   if (hechas===total){
     var cols=['#5b8def','#a06bff','#27c47a','#f2b63a','#e8619a','#ff8f6b'];

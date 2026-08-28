@@ -1904,7 +1904,7 @@ function dMostrarFin(){
   d$('dFinTitulo').textContent = hechas===lista.length ? '¡Día completado! 🎉' : '¡Lista la sesión!';
   d$('dFinTexto').textContent = hechas===lista.length
     ? 'Hiciste los '+lista.length+' ejercicios. ¡Descansá, te lo ganaste!'
-    : 'Respondiste '+hechas+' de '+lista.length+'. Mañana se vuelve.';
+    : 'Realizaste '+hechas+' de '+lista.length+'. Mañana se vuelve.';
   d$('dConfeti').innerHTML='';
   if(hechas===lista.length){
     var cols=['#5b8def','#a06bff','#27c47a','#f2b63a','#e8619a','#ff8f6b'];
