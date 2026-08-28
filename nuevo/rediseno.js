@@ -1986,9 +1986,12 @@ function conectar(){
     if(!arr) return;
     var dx=arr.x||0, carta=arr.c, cancelado = ev && ev.type==='pointercancel';
     carta.style.transition='';
-    var decide = dEsHoy() && !cancelado;
-    if(decide && dx>umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-ok'); dResponder(true); }
-    else if(decide && dx<-umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-no'); dResponder(false); }
+    if(cancelado){ carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },520); arr=null; return; }
+    var esHoy = dEsHoy();
+    if(esHoy && dx>umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-ok'); dResponder(true); }
+    else if(esHoy && dx<-umbral){ carta.classList.remove('sw-ok','sw-no'); carta.style.transform=''; carta.classList.add('fuera-no'); dResponder(false); }
+    else if(!esHoy && dx>umbral && D.idx>0){ carta.classList.remove('sw-ok','sw-no'); carta.classList.add('fuera-ok'); setTimeout(function(){ D.idx--; dRender(); },260); }
+    else if(!esHoy && dx<-umbral && D.idx<dLista(D.dia).length-1){ carta.classList.remove('sw-ok','sw-no'); carta.classList.add('fuera-no'); setTimeout(function(){ D.idx++; dRender(); },260); }
     else { carta.classList.add('volver'); resetPila(carta); setTimeout(function(){ carta.classList.remove('volver'); },520); }
     arr=null;
   }
