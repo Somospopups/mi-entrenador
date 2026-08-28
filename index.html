@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#4f7df2">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="nuevo/rediseno.css?v=67">
+<link rel="stylesheet" href="nuevo/rediseno.css?v=68">
 <title>Mi Entrenador · Ingreso</title>
 <!-- ============================================================
      PROTOTIPO REUTILIZABLE · Login con DNI + Panel de Administración
@@ -1965,7 +1965,29 @@ function claveDia(ms){ return ['dom','lun','mar','mie','jue','vie','sab'][new Da
 function nombreDia(k){ for (var i=0;i<DIAS.length;i++) if (DIAS[i][0]===k) return DIAS[i][1]; return k; }
 function fechaClave(ms){ var d=new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function planVacio(){ return { lun:[], mar:[], mie:[], jue:[], vie:[], sab:[], dom:[] }; }
-function planDe(u){ var p=u&&u.plan?u.plan:{}; var v=planVacio(); DIAS.forEach(function(d){ if(Array.isArray(p[d[0]])) v[d[0]]=p[d[0]]; }); return v; }
+// Semana del programa que corresponde HOY (periodización). Devuelve null si el
+// plan no tiene varias semanas; si las tiene, la semana 1 es el plan raíz y las
+// siguientes viven en __semanas. El ciclo arranca el lunes de la semana en que
+// se guardó el plan (__inicio).
+function semanaActualDe(p){
+  if(!p || !p.__semanas) return null;
+  var max = 1;
+  Object.keys(p.__semanas).forEach(function(k){ var n=Number(k); if(n>max) max=n; });
+  if(!p.__inicio) return 1;
+  var lunIni = new Date(p.__inicio); lunIni.setHours(0,0,0,0);
+  lunIni.setDate(lunIni.getDate() - ((lunIni.getDay()+6)%7));   // lunes de esa semana
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var trans = Math.floor((hoy - lunIni)/ (7*86400000));
+  var n = 1 + Math.max(0, trans);
+  return n>max ? max : n;   // al terminar el programa se queda en la última semana
+}
+function planDe(u){
+  var p=u&&u.plan?u.plan:{}; var v=planVacio();
+  var n = semanaActualDe(p), src = p;
+  if(n && n>1 && p.__semanas && p.__semanas[n]){ src = p.__semanas[n]; }
+  DIAS.forEach(function(d){ if(Array.isArray(src[d[0]])) v[d[0]]=src[d[0]]; });
+  return v;
+}
 function planTieneAlgo(p){ return DIAS.some(function(d){ return (p[d[0]]||[]).length>0; }); }
 function imgDe(nombre){
   var n=String(nombre||'').trim().toLowerCase();
@@ -2919,7 +2941,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   reanudarSiHabiaSesion();
 })();
 </script>
-<script src="nuevo/rediseno.js?v=67"></script>
+<script src="nuevo/rediseno.js?v=68"></script>
 <script>
 /* cuando el alumno vuelve del tab Progreso al tab Hoy, re-monta el mazo nuevo */
 document.addEventListener('click', function(ev){

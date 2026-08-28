@@ -1430,7 +1430,11 @@ function conectar(){
     // semanas extra del programa (periodización): semana 1 es el plan en vivo
     var extras={}; var hayExtras=false;
     for (var n=2; n<=B.maxSemana; n++){ if(B.semanas[n] && planTieneAlgo(B.semanas[n])){ extras[n]=B.semanas[n]; hayExtras=true; } }
-    if(hayExtras) final.__semanas = extras;
+    if(hayExtras){
+      final.__semanas = extras;
+      var lun = new Date(); lun.setHours(0,0,0,0); lun.setDate(lun.getDate() - ((lun.getDay()+6)%7)); // lunes de esta semana
+      final.__inicio = fechaClave(lun.getTime());
+    }
     if (B.demo){   // alumno de prueba: el plan queda solo en este dispositivo
       var vivo = B.vivos;
       if (vivo){
@@ -1705,7 +1709,7 @@ function crearEstructura(){
   var d=document.createElement('div');
   d.className='r-app'; d.id='rAppAlumno';
   d.innerHTML='<div class="r-manchas"><i></i><i></i><i></i></div>'+
-    '<div class="r-deck-top"><div class="r-deck-titulo"><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b></div>'+
+    '<div class="r-deck-top"><div class="r-deck-titulo"><small>Hola, '+(sesion.nombre.split(' ')[0]||'')+'</small><b id="dTitulo">¡A entrenar!</b><span class="r-sem-badge" id="dSemBadge" style="display:none"></span></div>'+
       '<div class="r-deck-dias" id="dDias"></div>'+
       '<div class="r-anillo-wrap"><div class="r-anillo" id="dAnillo"></div><i id="dAnilloTxt">0%</i></div>'+
       '<button class="r-salir-btn" id="dSalir" title="Cerrar sesión">🚪</button>'+
@@ -1741,7 +1745,7 @@ function dEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g
 
 function dRender(){
   D.timers.forEach(clearInterval); D.timers=[];
-  dPintarDias(); dPintarAnillo();
+  dSemBadge(); dPintarDias(); dPintarAnillo();
   var lista=dLista(D.dia), zona=d$('dZona');
   zona.querySelectorAll('.r-dcarta').forEach(function(c){ c.remove(); });
   var sinPlan = !planTieneAlgo(dPlan());
@@ -1847,6 +1851,18 @@ function dPintarAnillo(){
   d$('dAnilloTxt').textContent=pct+'%';
   d$('dTitulo').textContent = dEsHoy() ? (pct===100&&lista.length?'¡Día completado! 🎉':'¡A entrenar! 💪')
     : (DIAS.find(function(x){return x[0]===D.dia;})[1]);
+}
+function dSemBadge(){
+  var el=d$('dSemBadge'); if(!el) return;
+  var p=sesion&&sesion.plan;
+  try{
+    if(p && p.__semanas && typeof semanaActualDe==='function'){
+      var n=semanaActualDe(p), max=1;
+      Object.keys(p.__semanas).forEach(function(k){ var x=Number(k); if(x>max) max=x; });
+      el.style.display='inline-block';
+      el.textContent='Semana '+n+' de '+max+' 📅';
+    } else { el.style.display='none'; }
+  }catch(e){ el.style.display='none'; }
 }
 function dNavFlechas2(){}
 async function dResponder(ok){
