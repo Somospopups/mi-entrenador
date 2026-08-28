@@ -31,6 +31,48 @@ function rToast(msg, root){
 function rAbrirVelo(velo){ velo.classList.add('abierto'); }
 function rCerrarVelo(velo){ velo.classList.remove('abierto'); }
 
+/* ── Ayuda / onboarding con el diseño nuevo (no depende de la app vieja) ── */
+function rGuiaRol(rol){
+  if (rol==='alumno' || rol==='usuario') return [
+    ['📋','Tu profe te arma el plan','Lo ves día por día con el dibujo de cada ejercicio.'],
+    ['✅','Marcá cada ejercicio','Al terminarlo tocá ✓ (lo hice) o ✗ (no salió). Lo podés corregir.'],
+    ['⏱️','Timer y peso','Usá el descanso entre series y anotá el peso que levantaste.'],
+    ['🔥','No cortes la racha','Completá el día entero y sumá días seguidos. Tu profe te ve.']
+  ];
+  if (rol==='superadmin' || rol==='admin') return [
+    ['👥','Gestioná entrenadores','En "Entrenadores" les cobrás, das prueba o membresía para siempre.'],
+    ['💵','Registrá los pagos','El vencimiento corre solo y el resumen te muestra la recaudación.'],
+    ['🗑️','Liberar un DNI','Si un DNI quedó tomado, lo buscás y lo borrás para volver a crear la cuenta.'],
+    ['🔒','Privacidad','Cada entrenador ve solo a sus alumnos. Vos no ves los planes de nadie.']
+  ];
+  return [ // entrenador (default)
+    ['➕','Cargá tus alumnos','Creá cada uno con su DNI: la app te da la clave para mandarle por WhatsApp.'],
+    ['🏋️','Armales el plan','En "Crear plan nuevo" arrastrás los ejercicios al día, con series, reps y carga.'],
+    ['📋','Plantillas y copiar','Guardá plantillas o copiá planes entre alumnos: armás una vez, usás mil.'],
+    ['💬','WhatsApp y avisos','Mandale el plan o un recordatorio directo por WhatsApp desde su ficha.']
+  ];
+}
+function rAyuda(){
+  var ex = document.getElementById('rVeloAyuda'); if (ex) ex.remove();
+  var rol = (window.sesion && (sesion.rol||'entrenador')) || 'entrenador';
+  var items = rGuiaRol(rol);
+  var filas = items.map(function(it){
+    return '<div class="r-ayuda-fila"><span class="r-ayuda-em">'+it[0]+'</span>'+
+      '<div><b>'+esc(it[1])+'</b><small>'+esc(it[2])+'</small></div></div>';
+  }).join('');
+  var v = rEl('<div class="r-velo" id="rVeloAyuda" style="position:fixed;z-index:300"><div class="r-hoja"><div class="r-agarre"></div>'+
+    '<b style="font-size:17px">¿Cómo funciona?</b>'+
+    '<small style="color:var(--gris);display:block;margin:3px 0 12px">Te dejamos lo esencial para arrancar.</small>'+
+    '<div class="r-ayuda-lista">'+filas+'</div>'+
+    '<button class="r-listo" id="rAyudaOk" style="width:100%;margin-top:14px">Entendido 👍</button>'+
+    '</div></div>');
+  document.body.appendChild(v);
+  rAbrirVelo(v);
+  var cerrar=function(){ rCerrarVelo(v); setTimeout(function(){ v.remove(); },220); };
+  v.onclick=function(ev){ if(ev.target===v) cerrar(); };
+  v.querySelector('#rAyudaOk').onclick=cerrar;
+}
+
 /* Hoja modal de entrada de texto (reemplaza prompt nativo). cb(valor|null) */
 function rHojaInput(opts, cb){
   var existente = $('rVeloInput'); if (existente) existente.remove();
@@ -105,6 +147,7 @@ function rConfirmar(opts, onOk, onCancel){
   return v;
 }
 R.rConfirmar = rConfirmar;
+R.rAyuda = rAyuda;
 
 function rWaLink(tel, texto){
   var d = String(tel||'').replace(/\D/g,'').replace(/^0+/,'');
@@ -327,6 +370,7 @@ function rPintarLista(){
   wrap.innerHTML =
     '<div class="r-head"><h1>Hola, '+esc(nombre)+'<small class="r-sub">Mis alumnos</small></h1>'+
       '<button class="r-pill head" id="rBtnFin" style="margin-left:auto">💰 Finanzas · <b id="rTotalHead">$0</b></button>'+
+      '<button class="r-sync-btn" id="rBtnAyuda" title="Cómo usar la app">❓</button>'+
       '<button class="r-sync-btn" id="rBtnSync" title="Sincronizar con la nube">🔄</button>'+
       '<button class="r-salir-btn" id="rBtnSalir" title="Cerrar sesión">🚪</button>'+
     '</div>'+
@@ -341,6 +385,7 @@ function rPintarLista(){
   $('rBtnFin').onclick = function(){ rIrPantalla('finanzas'); };
   $('rBtnSalir').onclick = function(){ rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); }); };
   $('rBtnSync').onclick = function(){ rSincronizarAhora(this); };
+  var _btnAyuda = $('rBtnAyuda'); if(_btnAyuda) _btnAyuda.onclick = rAyuda;
   $('rBtnAgregar').onclick = function(){ rHojaAlta(); };
   $('rBuscaAlu').addEventListener('input', function(){ rPintarAlumnos(this.value); });
   rPintarAlumnos('');
@@ -1829,7 +1874,7 @@ function conectar(){
   d$('dSalir').onclick=function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ salir(); }); };
   d$('dVeloMenu').onclick=function(ev){ if(ev.target===this) this.classList.remove('abierto'); };
   d$('dMenuSalir').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); salir(); };
-  d$('dMenuAyuda').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); abrirAyuda(); };
+  d$('dMenuAyuda').onclick=function(){ d$('dVeloMenu').classList.remove('abierto'); rAyuda(); };
   d$('dMenuProg').onclick=function(){
     d$('dVeloMenu').classList.remove('abierto');
     R.ocultarAlumno();
@@ -1923,6 +1968,14 @@ function montar(){
   } else if(sesion.rol==='alumno' || sesion.rol==='usuario'){
     window.Rediseno.renderAlumno();
   }
+  // onboarding: primera vez que entra a la interfaz nueva
+  try{
+    var kAyuda = 'proto_entrenador_v1_ayuda_v2_'+(sesion.rol||'x');
+    if(!localStorage.getItem(kAyuda)){
+      localStorage.setItem(kAyuda,'1');
+      setTimeout(function(){ window.Rediseno.rAyuda && window.Rediseno.rAyuda(); }, 700);
+    }
+  }catch(e){}
 }
 // cuando entra a la app
 var _aLaApp = window.aLaApp;
@@ -2008,6 +2061,7 @@ function crearEstructura(){
   d.className='r-app'; d.id='rAppOwner';
   d.innerHTML='<div class="r-manchas"><i></i><i></i><i></i></div>'+
     '<div class="r-head"><h1>Panel del dueño<small class="r-sub">Hola, '+(window.sesion&&sesion.nombre?sesion.nombre.split(' ')[0]:'')+'</small></h1>'+
+      '<button class="r-sync-btn" id="oAyuda" title="Cómo usar la app">❓</button>'+
       '<button class="r-sync-btn" id="oSync" title="Sincronizar">🔄</button>'+
       '<button class="r-salir-btn" id="oSalir" title="Cerrar sesión">🚪</button></div>'+
     '<div style="padding:8px 16px 30px;overflow-y:auto;flex:1">'+
@@ -2036,6 +2090,7 @@ R.renderOwner = function(){
   o$('rAppOwner').classList.add('ver');
   o$('oSalir').onclick = function(){ R.rConfirmar({ icono:'🚪', titulo:'¿Cerrar tu sesión?', mensaje:'Vas a volver a la pantalla de ingreso.', okTexto:'Cerrar sesión', peligro:true }, function(){ R.ocultarOwner(); salir(); }); };
   o$('oSync').onclick = function(){ oToast('✓ Datos actualizados'); };
+  var _oAyuda = o$('oAyuda'); if(_oAyuda) _oAyuda.onclick = rAyuda;
   var buscar = function(){ oBuscar(); };
   o$('oBuscar').onclick = buscar;
   o$('oDni').addEventListener('keydown', function(e){ if(e.key==='Enter') buscar(); });
