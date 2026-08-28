@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#4f7df2">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="nuevo/rediseno.css?v=86">
+<link rel="stylesheet" href="nuevo/rediseno.css?v=87">
 <title>Mi Entrenador · Ingreso</title>
 <!-- ============================================================
      PROTOTIPO REUTILIZABLE · Login con DNI + Panel de Administración
@@ -635,6 +635,7 @@ var LIBRERIA = [
     <div class="login-error" id="loginError"></div>
     <button id="btnOlvide" style="display:block;margin:14px auto 0;background:none;border:none;color:var(--c1);font-size:13.5px;font-weight:700;cursor:pointer;text-decoration:underline">¿Olvidaste o trabaste tu clave?</button>
   </div>
+  <div id="verApp" style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.4px;color:var(--gris);opacity:.75;pointer-events:none;user-select:none">v…</div>
 </div>
 
 <!-- Modal recuperar clave -->
@@ -2964,6 +2965,16 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
 
 /* arranque */
 (function(){
+  // versión de la app: se toma sola del ?v= del archivo nuevo (así siempre refleja lo publicado)
+  try{
+    var _ver = '';
+    document.querySelectorAll('script[src*="rediseno.js"]').forEach(function(s){
+      var m = String(s.src).match(/[?&]v=(\d+)/); if(m) _ver = m[1];
+    });
+    if(!_ver){ _ver = ''; }
+    var _el = document.getElementById('verApp');
+    if(_el) _el.textContent = 'v' + (_ver || '?');
+  }catch(e){}
   if (leer(CONFIG.CLAVE_DATOS+'_tema','claro')==='dark') document.body.classList.add('dark');
   ['btnAyuda1','btnAyuda2'].forEach(function(id){ if ($(id)) $(id).innerHTML = icono('ayuda',17); });
   ['btnSalir1','btnSalir2'].forEach(function(id){ if ($(id)) $(id).innerHTML = icono('salir',15) + ' Salir'; });
@@ -2982,7 +2993,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
   reanudarSiHabiaSesion();
 })();
 </script>
-<script src="nuevo/rediseno.js?v=86"></script>
+<script src="nuevo/rediseno.js?v=87"></script>
 <script>
 /* cuando el alumno vuelve del tab Progreso al tab Hoy, re-monta el mazo nuevo */
 document.addEventListener('click', function(ev){
