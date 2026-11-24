@@ -47,3 +47,10 @@ test('exercise attribution and PWA assets are included',()=>{
   assert.ok(fs.existsSync(path.join(root,'manifest.webmanifest')));
   assert.ok(fs.existsSync(path.join(root,'sw.js')));
 });
+test('fresh gamified visual system stays consistent without copying another brand',()=>{
+  assert.match(css,/--green:#62c46a/);
+  assert.match(css,/border-bottom-width:5px/);
+  assert.match(css,/\.login-story\{background:var\(--green\)/);
+  assert.match(css,/\.mobile-nav button\.active\{color:#347a00;background:#eff9e5\}/);
+  assert.doesNotMatch(`${html}${js}${css}`,/duolingo|duo the owl|owl mascot/i);
+});

@@ -118,3 +118,133 @@
 @media(max-width:650px){.login-art-wrap .login-art-image{width:86px;height:104px;border-radius:12px}.login-art-wrap .login-art-image img{border-radius:12px}.deck-card-art{height:clamp(285px,42vh,370px);margin:0 8px}.deck-card-art .repdb-motion{border-radius:16px}.deck-illustration-credit{right:8px;bottom:7px}.brand-copy b{font-size:15px}.brand-copy small{font-size:6px}}
 @media(max-width:390px){.deck-card-art{height:clamp(260px,39vh,330px)}}
 @media(prefers-reduced-motion:reduce){.repdb-motion .repdb-start,.repdb-motion .repdb-peak{animation:none!important}.repdb-motion .repdb-start{opacity:1!important}.repdb-motion .repdb-peak{opacity:0!important}}
+
+/* Mi Entrenador: identidad propia, enérgica y gamificada */
+:root{--paper:#fffdf6;--white:#ffffff;--ink:#252922;--muted:#6f766d;--line:#e7e6dd;--green:#62c46a;--green-dark:#378944;--purple:#8b62c8;--coral:#ff914d;--blue:#37aebb;--yellow:#f5c84c;--shadow:0 5px 0 #e9e7df,0 12px 28px rgba(35,40,33,.07);--radius:22px}
+body{background:var(--paper);color:var(--ink)}
+.sidebar{background:#fff;border-right:2px solid var(--line)}
+.brand-mark{background:var(--green);color:#fff;border-radius:14px;box-shadow:0 3px 0 var(--green-dark)}
+.brand-copy b{font-weight:950;letter-spacing:-1.3px}
+.workspace{background:#f0f9e7;border:2px solid #e4f1d8;border-radius:16px}
+.workspace-dot{background:var(--green-dark);box-shadow:0 0 0 4px #62c46a2b}
+.nav-label{color:#96998f}
+.nav-item{border-radius:14px;min-height:45px;font-weight:750}
+.nav-item:hover{background:#f5f8ef;color:var(--ink)}
+.nav-item.active{background:#eaf8dd;color:#317a00;box-shadow:inset 4px 0 0 var(--green)}
+.nav-item.active .nav-icon{color:#378944}
+.main-area{background:var(--paper)}
+.topbar{background:#fffdf6ed;border-bottom:2px solid var(--line)}
+.breadcrumbs strong{color:var(--ink)}
+.page-heading h1{font-weight:950;letter-spacing:-1.35px}
+.eyebrow{color:#78826f}
+.card,.stat-card,.activity-card,.student-card,.routine-card,.week-card,.team-card,.session-card,.record-card,.table-card,.student-plan-card,.exercise-deck,.modal,.tour-card{border:2px solid var(--line);border-bottom-width:5px;border-radius:22px;box-shadow:0 4px 0 #eceae2,0 10px 22px rgba(35,40,33,.045)}
+.card{background:#fff}
+.stat-card{background:#fff}
+.stat-icon{background:#f0f8e8;color:#397f0b;border-radius:12px}
+.stat-card strong{font-weight:950}
+.trend{color:#378944}
+.btn{border:2px solid #e5e5dc;border-bottom-width:4px;background:#fff;border-radius:15px;color:var(--ink);font-size:11px;font-weight:850;box-shadow:0 2px 0 #e7e5dd;transition:transform .14s,box-shadow .14s,background .14s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 5px 0 #e7e5dd}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn-primary,.btn-lime,.login-submit,.workout-side .btn{background:var(--green);border:0;border-bottom:5px solid var(--green-dark);color:#17320b;box-shadow:none;font-weight:950}
+.btn-primary:hover,.btn-lime:hover,.login-submit:hover,.workout-side .btn:hover{background:#63d60a;box-shadow:none}
+.btn-primary:active,.btn-lime:active,.login-submit:active,.workout-side .btn:active{border-bottom-width:2px;transform:translateY(3px)}
+.btn-plain{background:transparent;border-color:transparent;box-shadow:none}
+.icon-button{background:#fff;border:2px solid var(--line);border-radius:13px;color:#52584f}
+.icon-button:hover{background:#f2f9e9;color:#347d00}
+.role-face,.avatar{border-radius:13px}
+.avatar-purple{background:#eee8fb;color:#7353a9}.avatar-green{background:#eaf8dd;color:#347a00}.avatar-coral{background:#fff0e4;color:#a94e15}.avatar-blue{background:#e3f5f7;color:#247b86}
+.help-card{background:#f0f9e7;border-radius:18px}
+.help-card:after{border-color:#62c46a26}
+.help-spark{color:#378944}
+.activity-card,.switch-view .activity-card{background:#eff9e5;border-color:#dcefcf;color:var(--ink)}
+.activity-card:after,.switch-view .activity-card:after{color:#deefce}
+.activity-card .card-head p,.activity-content>p,.progress-caption,.switch-view .activity-card .card-head p,.switch-view .activity-content>p,.switch-view .progress-caption{color:#65715d}
+.mini-progress{background:#dfe9d8}
+.mini-progress i,.deck-progress i,.progress-bar i{background:var(--green)}
+.chart-line-a{stroke:var(--green-dark)}
+.chart-line-b{stroke:var(--coral)}
+.chart-point{stroke:var(--green-dark)}
+.legend-dot{background:var(--green-dark)}
+.legend-dot.lime{background:var(--coral)}
+.session-hero{background:#eff9e5;border:2px solid #dcefcf;border-radius:18px}
+.session-hero small{color:#3f890a}
+.exercise-symbol,.exercise-number{background:#edf8e5;color:#397f0b;border-radius:12px}
+.exercise-row,.workout-exercise{border-color:#edede6}
+.set-check{accent-color:var(--green-dark)}
+.workout-side,.switch-view .workout-side{background:#244d25;color:#fff;border-radius:22px}
+.workout-side:after{color:#315e32}
+.workout-side .eyebrow{color:#c7e3b7}
+.workout-side p{color:#e2eedc}
+.record-card{background:#f5f9ef;color:var(--ink)}
+.student-view-banner{background:#244d25;color:#fff;border-radius:16px}
+.student-view-banner span{color:#bdf28f}
+.student-view-banner button{background:#ffffff20}
+.routine-card:after{background:var(--wash,#eaf8dd)}
+.routine-emoji{background:#eaf8dd;border-radius:14px}
+.tag,.status,.role-badge,.nav-badge,.login-pill,.filter-pill{border-radius:999px;font-weight:850}
+.status-green{background:#eaf8dd;color:#347a00}.status-purple{background:#f0e9fb;color:#7353a9}.status-red{background:#fff0e4;color:#aa511a}.status-yellow{background:#fff6d8;color:#856300}
+.search-box,.settings-form input,.settings-form select,.modal-form input,.modal-form select,.modal-form textarea,.login-form input{border:2px solid #e7e7df;border-radius:14px;background:#fff}
+.search-box:focus-within,.login-form input:focus,.modal-form input:focus,.modal-form select:focus,.modal-form textarea:focus{border-color:#8bdd4b;box-shadow:0 0 0 4px #62c46a1b}
+.modal{background:#fff}
+.modal-head{border-bottom:2px solid #f0efe9}
+.modal-close{background:#f1f8e9;border-radius:11px}
+.toast{background:#244d25;border:2px solid #3c7138;border-radius:16px;font-size:11px;font-weight:850;box-shadow:0 7px 0 #193d1b}
+.login-story{background:var(--green);color:#18320e}
+.login-story:before{border-color:#ffffff45;box-shadow:0 0 0 44px #ffffff1b,0 0 0 95px #ffffff12}
+.login-story:after{background:#ffffff40}
+.login-brand{color:#18320e}
+.login-brand .brand-copy small{color:#2e5b1a}
+.login-story .brand-mark{background:#fff;color:#347c00;box-shadow:0 3px 0 #d9ebca}
+.login-overline{color:#244b13}
+.login-overline i{background:#fff;box-shadow:0 0 0 5px #ffffff45}
+.login-story-copy h1{color:#17320b}
+.login-story-copy h1 em{color:#fff}
+.login-story-copy p{color:#28521a}
+.login-story-foot{color:#315b22}
+.login-story-foot a{color:#17320b}
+.login-art-glow{background:#a7eb75}
+.art-tag{border-radius:14px;box-shadow:0 4px 0 #d8d6ce,0 10px 24px #0002}
+.art-tag-two{background:#ff914d;color:#48220c;box-shadow:0 4px 0 #d96e30}
+.login-panel{background:#fffdf6}
+.login-pill{background:#eaf8dd;color:#347a00}
+.demo-access-card{border:2px solid var(--line);border-bottom-width:4px;border-radius:16px;background:#fff}
+.demo-access-card:hover{border-color:#a9dc83;box-shadow:0 3px 0 #dcefd0;transform:translateY(-1px)}
+.demo-access-avatar{border-radius:13px;background:#eaf8dd;color:#347a00}
+.student-avatar{background:#e2f5f7;color:#247b86}
+.login-submit{min-height:50px;border-radius:15px}
+.login-form input{height:48px}
+.mobile-nav{background:#fffefa;border-top:2px solid var(--line);padding-top:9px}
+.mobile-nav button{border-radius:13px;color:#81867e;font-weight:850}
+.mobile-nav button.active{color:#347a00;background:#eff9e5}
+.mobile-nav button span{font-size:18px}
+.exercise-deck{background:#fff;border-color:#e7e6dd;box-shadow:0 5px 0 #e7e5dd,0 14px 28px #2529220d}
+.deck-card-art{background:#eff9e5;border-radius:19px}
+.deck-topline,.deck-count{font-weight:900}
+.deck-dots i.current,.deck-progress i{background:var(--green)}
+.deck-done,.deck-success-mark{color:#378944}
+.deck-focus{background:#fff7df;border-radius:14px}
+.workout-thumb,.exercise-library-row>img{background:#eff9e5;border-radius:14px}
+.tour-card{background:#fff;border-color:#e7e6dd}
+.tour-progress i{background:var(--green)}
+.tour-demo-label{background:#eaf8dd;color:#347a00;border-radius:999px}
+.tour-intro-icon{background:#eff9e5;border-radius:20px}
+.table-card{overflow:hidden}
+.table-card th{background:#fbfcf7}
+th{color:#787f75}
+td{border-color:#f0f0e9}
+.student-card:hover,.routine-card:hover,.team-card:hover{transform:translateY(-2px);box-shadow:0 6px 0 #e5e3da,0 14px 28px #25292210}
+::selection{background:#c8f1a8;color:#17320b}
+@media(max-width:760px){.mobile-nav{box-shadow:0 -5px 18px #2529220a}.mobile-nav button{min-width:54px;padding:5px 7px}.content{padding-top:23px}.page-heading h1{font-size:26px}.card,.stat-card,.routine-card,.student-card,.week-card,.team-card{border-radius:19px}.btn{min-height:43px}}
+.switch-view .sidebar{background:#fff;color:var(--ink);border-right:2px solid var(--line)}
+.switch-view .brand,.switch-view .workspace b{color:var(--ink)}
+.switch-view .brand-copy small,.switch-view .nav-label{color:#96998f}
+.switch-view .workspace{background:#f0f9e7;border-color:#e4f1d8}
+.switch-view .nav-item{color:#6f766d}
+.switch-view .nav-item.active{background:#eaf8dd;color:#317a00}
+.switch-view .nav-item.active .nav-icon{color:#378944}
+.switch-view .sidebar-user{border-color:var(--line)}
+.switch-view .help-card{background:#f0f9e7;color:var(--ink)}
+.switch-view .help-card p{color:var(--muted)}
+.switch-view .role-face{background:#eaf8dd;color:#347a00}
+.switch-view .main-area{background:var(--paper)}
