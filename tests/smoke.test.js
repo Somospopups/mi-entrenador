@@ -65,3 +65,7 @@ test('native access screen is concise and uses a custom logo without the hero ph
   assert.doesNotMatch(login,/login-art-wrap|repdb-motion|<img/);
   assert.match(css,/\.native-input\{height:49px/);
 });
+test('native login always uses a single full-width column, including narrow phones',()=>{
+  assert.match(css,/\.login-screen\{grid-template-columns:minmax\(0,1fr\)!important\}/);
+  assert.match(css,/@media\(max-width:760px\)\{\.login-screen\{grid-template-columns:minmax\(0,1fr\)!important\}\}/);
+});

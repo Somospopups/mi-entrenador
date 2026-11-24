@@ -300,3 +300,6 @@ td{border-color:#f0f0e9}
 .brand-mark{font-size:0;padding:0;color:#fff}
 .brand-mark svg{display:block}
 @media(max-width:600px){.login-screen{padding:0;background:#f8f9f3}.login-screen:before,.login-screen:after{display:none}.native-login{width:100%;height:100svh;min-height:560px;max-height:none;border-radius:0;box-shadow:none;overflow:auto}.native-login-hero{padding:calc(17px + env(safe-area-inset-top)) 23px 34px;min-height:180px}.native-login-body{padding:22px 23px calc(18px + env(safe-area-inset-bottom));margin-top:-20px;min-height:0}.native-login-heading h2{font-size:19px}.native-input{height:52px}.native-login-form .login-submit{height:54px;min-height:54px}.native-demo-access .demo-access-card{min-height:51px}.native-login-footer{padding-bottom:4px}}
+/* Fix: el login tiene un solo panel; no heredar las dos columnas del antiguo split desktop. */
+.login-screen{grid-template-columns:minmax(0,1fr)!important}
+@media(max-width:760px){.login-screen{grid-template-columns:minmax(0,1fr)!important}}
