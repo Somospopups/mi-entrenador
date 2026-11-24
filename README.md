@@ -1,11 +1,11 @@
-# POPUPS Training · demo de producto
+# Mi Entrenador · demo de producto
 
-Prototipo web responsive e instalable (PWA) para presentar una experiencia de entrenamiento a potenciales clientes. Nombre de trabajo: **POPUPS Training**. No es la marca final ni está conectada a un servicio remoto.
+Prototipo web responsive e instalable (PWA) para presentar una experiencia de entrenamiento a potenciales clientes. Nombre de trabajo: **Mi Entrenador**. No es la marca final ni está conectada a un servicio remoto.
 
 ## Acceso de demostración
 
-- **Entrenadora:** `coach@popups.demo` / `popups2026`
-- **Alumno:** `alumno@popups.demo` / `popups2026`
+- **Entrenadora:** `coach@mi-entrenador.demo` / `entrena2026`
+- **Alumno:** `alumno@mi-entrenador.demo` / `entrena2026`
 
 También se puede entrar con un clic desde las tarjetas de la pantalla de acceso. La comprobación es local, codificada en el front-end y **no es autenticación segura**.
 
@@ -15,7 +15,7 @@ También se puede entrar con un clic desde las tarjetas de la pantalla de acceso
 - Navegación como entrenadora y como alumno, cerrar sesión y volver al acceso demo.
 - Buscar/filtrar alumnos; crear fichas de muestra y abrir sus perfiles.
 - Crear rutinas, asignarlas a alumnos y consultar la biblioteca ilustrada de ejercicios.
-- Registrar un entrenamiento, ver las ilustraciones, marcar ejercicios, usar el temporizador y consultar el historial local.
+- Registrar un entrenamiento, ver el cuerpo completo en tarjetas grandes con transiciones entre las poses inicial y final de RepDB, marcar ejercicios, usar el temporizador y consultar el historial local.
 - Registrar/actualizar cobros y exportar listados CSV.
 - Crear sesiones en la agenda, explorar meses, invitar miembros del equipo.
 - Reiniciar los datos demo desde Configuración.
