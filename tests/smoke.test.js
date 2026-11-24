@@ -54,3 +54,14 @@ test('fresh gamified visual system stays consistent without copying another bran
   assert.match(css,/\.mobile-nav button\.active\{color:#347a00;background:#eff9e5\}/);
   assert.doesNotMatch(`${html}${js}${css}`,/duolingo|duo the owl|owl mascot/i);
 });
+
+test('native access screen is concise and uses a custom logo without the hero photo',()=>{
+  const login=html.match(/<section class="login-screen"[\s\S]*?<\/section>/)?.[0]||'';
+  assert.match(login,/class="native-login"/);
+  assert.match(login,/class="native-logo"/);
+  assert.match(login,/id="loginForm"/);
+  assert.match(login,/data-role="coach"/);
+  assert.match(login,/data-role="student"/);
+  assert.doesNotMatch(login,/login-art-wrap|repdb-motion|<img/);
+  assert.match(css,/\.native-input\{height:49px/);
+});

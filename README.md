@@ -1,6 +1,6 @@
 # Mi Entrenador · demo de producto
 
-Prototipo web responsive e instalable (PWA) para presentar una experiencia de entrenamiento a potenciales clientes. Nombre de trabajo: **Mi Entrenador**. No es la marca final ni está conectada a un servicio remoto. Su identidad visual es propia, alegre y gamificada: verde fresco, superficies claras, botones con relieve y microinteracciones, sin reutilizar marca ni personajes de otras aplicaciones.
+Prototipo web responsive e instalable (PWA) para presentar una experiencia de entrenamiento a potenciales clientes. Nombre de trabajo: **Mi Entrenador**. No es la marca final ni está conectada a un servicio remoto. Su identidad visual es propia, alegre y gamificada: verde fresco, superficies claras, botones con relieve y microinteracciones, sin reutilizar marca ni personajes de otras aplicaciones. El acceso móvil prioriza el logo, pocos textos y controles amplios, sin ilustración de portada.
 
 ## Acceso de demostración
 

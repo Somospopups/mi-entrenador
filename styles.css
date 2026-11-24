@@ -248,3 +248,55 @@ td{border-color:#f0f0e9}
 .switch-view .help-card p{color:var(--muted)}
 .switch-view .role-face{background:#eaf8dd;color:#347a00}
 .switch-view .main-area{background:var(--paper)}
+
+/* Acceso nativo: foco en la acción y marca propia, sin foto ni página partida */
+.login-screen{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:22px;background:#183b2a;overflow:auto}
+.login-screen:before{content:"";position:absolute;width:580px;height:580px;border:1px solid #ffffff17;border-radius:50%;right:-245px;top:-210px;box-shadow:0 0 0 55px #ffffff08,0 0 0 115px #ffffff05;pointer-events:none}
+.login-screen:after{content:"";position:absolute;width:300px;height:300px;left:-140px;bottom:-150px;border-radius:50%;background:#62c46a20;pointer-events:none}
+.native-login{width:min(440px,100%);min-height:min(760px,calc(100svh - 44px));display:flex;flex-direction:column;background:#f8f9f3;border-radius:30px;overflow:hidden;position:relative;z-index:1;box-shadow:0 8px 0 #102c1d,0 30px 80px #091b1270;animation:panelIn .45s cubic-bezier(.2,.75,.25,1) both}
+.native-login-hero{position:relative;overflow:hidden;flex:none;background:#214b31;color:#fff;padding:22px 25px 37px;min-height:188px}
+.native-login-hero:after{content:"";position:absolute;right:-26px;bottom:-70px;width:180px;height:180px;border:1px solid #ffffff22;border-radius:50%;box-shadow:0 0 0 24px #ffffff0c,0 0 0 50px #ffffff08;pointer-events:none}
+.native-brand{position:relative;z-index:1;display:flex;align-items:center;gap:11px;min-height:42px}
+.native-logo{width:43px;height:43px;border-radius:15px;background:#62c46a;display:grid;place-items:center;color:#14391e;box-shadow:0 4px 0 #378944;flex:none}
+.native-logo svg,.brand-mark svg{width:73%;height:73%;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.native-wordmark b{display:block;font-size:16px;font-weight:950;letter-spacing:-.55px}
+.native-wordmark small{display:block;margin-top:2px;font-size:8px;font-weight:850;letter-spacing:1.05px;color:#c0d9c0}
+.native-demo-chip{margin-left:auto;padding:6px 9px;border-radius:99px;border:1px solid #ffffff35;color:#e5f0df;font-size:8px;font-weight:900;letter-spacing:.08em}
+.native-demo-chip i{display:inline-block;width:6px;height:6px;background:#82df6b;border-radius:50%;margin-right:4px;vertical-align:1px}
+.native-hero-copy{position:relative;z-index:1;margin-top:29px}
+.native-hero-copy>span{font-size:8px;font-weight:900;letter-spacing:1.5px;color:#c1e3b4}
+.native-hero-copy h1{margin:6px 0 0;font-size:27px;line-height:1.04;letter-spacing:-1.1px;font-weight:950;color:#fff}
+.native-login-body{flex:1;display:flex;flex-direction:column;padding:24px 25px 17px;background:#f8f9f3;border-radius:25px 25px 0 0;margin-top:-19px;position:relative;z-index:2}
+.native-login-heading h2{font-size:18px;letter-spacing:-.45px;margin:0;font-weight:950;color:#20281f}
+.native-login-heading p{font-size:10px;color:#7c8377;margin:4px 0 17px}
+.native-login-form{display:grid;gap:7px}
+.native-login-form label{margin:3px 0 0;font-size:9px;font-weight:900;color:#50594e;letter-spacing:.035em}
+.native-input{height:49px;width:100%;display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #e1e5dc;border-radius:14px;padding:0 13px;color:#7c8478;transition:border-color .18s,box-shadow .18s}
+.native-input:focus-within{border-color:#62c46a;box-shadow:0 0 0 4px #62c46a20}
+.native-input>span{font-size:14px;font-weight:900;color:#859181;width:17px;text-align:center}
+.native-input input{height:100%;width:100%;min-width:0;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:0!important;color:#242a23;font-size:12px}
+.native-input input::placeholder{color:#a0a59b}
+.native-input .password-toggle{position:static;flex:none;width:32px;height:32px;border-radius:10px;background:#f1f5ed;color:#697267;font-size:13px}
+.native-login-form .login-error{min-height:12px;margin:0;font-size:9px}
+.native-login-form .login-submit{height:50px;min-height:50px;width:100%;justify-content:space-between;padding:0 17px;border-radius:14px;background:#62c46a;color:#15381c;border-bottom:4px solid #378944;font-size:12px}
+.native-login-form .login-submit span{font-size:19px}
+.native-login-form .login-submit:active{transform:translateY(2px);border-bottom-width:2px}
+.native-demo-access{margin-top:14px}
+.native-demo-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.native-demo-heading span{font-size:10px;font-weight:900;color:#333b31}
+.native-demo-heading small{font-size:8px;color:#8a9086;font-weight:750}
+.native-demo-access .demo-access-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.native-demo-access .demo-access-card{min-height:47px;padding:6px 9px;gap:7px;border:1px solid #e3e6dd;border-bottom:3px solid #d9ddd3;border-radius:13px;text-align:left;box-shadow:none;transform:none}
+.native-demo-access .demo-access-card:hover{background:#fff;border-color:#bcdcb1;box-shadow:0 2px 0 #d9e9d2}
+.native-demo-access .demo-access-card b{font-size:9px;font-weight:900;color:#374033}
+.native-demo-access .demo-access-avatar{width:29px;height:29px;border-radius:10px;font-size:12px;background:#eaf8dd;color:#378944}
+.native-demo-access .student-avatar{background:#e3f5f7;color:#287a84}
+.native-demo-access .demo-arrow{margin-left:auto;font-size:17px;color:#7b8378}
+.native-login .demo-credentials{margin:8px 0 0;color:#798075;font-size:8px}
+.native-login .demo-credentials summary{cursor:pointer;width:max-content;font-weight:800}
+.native-login .demo-credentials p{margin:5px 0 0;padding:8px 10px;border-radius:10px;background:#eef2e9;line-height:1.7}
+.native-login-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:12px;color:#92988d;font-size:7px}
+.native-login-footer a{color:#61735c;text-decoration:none;font-weight:800}
+.brand-mark{font-size:0;padding:0;color:#fff}
+.brand-mark svg{display:block}
+@media(max-width:600px){.login-screen{padding:0;background:#f8f9f3}.login-screen:before,.login-screen:after{display:none}.native-login{width:100%;height:100svh;min-height:560px;max-height:none;border-radius:0;box-shadow:none;overflow:auto}.native-login-hero{padding:calc(17px + env(safe-area-inset-top)) 23px 34px;min-height:180px}.native-login-body{padding:22px 23px calc(18px + env(safe-area-inset-bottom));margin-top:-20px;min-height:0}.native-login-heading h2{font-size:19px}.native-input{height:52px}.native-login-form .login-submit{height:54px;min-height:54px}.native-demo-access .demo-access-card{min-height:51px}.native-login-footer{padding-bottom:4px}}
