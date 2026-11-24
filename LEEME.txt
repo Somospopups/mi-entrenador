@@ -1,0 +1,19 @@
+POPUPS TRAINING · v1 · PUBLICACION DE REEMPLAZO
+
+Este paquete publica la demo local de POPUPS Training en:
+https://github.com/Somospopups/mi-entrenador
+
+IMPORTANTE: la instruccion del usuario autoriza reemplazar la historia de la rama main. El BAT hace un force-push CON LEASE: solo procede si main todavia apunta exactamente al commit 98c7263b5388729436ac3891f316ad262e3b4f42, no hay tags ni otras ramas, y la persona confirma una segunda vez en Windows. Si el remoto cambio, esta protegido o GitHub rechaza la operacion, se detiene sin sobrescribir.
+
+La publicacion nueva deja la rama main con la app POPUPS Training v1 y su raiz Git nueva. No es un borrado garantizado de copias, clones, forks, caches, PRs ni respaldos de GitHub; tampoco elimina issues/wiki/ajustes del repo. El historial puede seguir siendo accesible por SHA durante un tiempo.
+
+PASOS
+1. Extrae todo el ZIP en una carpeta.
+2. Ejecuta PUBLICAR.bat en Windows con Git for Windows instalado.
+3. Inicia sesion cuando Git Credential Manager lo abra.
+4. Revisa la advertencia y confirma solo si queres reemplazar main.
+5. Espera el mensaje PUBLICACION CONFIRMADA y el SHA nuevo.
+
+No hay claves ni tokens en el paquete. La autenticacion es con Git Credential Manager.
+
+Accesos locales de demo: coach@popups.demo / popups2026 y alumno@popups.demo / popups2026. No son credenciales seguras.

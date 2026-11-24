@@ -1,0 +1,5 @@
+Producto de trabajo: POPUPS Training
+Entrega: v1
+Destino GitHub: https://github.com/Somospopups/mi-entrenador
+Tipo de publicación: reemplazo de la historia de main con nueva raíz v1
+Commit anterior esperado para el BAT: 98c7263b5388729436ac3891f316ad262e3b4f42

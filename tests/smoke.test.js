@@ -1,0 +1,33 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const js=fs.readFileSync(path.join(root,'app.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+test('login and demo identities are present',()=>{
+  assert.match(html,/id="loginForm"/);
+  assert.match(js,/coach@popups\.demo/);
+  assert.match(js,/alumno@popups\.demo/);
+  assert.match(js,/function logout\(/);
+});
+test('core flows and guided tour are wired',()=>{
+  for(const action of ['tour-start','tour-next','tour-back','tour-contact','finish-workout','mark-paid','add-event','reset-demo']) assert.ok(js.includes(`case'${action}'`),`missing ${action}`);
+  assert.match(js,/workoutHistory\.unshift/);
+});
+test('every exercise illustration referenced by app is bundled',()=>{
+  const refs=[...js.matchAll(/assets\/exercises\/([a-z0-9-]+\.webp)/g)].map(m=>m[1]);
+  assert.ok(refs.length>=6);
+  for(const f of new Set(refs)) assert.ok(fs.existsSync(path.join(root,'assets','exercises',f)),`missing image ${f}`);
+});
+test('responsive motion and accessibility affordances exist',()=>{
+  assert.match(css,/@media\(max-width:650px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(html,/aria-label="Mostrar contraseña"/);
+});
+test('exercise attribution and PWA assets are included',()=>{
+  assert.match(html,/repdb\.co/);
+  assert.ok(fs.existsSync(path.join(root,'manifest.webmanifest')));
+  assert.ok(fs.existsSync(path.join(root,'sw.js')));
+});
